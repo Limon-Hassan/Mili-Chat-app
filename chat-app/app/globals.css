@@ -1,0 +1,15 @@
+@import 'tailwindcss';
+@import './styles/dotsBackground.css';
+@theme {
+  --font-inter: 'Inter', 'sans-serif';
+}
+@theme {
+  --font-open_sens: 'Open Sans', 'sans-serif';
+}
+
+@theme {
+  --breakpoint-mobile: 20rem;
+  --breakpoint-tablet: 38.75rem;
+  --breakpoint-laptop: 64rem;
+  --breakpoint-computer: 100rem;
+}
