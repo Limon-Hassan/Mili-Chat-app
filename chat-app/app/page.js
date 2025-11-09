@@ -1,5 +1,5 @@
 import AnimatedDots from '@/components/AnimatedDots';
-import Navber from '@/components/Navber';
+import Login from '@/components/Login';
 import Registation from '@/components/Registation';
 
 export default function Home() {
@@ -8,7 +8,8 @@ export default function Home() {
       <AnimatedDots />
 
       <div className="relative z-10">
-        <Registation />
+        <Login></Login>
+
       </div>
     </div>
   );
