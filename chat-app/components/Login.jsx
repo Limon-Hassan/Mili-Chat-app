@@ -1,15 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Container from './container/Container';
 import FloatingInput from './FloatingInputs';
 
 const Login = () => {
   const [active, setActive] = useState(false);
+  let menuRef = useRef(null);
+
+  useEffect(() => {
+    let handler = event => {
+      if (!menuRef.current.contains(event.target)) {
+        setActive(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => {
+      document.removeEventListener('mousedown', handler);
+    };
+  }, []);
+
   return (
     <section>
       <Container>
-        <div className="flex justify-center items-center mobile:h-auto tablet:h-auto laptop:h-screen computer:h-screen">
+        <div className="flex justify-center items-center h-screen">
           <div className="mobile:w-full target:w-full laptop:w-[660px] computer:w-[660px] h-auto p-8 rounded-lg border border-white   shadow-2xl shadow-blue-600">
             <h1
               style={{
@@ -24,6 +38,7 @@ const Login = () => {
             <FloatingInput label="Password" type="password" id="password" />
             <button
               onClick={() => setActive(true)}
+              ref={menuRef}
               className="relative overflow-hidden text-[18px] font-inter font-bold text-white mobile:w-full target:w-full laptop:w-[300px] computer:w-[300px] h-[50px] border border-white mt-3 flex items-center justify-center mx-auto group cursor-pointer"
             >
               <span

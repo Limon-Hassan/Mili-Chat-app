@@ -8,8 +8,7 @@ export default function Home() {
       <AnimatedDots />
 
       <div className="relative z-10">
-        <Login></Login>
-
+        <Registation />
       </div>
     </div>
   );
