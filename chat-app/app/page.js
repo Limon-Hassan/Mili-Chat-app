@@ -1,14 +1,15 @@
 import AnimatedDots from '@/components/AnimatedDots';
-import Login from '@/components/Login';
-import Registation from '@/components/Registation';
+import HomePage from '@/components/HomePage';
+import SubItems from '@/components/SubItems';
 
 export default function Home() {
   return (
-    <div className="relative min-h-screen bg-[#0f172a] text-white overflow-hidden">
+    <div className="relative min-h-screen bg-[#080a10] text-white overflow-hidden">
       <AnimatedDots />
 
-      <div className="relative z-10">
-        <Registation />
+      <div className="flex gap-4 relative z-10">
+        <HomePage />
+        <SubItems />
       </div>
     </div>
   );
