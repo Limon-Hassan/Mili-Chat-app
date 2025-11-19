@@ -1,14 +1,15 @@
 import React from 'react';
+import { LuMessageCircleMore } from 'react-icons/lu';
 
-const Group = () => {
+const MyGroup = () => {
   return (
     <>
       <section className="w-full min-w-[390px] h-[430px] bg-transparent border border-white p-5 rounded-lg">
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
-          Group
+          My Group
         </h1>
 
-        <div className="mt-5 flex items-center justify-between">
+        <div className="mt-5">
           <div className=" w-full h-10 bg-white rounded-full mr-1.5">
             <input
               className="w-full h-full bg-transparent outline-none px-3 text-black"
@@ -16,9 +17,6 @@ const Group = () => {
               placeholder="Search Group"
             />
           </div>
-          <button className="text-sm font-inter font-bold bg-green-400 px-5 py-2.5 rounded-full text-white cursor-pointer hover:opacity-70">
-            Create
-          </button>
         </div>
         <div className="bg-white h-px w-full my-3"></div>
         <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full max-h-80">
@@ -33,8 +31,8 @@ const Group = () => {
                 mahammud hassan limon
               </h5>
             </div>
-            <button className="text-sm font-inter font-bold bg-purple-500 px-3.5 py-[5px] rounded-full h-[30px] text-white cursor-pointer hover:opacity-70">
-              Join
+            <button className="text-[20px] h-[30px] font-inter font-bold bg-purple-500 px-5 py-[5px] rounded-full text-white cursor-pointer hover:opacity-70">
+              <LuMessageCircleMore />
             </button>
           </li>
         </ul>
@@ -43,4 +41,4 @@ const Group = () => {
   );
 };
 
-export default Group;
+export default MyGroup;

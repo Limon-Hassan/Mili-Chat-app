@@ -7,7 +7,7 @@ import { IoSettingsOutline } from 'react-icons/io5';
 import { LuMessageCircleMore } from 'react-icons/lu';
 import { GrLogout } from 'react-icons/gr';
 
-const Sideber = () => {
+const Sideber = ({ setActivePage }) => {
   let [hoveredButton, setHoveredButton] = useState({
     home: false,
     message: false,
@@ -31,7 +31,7 @@ const Sideber = () => {
   };
   return (
     <section className="max-w-[300px]">
-      <div className="flex flex-col gap-3.50 w-[220px] h-screen shadow-2xl border border-white bg-transparent p-5">
+      <div className="flex flex-col gap-3.50 w-[220px] h-auto shadow-2xl border border-white bg-transparent p-5">
         <div className="w-[120px] h-[120px] rounded-full border border-purple-600 mx-auto">
           <img
             className="w-full h-full object-cover bg-cover rounded-full"
@@ -43,9 +43,12 @@ const Sideber = () => {
           Mahammud Hassan Limon
         </h1>
 
-        <div className="flex flex-col gap-[50px] mt-[60px]">
+        <div className="flex flex-col gap-[50px] my-[35px]">
           <button
-            onClick={() => handleactive('home')}
+            onClick={() => {
+              handleactive('home');
+              setActivePage('home');
+            }}
             className={` text-[40px] hover:text-purple-600 hover:bg-white transition-all ${
               hoveredButton.home
                 ? 'bg-white border-r-4 border-purple-600 rounded-r-lg text-purple-600 scale-110'
@@ -55,7 +58,10 @@ const Sideber = () => {
             <GoHome />
           </button>
           <button
-            onClick={() => handleactive('message')}
+            onClick={() => {
+              setActivePage('messages');
+              handleactive('message');
+            }}
             className={` text-[40px] hover:text-purple-600 hover:bg-white transition-all ${
               hoveredButton.message
                 ? 'bg-white border-r-4 border-purple-600 rounded-r-lg text-purple-600 scale-110'
@@ -65,7 +71,10 @@ const Sideber = () => {
             <LuMessageCircleMore />
           </button>
           <button
-            onClick={() => handleactive('notification')}
+            onClick={() => {
+              setActivePage('notification');
+              handleactive('notification');
+            }}
             className={` text-[40px] hover:text-purple-600 hover:bg-white transition-all ${
               hoveredButton.notification
                 ? 'bg-white border-r-4 border-purple-600 rounded-r-lg text-purple-600 scale-110'
@@ -75,7 +84,10 @@ const Sideber = () => {
             <IoMdNotificationsOutline />
           </button>
           <button
-            onClick={() => handleactive('settings')}
+            onClick={() => {
+              setActivePage('settings');
+              handleactive('settings');
+            }}
             className={` text-[40px] hover:text-purple-600 hover:bg-white transition-all ${
               hoveredButton.settings
                 ? 'bg-white border-r-4 border-purple-600 rounded-r-lg text-purple-600 scale-110'
@@ -85,7 +97,10 @@ const Sideber = () => {
             <IoSettingsOutline />
           </button>
           <button
-            onClick={() => handleactive('logout')}
+            onClick={() => {
+              setActivePage('settings');
+              handleactive('logout');
+            }}
             className={` text-[40px] hover:text-purple-600 hover:bg-white transition-all ${
               hoveredButton.logout
                 ? 'bg-white border-r-4 border-purple-600 rounded-r-lg text-purple-600 scale-110'
