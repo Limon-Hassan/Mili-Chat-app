@@ -9,6 +9,8 @@ import BlockUser from './BlockUser';
 import AddUser from './AddUser';
 import Message from './Message';
 import MyGroup from './MyGroup';
+import Notifaction from './Notifaction';
+import Setting from './Setting';
 
 const HomePage = () => {
   let [activePage, setActivePage] = useState('home');
@@ -38,19 +40,12 @@ const HomePage = () => {
               <Message />
             </div>
           )}
+          {activePage === 'notification' && <Notifaction />}
+          {activePage === 'settings' && <Setting />}
         </div>
         {activePage === 'home' && <AddUser />}
       </div>
-      {/* <div className="flex gap-[60px] p-6">
-        <Sideber />
-        <div className="grid grid-cols-2 gap-[30px]">
-          <Group />
-          <Friends />
-          <Friend_Request />
-          <BlockUser />
-        </div>
-        <AddUser />
-      </div> */}
+      
     </>
   );
 };

@@ -5,55 +5,56 @@ import {
   Phone,
   Video,
   MoreVertical,
+  Cross,
   Send,
-  Smile,
-  Paperclip,
+  StopCircle,
 } from 'lucide-react';
 import useScrollToBottom from '@/customHook/useScrollToBottom';
+import NormalChatUI from './NormalChatUI';
+import LiveWaveform from './LiveWaveform';
+import VoiceChatCard from './VoiceChatCard';
+import { IoIosCloseCircleOutline } from 'react-icons/io';
+import AudioPlayer from './AudioPlayer';
 
 export default function Message() {
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
-  const [audioChunks, setAudioChunks] = useState([]);
   const [recordTime, setRecordTime] = useState(0);
   const timerRef = useRef(null);
 
+  const [analyser, setAnalyser] = useState(null);
+
   const startRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true,
-    });
-    const recorder = new MediaRecorder(stream);
-    setMediaRecorder(recorder);
-    setAudioChunks([]);
-    setRecordTime(0);
-
-    recorder.ondataavailable = e => setAudioChunks(prev => [...prev, e.data]);
-
-    recorder.onstop = () => {
-      const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-      const audioUrl = URL.createObjectURL(audioBlob);
-      setMessages(prev => [
-        ...prev,
-        { id: Date.now(), text: audioUrl, sender: 'me', type: 'audio' },
-      ]);
-      clearInterval(timerRef.current);
-      setRecordTime(0);
-    };
-
-    recorder.start();
     setIsRecording(true);
+    setRecordTime(0);
 
     timerRef.current = setInterval(() => {
       setRecordTime(prev => prev + 1);
     }, 1000);
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+    const audioContext = new AudioContext();
+    const source = audioContext.createMediaStreamSource(stream);
+    const analyserNode = audioContext.createAnalyser();
+
+    analyserNode.fftSize = 64;
+    source.connect(analyserNode);
+
+    setAnalyser(analyserNode);
+
+    const recorder = new MediaRecorder(stream);
+    recorder.start();
+    setMediaRecorder(recorder);
   };
 
   const stopRecording = () => {
-    mediaRecorder?.stop();
     setIsRecording(false);
     clearInterval(timerRef.current);
+    mediaRecorder?.stop();
+    setAnalyser(null);
   };
 
   const [messages, setMessages] = useState([
@@ -178,11 +179,11 @@ export default function Message() {
               className={`max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${
                 msg.sender === 'me'
                   ? 'bg-purple-600 text-white rounded-br-none'
-                  : 'bg-gray-200 text-black rounded-bl-none'
+                  : 'bg-white text-gray-600 rounded-bl-none'
               }`}
             >
               {msg.type === 'audio' ? (
-                <audio controls src={msg.text} className="w-full rounded" />
+                <AudioPlayer src={msg.text} />
               ) : (
                 <span className="text-sm leading-5 font-normal font-open_sens">
                   {msg.text}
@@ -194,44 +195,35 @@ export default function Message() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="w-full px-4 py-3 border-t bg-transparent flex items-center gap-3">
-        <Smile className="cursor-pointer" size={22} />
-        <Paperclip className="cursor-pointer" size={22} />
-
-        <button
-          onMouseDown={startRecording}
-          onMouseUp={stopRecording}
-          className={`px-3 py-2 rounded-full ${
-            isRecording ? 'bg-red-500' : 'bg-gray-300'
-          }`}
-        >
-          {isRecording ? 'Recording...' : '🎤'}
-        </button>
-
-        {isRecording ? (
-          <div className="flex-1 flex items-center justify-center text-sm font-medium text-red-600">
-            Recording: {recordTime}s
-          </div>
-        ) : (
-          <input
-            type="text"
-            placeholder="Type a message..."
-            className="flex-1 border rounded-full px-4 py-2 focus:outline-none"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && sendMessage()}
-          />
-        )}
-
-        {!isRecording && (
+      {isRecording ? (
+        <div className="w-[95%] mx-auto px-4 py-3 bg-blue-500 text-white flex items-center gap-4 rounded-xl">
           <button
-            onClick={sendMessage}
-            className="bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700"
+            className="bg-red-500 text-white w-[30px] h-[30px] rounded-full flex items-center justify-center cursor-pointer"
+            onClick={stopRecording}
           >
-            <Send size={18} />
+            <IoIosCloseCircleOutline size={24} />
           </button>
-        )}
-      </div>
+
+          <span className="font-semibold text-sm">
+            {recordTime < 10 ? `00:0${recordTime}` : `00:${recordTime}`}
+          </span>
+
+          <div className="flex-1">
+            <LiveWaveform analyser={analyser} />
+          </div>
+
+          <button className="bg-white text-blue-500 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer">
+            <Send size={24} />
+          </button>
+        </div>
+      ) : (
+        <NormalChatUI
+          input={input}
+          setInput={setInput}
+          sendMessage={sendMessage}
+          startRecording={startRecording}
+        />
+      )}
     </div>
   );
 }

@@ -13,3 +13,8 @@
   --breakpoint-laptop: 64rem;
   --breakpoint-computer: 100rem;
 }
+
+audio::-webkit-media-controls-play-button {
+  background-color: rgb(181, 177, 177);
+  border-radius: 50%;
+}

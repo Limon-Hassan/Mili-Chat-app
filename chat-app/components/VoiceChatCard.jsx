@@ -1,0 +1,21 @@
+'use client';
+
+import React from 'react';
+
+const VoiceChatCard = ({ audioSrc }) => {
+  return (
+    <div className="voice-chat-card border rounded-lg p-4 bg-gray-100 shadow-md w-[300px] mx-auto">
+      <div className="voice-chat-card-body flex flex-col">
+        <div className="text-gray-600 text-lg font-semibold"> Own Voice</div>
+        <div className="audio-container">
+          <audio controls className="w-full">
+            <source src={audioSrc} type="audio/mp3" />
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default VoiceChatCard;
