@@ -4,7 +4,7 @@ import { Play, Pause, RotateCw, RotateCcw, Volume2, Zap } from 'lucide-react';
 
 const SPEEDS = [1, 1.25, 1.5, 2];
 
-export default function AudioPlayer({ src, className = '' }) {
+export default function AudioPlayer({ src, autoPlay = false, className = '' }) {
   const audioRef = useRef(null);
   const progressRef = useRef(null);
   const rafRef = useRef(null);

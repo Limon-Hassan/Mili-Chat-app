@@ -32,7 +32,7 @@ const Sideber = ({ setActivePage }) => {
   return (
     <section className="max-w-[300px]">
       <div className="flex flex-col gap-3.50 w-[220px] h-auto shadow-2xl border border-white bg-transparent p-5">
-        <div className="w-[120px] h-[120px] rounded-full border border-purple-600 mx-auto">
+        <div className="w-[120px] h-[120px] rounded-full border-2 border-purple-600 mx-auto">
           <img
             className="w-full h-full object-cover bg-cover rounded-full"
             src="/Image.jpg"

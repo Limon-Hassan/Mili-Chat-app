@@ -101,6 +101,12 @@ export default function Message() {
       sender: 'other',
     },
     { id: 11, text: 'I want to know about your services.', sender: 'me' },
+    {
+      id: 12,
+      type: 'audio',
+      audio: 'Sayfalse  Nulteex - AL NACER!.mp3',
+      sender: 'me',
+    },
   ]);
 
   const [input, setInput] = useState('');
@@ -124,7 +130,7 @@ export default function Message() {
   };
 
   return (
-    <div className="h-[94vh] w-full bg-transparent border rounded-xl shadow-md mx-auto max-w-5xl flex flex-col">
+    <div className="h-[94vh] w-full backdrop-blur-md bg-transparent border rounded-xl shadow-md mx-auto max-w-5xl flex flex-col">
       <div className="w-full px-5 py-4 border-b bg-transparent flex justify-between items-center rounded-t-lg">
         <div className="flex items-center gap-2">
           <img
@@ -183,7 +189,7 @@ export default function Message() {
               }`}
             >
               {msg.type === 'audio' ? (
-                <AudioPlayer src={msg.text} />
+                <AudioPlayer src={msg.audio} />
               ) : (
                 <span className="text-sm leading-5 font-normal font-open_sens">
                   {msg.text}
