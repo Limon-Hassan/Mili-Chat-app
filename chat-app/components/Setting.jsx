@@ -1,10 +1,16 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import VoiceChatCard from './VoiceChatCard';
 import AllFriend from './AllFriend';
 import { Plus } from 'lucide-react';
+import { RiEdit2Fill } from 'react-icons/ri';
 import Stories from './Stories';
+import { IoPersonAddSharp } from 'react-icons/io5';
+import Edite from './Edite';
 
 const Setting = () => {
+  const [active, setActive] = useState(false);
   return (
     <>
       <section className="w-[1200px] p-5 bg-gray-400/30 rounded-lg border border-gray-300">
@@ -18,6 +24,12 @@ const Setting = () => {
         </div>
         <div className="mt-10 flex flex-col mx-auto gap-5 p-5 overflow-y-auto h-[75vh] ">
           <div className="relative">
+            <button
+              onClick={() => setActive(!active)}
+              className="absolute top-0 right-0 flex items-center gap-1 text-white bg-purple-600 rounded-md px-3 py-2 hover:bg-purple-700 cursor-pointer font-semibold text-[16px]"
+            >
+              <RiEdit2Fill /> Edite
+            </button>
             <div className="w-[300px] h-[300px] border-[6px] rounded-full border-purple-600 overflow-hidden">
               <img
                 className="w-full h-full rounded-full object-cover active:scale-110 ease-in-out transition-all duration-500"
@@ -57,6 +69,12 @@ const Setting = () => {
               <h3 className="text-sm font-normal font-inter text-white mt-3.5">
                 I'm Full stack Developer || Web Designer || MERN stack Developer
               </h3>
+              <button className="flex items-center gap-1 text-md font-inter font-semibold text-white bg-purple-500 px-4 py-2 rounded-full mt-4 hover:bg-purple-600 cursor-pointer">
+                <span>
+                  <IoPersonAddSharp />
+                </span>
+                Add Friend
+              </button>
             </div>
             <div>
               <VoiceChatCard
@@ -67,6 +85,7 @@ const Setting = () => {
           </div>
           <AllFriend />
           <Stories />
+          {active && <Edite />}
         </div>
       </section>
     </>

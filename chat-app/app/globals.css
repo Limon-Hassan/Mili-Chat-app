@@ -18,3 +18,14 @@ audio::-webkit-media-controls-play-button {
   background-color: rgb(181, 177, 177);
   border-radius: 50%;
 }
+
+@keyframes wave {
+  0% { height: 5px; opacity: 0.6; }
+  50% { height: 25px; opacity: 1; }
+  100% { height: 5px; opacity: 0.6; }
+}
+
+.animate-wave {
+  animation: wave 0.7s infinite ease-in-out;
+}
+
