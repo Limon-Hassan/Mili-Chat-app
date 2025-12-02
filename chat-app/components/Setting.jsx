@@ -8,9 +8,24 @@ import { RiEdit2Fill } from 'react-icons/ri';
 import Stories from './Stories';
 import { IoPersonAddSharp } from 'react-icons/io5';
 import Edite from './Edite';
+import ShowStatus from './ShowStatus';
+import SeeProfileFicture from './SeeProfileFicture';
+import AddStory from './AddStory';
 
 const Setting = () => {
-  const [active, setActive] = useState(false);
+  const [active, setActive] = useState({
+    status: false,
+    story: false,
+    picture: false,
+    StoryUpload: false,
+    edite: false,
+    ImageToggole: false,
+  });
+
+  let toggoleActive = key => {
+    setActive(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
   return (
     <>
       <section className="w-[1200px] p-5 bg-gray-400/30 rounded-lg border border-gray-300">
@@ -25,31 +40,40 @@ const Setting = () => {
         <div className="mt-10 flex flex-col mx-auto gap-5 p-5 overflow-y-auto h-[75vh] ">
           <div className="relative">
             <button
-              onClick={() => setActive(!active)}
+              onClick={() => toggoleActive('edite')}
               className="absolute top-0 right-0 flex items-center gap-1 text-white bg-purple-600 rounded-md px-3 py-2 hover:bg-purple-700 cursor-pointer font-semibold text-[16px]"
             >
               <RiEdit2Fill /> Edite
             </button>
-            <div className="w-[300px] h-[300px] border-[6px] rounded-full border-purple-600 overflow-hidden">
+            <div
+              onClick={() => toggoleActive('ImageToggole')}
+              className="w-[300px] h-[300px] border-[6px] rounded-full border-purple-600 overflow-hidden"
+            >
               <img
                 className="w-full h-full rounded-full object-cover active:scale-110 ease-in-out transition-all duration-500"
                 src="/Image.jpg"
                 alt="Image"
               />
             </div>
-            <div className="absolute left-[150px] ">
+            <div className={`${active.ImageToggole ? 'block' : 'hidden'} absolute left-[150px] `}>
               <div className="relative bg-white text-black p-2 rounded-lg w-44 before:absolute before:-top-2 before:left-6 before:w-0 before:h-0 before:border-l-8 before:border-r-8 before:border-b-8 before:border-l-transparent before:border-r-transparent before:border-b-white">
                 <ul>
-                  <li className="cursor-pointer hover:bg-gray-300 active:bg-gray-300 font-medium p-1 rounded-sm">
+                  <li
+                    onClick={() => toggoleActive('story')}
+                    className="cursor-pointer hover:bg-gray-300 active:bg-gray-300 font-medium p-1 rounded-sm"
+                  >
                     See story
                   </li>
-                  <li className="cursor-pointer hover:bg-gray-300 active:bg-gray-300 font-medium p-1 rounded-sm">
+                  <li
+                    onClick={() => toggoleActive('picture')}
+                    className="cursor-pointer hover:bg-gray-300 active:bg-gray-300 font-medium p-1 rounded-sm"
+                  >
                     See profile picture
                   </li>
                 </ul>
               </div>
             </div>
-            <span className="absolute bottom-0 left-0 w-[50px] h-[50px] bg-purple-600 flex items-center justify-center rounded-full cursor-pointer border border-gray-500">
+            <span onClick={() => toggoleActive('StoryUpload')} className="absolute bottom-0 left-0 w-[50px] h-[50px] bg-purple-600 flex items-center justify-center rounded-full cursor-pointer border border-gray-500">
               <Plus />
             </span>
           </div>
@@ -85,7 +109,17 @@ const Setting = () => {
           </div>
           <AllFriend />
           <Stories />
-          {active && <Edite />}
+          {active.edite && <Edite setActive={setActive} />}
+          {active.StoryUpload && <AddStory onClose={()=> setActive(false)} />}
+          {active.story && (
+            <ShowStatus src="/kawasaki.mp4" onClose={() => setActive(false)} />
+          )}
+          {active.picture && (
+            <SeeProfileFicture
+              src="/Image.jpg"
+              onClose={() => setActive(false)}
+            />
+          )}
         </div>
       </section>
     </>

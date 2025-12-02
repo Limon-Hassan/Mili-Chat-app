@@ -1,14 +1,29 @@
 'use client';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import VoiceRecorder from './VoiceRecorder';
 
-const Edite = () => {
+const Edite = ({ setActive }) => {
   const [image, setImage] = useState(null);
+  let offRef = useRef(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [finalImage, setFinalImage] = useState(null);
+
+  useEffect(() => {
+    const handleClickOutside = e => {
+      if (offRef.current && !offRef.current.contains(e.target)) {
+        setActive(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [setActive]);
 
   const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
     setCroppedAreaPixels(croppedAreaPixels);
@@ -43,7 +58,10 @@ const Edite = () => {
   return (
     <>
       <section className="flex items-center justify-center h-screen w-full fixed top-0 left-0 bg-black/50 z-50">
-        <div className="bg-white rounded-xl shadow-xl p-6 w-[600px] relative">
+        <div
+          ref={offRef}
+          className="bg-white rounded-xl shadow-xl p-6 w-[600px] relative"
+        >
           <h4 className="text-2xl font-semibold text-gray-700 mb-4">
             Edit Your Profile
           </h4>
@@ -132,16 +150,17 @@ const Edite = () => {
               </button>
             </div>
           )}
-          <div className=" mt-3.5">
+          <div className="mt-3.5">
             <input
-              className="shadow-xl/20 shadow-gray-500 w-full h-[50px] rounded-lg placeholder:text-gray-500 border border-gray-500 px-3 outline-none text-gray-500 font-semibold font-inter "
+              className="w-full h-[50px] rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-200 bg-white"
               type="text"
               placeholder="Your name..."
             />
           </div>
-          <div className=" mt-3.5">
+
+          <div className="mt-3.5">
             <input
-              className="shadow-xl/20 shadow-gray-500 w-full h-[50px] rounded-lg placeholder:text-gray-500 border border-gray-500 px-3 outline-none text-gray-500 font-semibold font-inter "
+              className="w-full h-[50px] rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-200 bg-white"
               type="text"
               placeholder="Your bio..."
             />
@@ -152,8 +171,32 @@ const Edite = () => {
             </span>
             <VoiceRecorder />
           </div>
-
-          
+          <div className="mt-3.5">
+            <span className="text-[16px] font-inter font-semibold text-gray-500">
+              Edit your additional info <span className="text-red-600">*</span>
+            </span>
+          </div>
+          <div className="mt-3.5">
+            <span className="text-[16px] font-inter font-semibold text-gray-500">
+              Who can see your Status ?
+            </span>
+            <select className="w-full h-[50px] mt-2 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 bg-white">
+              <option>Everyone</option>
+              <option>My Friends</option>
+              <option>Only Me</option>
+            </select>
+          </div>
+          <div className="mt-3.5">
+            <span className="text-[16px] font-inter font-semibold text-gray-500">
+              Who can see your Friend List ?
+            </span>
+            <select className="w-full h-[50px] mt-2 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 bg-white">
+              <option>Everyone</option>
+              <option>My Friends</option>
+              <option>Only Me</option>
+            </select>
+          </div>
+          <button className='text-[16px] font-semibold font-inter text-white bg-green-500 px-6 cursor-pointer py-2 rounded-md mt-6 flex items-center justify-center mx-auto'>Save</button>
         </div>
       </section>
     </>
