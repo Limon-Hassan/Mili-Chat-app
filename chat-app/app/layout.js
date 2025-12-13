@@ -1,5 +1,6 @@
 import { Inter, Open_Sans } from 'next/font/google';
 import './globals.css';
+import { ClientProvider } from './ClientProvider';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -20,8 +21,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${open_sens.variable} antialiased`}>
-        {children}
+      <body className={`${inter.variable} ${open_sens.variable} antialiased `}>
+        <ClientProvider>{children}</ClientProvider>
       </body>
     </html>
   );

@@ -60,7 +60,7 @@ const Edite = ({ setActive }) => {
       <section className="flex items-center justify-center h-screen w-full fixed top-0 left-0 bg-black/50 z-50">
         <div
           ref={offRef}
-          className="bg-white rounded-xl shadow-xl p-6 w-[600px] relative"
+          className="bg-white rounded-xl shadow-xl p-6 w-[600px] h-[800px] overflow-y-auto relative"
         >
           <h4 className="text-2xl font-semibold text-gray-700 mb-4">
             Edit Your Profile

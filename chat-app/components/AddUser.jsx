@@ -1,10 +1,12 @@
 import { UserPlus } from 'lucide-react';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 const AddUser = () => {
   return (
     <>
-      <section className="w-[400px] h-auto bg-transparent border border-white p-5 rounded-lg">
+      <section
+        className={`w-[400px] h-auto bg-transparent border border-white p-5 rounded-lg `}
+      >
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
           Add user
         </h1>
@@ -21,7 +23,7 @@ const AddUser = () => {
         <div className="bg-white h-px w-full my-3"></div>
         <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full max-h-80">
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
-            <div className='flex items-center gap-2.5'>
+            <div className="flex items-center gap-2.5">
               <img
                 className="w-[60px] h-[60px] object-cover bg-center rounded-full"
                 src="/Image.jpg"

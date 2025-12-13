@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import Container from './container/Container';
-import FloatingInput from './FloatingInputs';
+import Container from '../../components/container/Container';
+import FloatingInput from '../../components/FloatingInputs';
 
-const Login = () => {
+const page = () => {
   const [active, setActive] = useState(false);
   let menuRef = useRef(null);
 
@@ -21,7 +21,7 @@ const Login = () => {
   }, []);
 
   return (
-    <section>
+    <section className="relative z-10">
       <Container>
         <div className="flex justify-center items-center h-screen">
           <div className="mobile:w-full target:w-full laptop:w-[660px] computer:w-[660px] h-auto p-8 rounded-lg border border-white   shadow-2xl shadow-blue-600">
@@ -32,8 +32,9 @@ const Login = () => {
               className=" font-bold font-inter text-white leading-6
               flex items-center justify-center mb-[50px]"
             >
-              Login Your Account
+              Register Your Account
             </h1>
+            <FloatingInput label="Username" type="text" id="name" />
             <FloatingInput label="Email" type="email" id="email" />
             <FloatingInput label="Password" type="password" id="password" />
             <button
@@ -46,7 +47,7 @@ const Login = () => {
                   active ? 'text-black' : ''
                 } transition-all duration-600 ease-in-out z-10 `}
               >
-                Login
+                Register
               </span>
               <span
                 className={`absolute left-0 top-0 ${
@@ -92,9 +93,9 @@ const Login = () => {
               </button>
             </div>
             <p className="text-[14px] font-inter text-white mt-3 flex items-center justify-center mx-auto">
-              Don't have an account ?
-              <a className="hover:underline ml-2" href="#">
-                Register
+              Already have an account ?
+              <a className="hover:underline ml-2" href="/Login">
+                Login
               </a>
             </p>
           </div>
@@ -104,4 +105,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default page;
