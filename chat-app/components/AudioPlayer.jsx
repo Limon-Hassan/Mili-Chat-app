@@ -171,7 +171,9 @@ export default function AudioPlayer({ src, autoPlay = false, className = '' }) {
     : 0;
 
   return (
-    <div className={`w-full max-w-[740px] ${className}`}>
+    <div
+      className={`computer:w-full  max-w-[740px] ${className}`}
+    >
       <div
         className="bg-white text-gray-900 rounded-xl shadow-md px-3 py-2 flex items-center gap-4"
         data-audioplayer="true"
@@ -256,7 +258,7 @@ export default function AudioPlayer({ src, autoPlay = false, className = '' }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 mobile:hidden tablet:hidden laptop:flex computer:flex">
               <div className="hidden md:block text-sm text-gray-600">
                 {formatTime(current)} / {formatTime(duration)}
               </div>

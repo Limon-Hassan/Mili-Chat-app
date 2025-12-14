@@ -21,7 +21,7 @@ const Group = () => {
           </button>
         </div>
         <div className="bg-white h-px w-full my-3"></div>
-        <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full mobile:max-h-[350px] tablet:max-h-[350px] laptop:max-h-[350px] computer:max-h-60">
+        <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full mobile:max-h-80 tablet:max-h-80 laptop:max-h-80 computer:max-h-60">
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
             <div className="flex items-center gap-2.5">
               <img

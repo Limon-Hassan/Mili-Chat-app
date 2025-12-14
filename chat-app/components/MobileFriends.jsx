@@ -2,11 +2,13 @@
 import React from 'react';
 import { LuMessageCircleMore } from 'react-icons/lu';
 
-
-const Friends = () => {
+const MobileFriends = () => {
+  let handleMessage = () => {
+    window.location.href = '/message';
+  };
   return (
     <>
-      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-[390px] mobile:h-auto tablet:h-auto laptop:h-auto computer:h-[430px] bg-transparent border border-white p-5 rounded-lg mobile:absolute mobile:top-[110px] mobile:left-0 tablet:absolute tablet:top-[110px] tablet:left-0 laptop:absolute laptop:top-[110px] laptop:left-0 computer:relative computer:top-0">
+      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-[390px] mobile:h-auto tablet:h-auto laptop:h-auto bg-transparent border border-white p-5 rounded-lg mobile:absolute mobile:top-[110px] mobile:left-0 tablet:absolute tablet:top-[110px] tablet:left-0 laptop:absolute laptop:top-[110px] laptop:left-0 ">
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
           Friends
         </h1>
@@ -21,7 +23,7 @@ const Friends = () => {
           </div>
         </div>
         <div className="bg-white h-px w-full my-3"></div>
-        <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full max-h-80">
+        <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full mobile:max-h-80 tablet:max-h-80 laptop:max-h-80 ">
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
             <div className="flex items-center gap-2.5">
               <img
@@ -29,11 +31,15 @@ const Friends = () => {
                 src="/Image.jpg"
                 alt="group"
               />
-              <h5 className="text-[15px] h-[22px] font-open_sens font-semibold text-white">
+              <h5
+                onClick={handleMessage}
+                className="text-[15px] h-[22px] font-open_sens font-semibold text-white"
+              >
                 mahammud hassan limon
               </h5>
             </div>
             <button
+              onClick={handleMessage}
               type="button"
               className="text-[20px] h-[30px] font-inter font-bold bg-purple-500 px-5 py-[5px] rounded-full text-white cursor-pointer hover:opacity-70"
             >
@@ -46,4 +52,4 @@ const Friends = () => {
   );
 };
 
-export default Friends;
+export default MobileFriends;

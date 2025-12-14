@@ -21,7 +21,7 @@ const MobileUser = () => {
           </div>
         </div>
         <div className="bg-white h-px w-full my-3"></div>
-        <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full max-h-[350px]">
+        <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full max-h-80">
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
             <div className="flex items-center gap-2.5">
               <img

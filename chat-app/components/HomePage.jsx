@@ -75,6 +75,8 @@ import Notifaction from './Notifaction';
 import Setting from './Setting';
 import MobileSideIcons from './MobileSideIcons';
 import useIsMobile from './Hook/useIsMobile';
+import MobileFriends from './MobileFriends';
+import MobileSetting from './MobileSetting';
 
 const HomePage = () => {
   let [activePage, setActivePage] = useState('home');
@@ -122,7 +124,10 @@ const HomePage = () => {
 
         {!isMobile && show && activePage === 'home' && <AddUser />}
 
-        {isMobile && <MobileSideIcons />}
+        {isMobile && activePage === 'home' && <MobileSideIcons />}
+        {isMobile && activePage === 'messages' && <MobileFriends />}
+        {isMobile && activePage === 'notification' && <Notifaction />}
+        {isMobile && activePage === 'settings' && <MobileSetting />}
       </div>
     </>
   );

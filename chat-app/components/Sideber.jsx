@@ -144,7 +144,7 @@ const Sideber = ({ setActivePage }) => {
       </section>
 
       <section className="w-full fixed bottom-0 left-0 z-50 mobile:block tablet:block laptop:block computer:hidden">
-        <div className="flex items-center gap-3.50 w-full h-auto shadow-2xl border border-white bg-transparent overflow-x-scroll">
+        <div className="flex items-center gap-3.50 w-full h-auto shadow-2xl border border-white bg-[#0b0b0b] overflow-x-scroll">
           <div className="mobile:hidden tablet:block laptop:block w-[50px] h-[50px] rounded-full border-2 border-purple-600 mx-auto">
             <img
               className="w-full h-full object-cover bg-cover rounded-full"

@@ -2,11 +2,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Pencil, X, Save } from 'lucide-react';
 
-/**
- Props:
-  - onClose(): close editor UI
-  - onSave(blob, filename): callback when edited video ready (blob is webm)
-*/
 export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
   const editorRef = useRef(null);
   const [videoFile, setVideoFile] = useState(null);
@@ -15,6 +10,23 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
   const imageUrl = useRef(null);
   const videoElRef = useRef(null);
   const imageElRef = useRef(null);
+
+  const [imgTransform, setImgTransform] = useState({
+    x: 0,
+    y: 0,
+    scale: 1,
+    rotate: 0,
+  });
+
+  const gestureRef = useRef({
+    mode: null,
+    startDist: 0,
+    startAngle: 0,
+    startScale: 1,
+    startRotate: 0,
+    startX: 0,
+    startY: 0,
+  });
 
   const [overlays, setOverlays] = useState([]);
   const nextId = useRef(1);
@@ -46,17 +58,96 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
     setVideoFile(f);
   };
 
+  //just new addded
+
   const handleImageUpload = e => {
     const f = e.target.files?.[0];
     if (!f) return;
+
     if (videoUrl.current) {
       URL.revokeObjectURL(videoUrl.current);
       videoUrl.current = null;
       setVideoFile(null);
     }
     if (imageUrl.current) URL.revokeObjectURL(imageUrl.current);
+
     imageUrl.current = URL.createObjectURL(f);
     setImageFile(f);
+
+    // 👉 FACEBOOK STYLE CENTER
+    requestAnimationFrame(() => {
+      const rect = editorRef.current.getBoundingClientRect();
+      setImgTransform({
+        x: rect.width / 2,
+        y: rect.height / 2,
+        scale: 1,
+        rotate: 0,
+      });
+    });
+  };
+
+  const getDistance = (t1, t2) =>
+    Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+
+  const getAngle = (t1, t2) =>
+    (Math.atan2(t2.clientY - t1.clientY, t2.clientX - t1.clientX) * 180) /
+    Math.PI;
+
+  const handleImageTouchStart = e => {
+    if (e.touches.length === 2) {
+      const [t1, t2] = e.touches;
+      gestureRef.current = {
+        mode: 'pinch',
+        startDist: getDistance(t1, t2),
+        startAngle: getAngle(t1, t2),
+        startScale: imgTransform.scale,
+        startRotate: imgTransform.rotate,
+      };
+    } else if (e.touches.length === 1) {
+      const t = e.touches[0];
+      gestureRef.current = {
+        mode: 'drag',
+        startX: t.clientX - imgTransform.x,
+        startY: t.clientY - imgTransform.y,
+      };
+    }
+  };
+
+  const handleImageTouchMove = e => {
+    e.preventDefault();
+    if (gestureRef.current.mode === 'drag' && e.touches.length === 1) {
+      const t = e.touches[0];
+      setImgTransform(prev => ({
+        ...prev,
+        x: t.clientX - gestureRef.current.startX,
+        y: t.clientY - gestureRef.current.startY,
+      }));
+    }
+
+    if (gestureRef.current.mode === 'pinch' && e.touches.length === 2) {
+      const [t1, t2] = e.touches;
+      const dist = getDistance(t1, t2);
+      const angle = getAngle(t1, t2);
+
+      setImgTransform(prev => ({
+        ...prev,
+        scale: Math.min(
+          3,
+          Math.max(
+            0.3,
+            gestureRef.current.startScale *
+              (dist / gestureRef.current.startDist)
+          )
+        ),
+        rotate:
+          gestureRef.current.startRotate +
+          (angle - gestureRef.current.startAngle),
+      }));
+    }
+  };
+
+  const handleImageTouchEnd = () => {
+    gestureRef.current.mode = null;
   };
 
   const addOverlay = () => {
@@ -271,7 +362,7 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">
+    <div className="fixed w-full inset-0 z-50 flex items-center justify-center bg-black/70 mobile:p-0 tablet:p-0 laptop:p-0 computer:p-4">
       <div
         ref={editorRef}
         className="relative w-[420px] h-[720px] bg-black rounded-xl overflow-hidden shadow-2xl"
@@ -304,7 +395,7 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
             }}
             className="bg-white/10 text-white px-2 py-1 rounded flex items-center gap-1"
           >
-            <Pencil size={16} /> Add Text
+            <Pencil size={24} /> 
           </button>
           <button
             onClick={handleSave}
@@ -338,8 +429,20 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
             <img
               ref={imageElRef}
               src={imageUrl.current}
-              className="w-full h-full object-cover"
               alt="preview"
+              onTouchStart={handleImageTouchStart}
+              onTouchMove={handleImageTouchMove}
+              onTouchEnd={handleImageTouchEnd}
+              style={{
+                position: 'absolute',
+                left: imgTransform.x,
+                top: imgTransform.y,
+                transform: `translate(-50%, -50%) scale(${imgTransform.scale}) rotate(${imgTransform.rotate}deg)`,
+                maxWidth: '90%',
+                maxHeight: '90%',
+                touchAction: 'none',
+                userSelect: 'none',
+              }}
             />
           )}
           {!videoFile && !imageFile && (

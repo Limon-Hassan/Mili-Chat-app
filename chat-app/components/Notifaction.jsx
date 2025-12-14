@@ -85,12 +85,12 @@ export default function Notification() {
   ];
 
   return (
-    <div className=" w-[400px] h-auto bg-transparent border border-white  rounded-lg">
+    <div className="mobile:w-full tablet:w-full laptop:w-full computer:w-[400px] h-auto bg-transparent border border-white p-2 rounded-lg mobile:absolute mobile:top-[110px] mobile:left-0 tablet:absolute tablet:top-[110px] tablet:left-0 laptop:absolute laptop:top-[110px] laptop:left-0 computer:relative computer:top-0">
       <div className="px-4 py-3 border-b">
         <h3 className="font-bold text-[24px]">Notifications</h3>
       </div>
 
-      <div className="flex flex-col gap-1 mt-5 overflow-auto w-full max-h-[800px]">
+      <div className="flex flex-col gap-1 mt-5 overflow-auto w-full mobile:max-h-[455px] tablet:max-h-[455px] laptop:max-h-[455px] computer:max-h-[800px]">
         {notifications.map(n => (
           <div
             key={n.id}
