@@ -1,6 +1,43 @@
 'use client';
 
+import { useEffect, useState } from "react";
+
 export default function Notification() {
+  const [mobileHeight, setVh] = useState(null);
+  useEffect(() => {
+    let calculateVh = () => {
+      if (window.innerWidth >= 1024) {
+        setVh(null);
+        return;
+      }
+
+      const h = window.innerHeight;
+
+      const minH = 575;
+      const maxH = 800;
+
+      const minVh = 50;
+      const maxVh = 64;
+      if (h <= minH) {
+        setVh(minVh);
+        return;
+      }
+
+      if (h >= maxH) {
+        setVh(maxVh);
+        return;
+      }
+      const ratio = (h - minH) / (maxH - minH);
+      const calculatedVh = minVh + ratio * (maxVh - minVh);
+
+      setVh(Number(calculatedVh.toFixed(1)));
+    };
+    calculateVh();
+    window.addEventListener('resize', calculateVh);
+    return () => {
+      window.removeEventListener('resize', calculateVh);
+    };
+  }, []);
   const notifications = [
     {
       id: 1,
@@ -90,7 +127,12 @@ export default function Notification() {
         <h3 className="font-bold text-[24px]">Notifications</h3>
       </div>
 
-      <div className="flex flex-col gap-1 mt-5 overflow-auto w-full mobile:max-h-[455px] tablet:max-h-[455px] laptop:max-h-[455px] computer:max-h-[800px]">
+      <div
+        className="flex flex-col gap-1 mt-5 overflow-auto w-full computer:max-h-200"
+        style={{
+          height: mobileHeight ? `${mobileHeight}vh` : 'auto',
+        }}
+      >
         {notifications.map(n => (
           <div
             key={n.id}

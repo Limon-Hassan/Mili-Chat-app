@@ -5,7 +5,7 @@ const AddUser = () => {
   return (
     <>
       <section
-        className={`w-[400px] h-auto bg-transparent border border-white p-5 rounded-lg `}
+        className={`w-100 h-auto bg-transparent border border-white p-5 rounded-lg `}
       >
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
           Add user
@@ -25,11 +25,11 @@ const AddUser = () => {
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
             <div className="flex items-center gap-2.5">
               <img
-                className="w-[60px] h-[60px] object-cover bg-center rounded-full"
+                className="w-15 h-15 object-cover bg-center rounded-full"
                 src="/Image.jpg"
                 alt="group"
               />
-              <h5 className="text-[14px] h-[22px] font-open_sens font-semibold text-white">
+              <h5 className="text-[14px] h-5.5 font-open_sens font-semibold text-white">
                 mahammud hassan limon
               </h5>
             </div>
