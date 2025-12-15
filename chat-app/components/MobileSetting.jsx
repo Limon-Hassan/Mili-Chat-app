@@ -38,7 +38,7 @@ const MobileSetting = () => {
             Manage your account settings and set e-mail preferences.
           </p>
         </div>
-        <div className="mobile:mt-6 tablet:mt-10 laptop:mt-10 flex flex-col mx-auto gap-5 p-2 overflow-y-auto mobile:h-[55vh] tablet:h-[75vh] laptop:h-[75vh] ">
+        <div className="mobile:mt-6 tablet:mt-10 laptop:mt-10 flex flex-col mx-auto gap-5 p-2 overflow-y-auto mobile:h-[55vh] tablet:h-[54vh] laptop:h-[75vh] ">
           <div className="relative">
             <button
               onClick={() => toggoleActive('edite')}
@@ -59,9 +59,9 @@ const MobileSetting = () => {
             <div
               className={`${
                 active.ImageToggole ? 'block' : 'hidden'
-              } absolute left-[150px] `}
+              } absolute left-[150px] z-20`}
             >
-              <div className="relative bg-white text-black p-2 rounded-lg w-44 before:absolute before:-top-2 before:left-6 before:w-0 before:h-0 before:border-l-8 before:border-r-8 before:border-b-8 before:border-l-transparent before:border-r-transparent before:border-b-white">
+              <div className="relative bg-white text-black p-2 rounded-lg w-44 before:absolute before:-top-2 before:left-6 before:w-0 before:h-0 before:border-l-8 before:border-r-8 before:border-b-8 before:border-l-transparent before:border-r-transparent before:border-b-white ">
                 <ul>
                   <li
                     onClick={() => toggoleActive('story')}
@@ -97,7 +97,7 @@ const MobileSetting = () => {
                     alt="verify"
                   />
                 </span>
-                <span className="mobile:absolute mobile:top-[-38px] mobile:right-0  tablet:hidden laptop:hidden flex items-center gap-1 text-[12px] bg-gray-700 w-[100px] justify-center h-[35px] border border-gray-500 rounded-full">
+                <span className="mobile:absolute mobile:top-[-38px] mobile:right-0  tablet:hidden laptop:hidden flex items-center gap-1 text-[12px] bg-gray-700 w-[100px] justify-center h-[35px] border border-gray-500 rounded-full z-10">
                   Creator
                   <img
                     className=" h-5 object-contain bg-center "
