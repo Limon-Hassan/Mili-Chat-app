@@ -51,10 +51,10 @@ const ShowStatus = ({ src, onClose }) => {
     <section className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
       <div
         ref={storyRef}
-        className="relative rounded-xl overflow-hidden shadow-2xl w-[520px] h-[800px] bg-black"
+        className="relative mobile:rounded-none computer:rounded-xl overflow-hidden shadow-2xl mobile:w-full tablet:w-full mobile:h-full tablet:h-full computer:w-130 computer:h-200 bg-black"
       >
         <div className="absolute top-0 left-0 w-full">
-          <div className='flex items-center gap-2 mb-5'>
+          <div className="flex items-center gap-2 mb-5">
             <div className="w-[50px] h-[50px] rounded-full">
               <img
                 className="w-full h-full rounded-full object-cover"
