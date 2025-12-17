@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 const useMobileHeight = () => {
-  let [vh, setVh] = useState(null);
+  const [vh, setVh] = useState(null);
+
   useEffect(() => {
     const calculateVh = () => {
       if (window.innerWidth >= 1024) {
@@ -9,7 +10,9 @@ const useMobileHeight = () => {
         return;
       }
 
-      const h = window.innerHeight;
+      const h = window.visualViewport
+        ? window.visualViewport.height
+        : window.innerHeight;
 
       const minH = 475;
       const maxH = 800;
@@ -32,10 +35,18 @@ const useMobileHeight = () => {
 
       setVh(Number(calculatedVh.toFixed(1)));
     };
+
     calculateVh();
+
+    window.visualViewport?.addEventListener('resize', calculateVh);
     window.addEventListener('resize', calculateVh);
-    return () => window.removeEventListener('resize', calculateVh);
+
+    return () => {
+      window.visualViewport?.removeEventListener('resize', calculateVh);
+      window.removeEventListener('resize', calculateVh);
+    };
   }, []);
+
   return vh;
 };
 

@@ -10,7 +10,9 @@ const Group = () => {
         return;
       }
 
-      const h = window.innerHeight;
+      const h = window.visualViewport
+        ? window.visualViewport.height
+        : window.innerHeight;
 
       const minH = 475;
       const maxH = 800;
@@ -32,8 +34,11 @@ const Group = () => {
       setVh(Number(calculatedVh.toFixed(1)));
     };
     calculateVh();
+
+    window.visualViewport?.addEventListener('resize', calculateVh);
     window.addEventListener('resize', calculateVh);
     return () => {
+      window.visualViewport?.removeEventListener('resize', calculateVh);
       window.removeEventListener('resize', calculateVh);
     };
   }, []);
@@ -60,7 +65,7 @@ const Group = () => {
         <ul
           className="flex flex-col gap-1 mt-5 overflow-auto w-full computer:max-h-60"
           style={{
-            height: mobileHeight ? `${mobileHeight}vh` : 'auto',
+            height: mobileHeight ? `${mobileHeight}vh` : '100dvh',
           }}
         >
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">

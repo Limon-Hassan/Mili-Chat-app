@@ -29,7 +29,7 @@ const MobileFriends = () => {
         <ul
           className="flex flex-col gap-1 mt-5 overflow-auto w-full"
           style={{
-            height: mobileHeight ? `${mobileHeight}vh` : 'auto',
+            height: mobileHeight ? `${mobileHeight}vh` : '100dvh',
           }}
         >
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">

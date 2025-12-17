@@ -44,7 +44,7 @@ const MobileSetting = () => {
         <div
           className="mobile:mt-6 tablet:mt-10 laptop:mt-10 flex flex-col mx-auto gap-5 p-2 overflow-y-auto"
           style={{
-            height: mobileHeight ? `${mobileHeight}vh` : 'auto',
+            height: mobileHeight ? `${mobileHeight}vh` : '100dvh',
           }}
         >
           <div className="relative">
