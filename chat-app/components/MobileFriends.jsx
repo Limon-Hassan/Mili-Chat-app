@@ -1,13 +1,11 @@
 'use client';
 import React from 'react';
 import { LuMessageCircleMore } from 'react-icons/lu';
-import useMobileHeight from './Hook/useMobileHeight';
 
 const MobileFriends = () => {
   let handleMessage = () => {
     window.location.href = '/message';
   };
-  let mobileHeight = useMobileHeight();
 
   return (
     <>
@@ -26,12 +24,7 @@ const MobileFriends = () => {
           </div>
         </div>
         <div className="bg-white h-px w-full my-3"></div>
-        <ul
-          className="flex flex-col gap-1 mt-5 overflow-auto w-full"
-          style={{
-            height: mobileHeight ? `${mobileHeight}vh` : '100dvh',
-          }}
-        >
+        <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full max-h-[55dvh] min-h-[40dvh]">
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
             <div className="flex items-center gap-2.5">
               <img

@@ -12,7 +12,6 @@ import ShowStatus from './ShowStatus';
 import SeeProfileFicture from './SeeProfileFicture';
 import AddStory from './AddStory';
 import BlockUser from './BlockUser';
-import useMobileHeight from './Hook/useMobileHeight';
 
 const MobileSetting = () => {
   const [active, setActive] = useState({
@@ -23,8 +22,6 @@ const MobileSetting = () => {
     edite: false,
     ImageToggole: false,
   });
-
-  let mobileHeight = useMobileHeight();
 
   let toggoleActive = key => {
     setActive(prev => ({ ...prev, [key]: !prev[key] }));
@@ -41,12 +38,7 @@ const MobileSetting = () => {
             Manage your account settings and set e-mail preferences.
           </p>
         </div>
-        <div
-          className="mobile:mt-6 tablet:mt-10 laptop:mt-10 flex flex-col mx-auto gap-5 p-2 overflow-y-auto"
-          style={{
-            height: mobileHeight ? `${mobileHeight}vh` : '100dvh',
-          }}
-        >
+        <div className="mobile:mt-6 tablet:mt-10 laptop:mt-10 flex flex-col mx-auto gap-5 p-2 overflow-y-auto max-h-[56dvh] min-h-[40dvh]">
           <div className="relative">
             <button
               onClick={() => toggoleActive('edite')}

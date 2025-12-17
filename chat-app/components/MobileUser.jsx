@@ -1,48 +1,6 @@
-'use client';
 import { UserPlus } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
 
 const MobileUser = () => {
-  const [mobileHeight, setVh] = useState(null);
-
-  useEffect(() => {
-    let calculateVh = () => {
-      if (window.innerWidth >= 1024) {
-        setVh(null);
-        return;
-      }
-      const h = window.visualViewport
-        ? window.visualViewport.height
-        : window.innerHeight;
-
-      const minH = 475;
-      const maxH = 800;
-
-      const minVh = 10;
-      const maxVh = 45;
-      if (h <= minH) {
-        setVh(minVh);
-        return;
-      }
-
-      if (h >= maxH) {
-        setVh(maxVh);
-        return;
-      }
-      const ratio = (h - minH) / (maxH - minH);
-      const calculatedVh = minVh + ratio * (maxVh - minVh);
-
-      setVh(Number(calculatedVh.toFixed(1)));
-    };
-    calculateVh();
-     window.visualViewport?.addEventListener('resize', calculateVh);
-    window.addEventListener('resize', calculateVh);
-    return () => {
-      window.visualViewport?.removeEventListener('resize', calculateVh);
-      window.removeEventListener('resize', calculateVh);
-    };
-  }, []);
-
   return (
     <>
       <section
@@ -62,12 +20,7 @@ const MobileUser = () => {
           </div>
         </div>
         <div className="bg-white h-px w-full my-3"></div>
-        <ul
-          className="flex flex-col gap-1 mt-5 overflow-auto w-full "
-          style={{
-            height: mobileHeight ? `${mobileHeight}vh` : '100dvh',
-          }}
-        >
+        <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full max-h-[44dvh]  min-h-[30dvh]">
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
             <div className="flex items-center gap-2.5">
               <img

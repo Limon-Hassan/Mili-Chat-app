@@ -5,7 +5,9 @@ const useMobileHeight = () => {
 
   useEffect(() => {
     const calculateVh = () => {
-      if (window.innerWidth >= 1024) {
+      const isMobile = window.matchMedia('(pointer: coarse)').matches;
+
+      if (!isMobile) {
         setVh(null);
         return;
       }

@@ -3,45 +3,6 @@
 import { useEffect, useState } from 'react';
 
 export default function Notification() {
-  const [mobileHeight, setVh] = useState(null);
-  useEffect(() => {
-    let calculateVh = () => {
-      if (window.innerWidth >= 1024) {
-        setVh(null);
-        return;
-      }
-
-      const h = window.visualViewport
-        ? window.visualViewport.height
-        : window.innerHeight;
-
-      const minH = 475;
-      const maxH = 800;
-
-      const minVh = 38;
-      const maxVh = 64;
-      if (h <= minH) {
-        setVh(minVh);
-        return;
-      }
-
-      if (h >= maxH) {
-        setVh(maxVh);
-        return;
-      }
-      const ratio = (h - minH) / (maxH - minH);
-      const calculatedVh = minVh + ratio * (maxVh - minVh);
-
-      setVh(Number(calculatedVh.toFixed(1)));
-    };
-    calculateVh();
-    window.visualViewport?.addEventListener('resize', calculateVh);
-    window.addEventListener('resize', calculateVh);
-    return () => {
-      window.visualViewport?.removeEventListener('resize', calculateVh);
-      window.removeEventListener('resize', calculateVh);
-    };
-  }, []);
   const notifications = [
     {
       id: 1,
@@ -131,12 +92,7 @@ export default function Notification() {
         <h3 className="font-bold text-[24px]">Notifications</h3>
       </div>
 
-      <div
-        className="flex flex-col gap-1 mt-5 overflow-auto w-full computer:max-h-200"
-        style={{
-          height: mobileHeight ? `${mobileHeight}vh` : '100dvh',
-        }}
-      >
+      <div className="flex flex-col gap-1 mt-5 overflow-auto w-full computer:max-h-200 mobile:max-h-[62dvh] mobile:min-h-[45dvh]">
         {notifications.map(n => (
           <div
             key={n.id}
