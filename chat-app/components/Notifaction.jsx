@@ -13,10 +13,10 @@ export default function Notification() {
 
       const h = window.innerHeight;
 
-      const minH = 575;
+      const minH = 475;
       const maxH = 800;
 
-      const minVh = 50;
+      const minVh = 38;
       const maxVh = 64;
       if (h <= minH) {
         setVh(minVh);

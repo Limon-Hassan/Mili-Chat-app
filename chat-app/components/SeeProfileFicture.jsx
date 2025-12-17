@@ -14,7 +14,7 @@ const SeeProfileFicture = ({ src, onClose }) => {
     document.body.removeChild(link);
   };
   return (
-    <section className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+    <section className="fixed inset-0 bg-gray-800/98 flex items-center justify-center z-50">
       <div className="realative">
         <div className="flex items-center gap-5 absolute top-5 right-5">
           <button onClick={handleDownload} className="cursor-pointer">
@@ -27,7 +27,7 @@ const SeeProfileFicture = ({ src, onClose }) => {
             <GrClose size={24} />
           </button>
         </div>
-        <div className="w-[90vw] h-[80vh] md:w-[600px] md:h-[600px] lg:w-[800px] lg:h-[800px] ">
+        <div className="mobile:w-full mobile:h-auto tablet:w-full tablet:h-auto laptop:w-[90vw] laptop:h-[80vh] computer:w-[90vh] computer:h-[90vh] overflow-hidden rounded-md">
           <img
             className="w-full h-full object-cover rounded-md"
             src={src}

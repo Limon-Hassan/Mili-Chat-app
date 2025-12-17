@@ -14,10 +14,10 @@ const MobileUser = () => {
 
       const h = window.innerHeight;
 
-      const minH = 575;
+      const minH = 475;
       const maxH = 800;
 
-      const minVh = 25;
+      const minVh = 10;
       const maxVh = 45;
       if (h <= minH) {
         setVh(minVh);
@@ -60,7 +60,7 @@ const MobileUser = () => {
         </div>
         <div className="bg-white h-px w-full my-3"></div>
         <ul
-          className="flex flex-col gap-1 mt-5 overflow-auto w-full  "
+          className="flex flex-col gap-1 mt-5 overflow-auto w-full "
           style={{
             height: mobileHeight ? `${mobileHeight}vh` : 'auto',
           }}

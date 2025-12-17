@@ -130,7 +130,7 @@ export default function page() {
 
   return (
     <div
-      className="fixed inset-0 w-full flex flex-col backdrop-blur-md bg-transparent border rounded-xl shadow-md mx-auto max-w-5xl"
+      className="fixed inset-0 w-full flex flex-col backdrop-blur-md bg-transparent border shadow-md mx-auto max-w-5xl"
       style={{ height: 'var(--app-height)' }}
     >
       <div className="w-full px-5 py-4 border-b bg-transparent flex justify-between items-center rounded-t-lg">

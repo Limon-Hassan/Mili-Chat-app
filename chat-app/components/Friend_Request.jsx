@@ -12,10 +12,10 @@ const Friend_Request = () => {
 
       const h = window.innerHeight;
 
-      const minH = 575;
+      const minH = 475;
       const maxH = 800;
 
-      const minVh = 25;
+      const minVh = 10;
       const maxVh = 45;
       if (h <= minH) {
         setVh(minVh);

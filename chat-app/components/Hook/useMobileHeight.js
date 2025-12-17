@@ -11,10 +11,10 @@ const useMobileHeight = () => {
 
       const h = window.innerHeight;
 
-      const minH = 575;
+      const minH = 475;
       const maxH = 800;
 
-      const minVh = 42;
+      const minVh = 28;
       const maxVh = 58;
 
       if (h <= minH) {

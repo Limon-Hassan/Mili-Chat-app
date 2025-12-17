@@ -2,8 +2,9 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import VoiceRecorder from './VoiceRecorder';
+import { GrClose } from 'react-icons/gr';
 
-const Edite = ({ setActive }) => {
+const Edite = ({ setActive, onClose = () => {} }) => {
   const [image, setImage] = useState(null);
   let offRef = useRef(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -60,10 +61,13 @@ const Edite = ({ setActive }) => {
       <section className="flex items-center justify-center h-screen w-full fixed top-0 left-0 bg-black/50 z-50">
         <div
           ref={offRef}
-          className="bg-white rounded-xl shadow-xl p-6 w-[600px] h-[800px] overflow-y-auto relative"
+          className="bg-white mobile:rounded-none tablet:rounded-none laptop:rounded-none computer:rounded-xl shadow-xl p-6 mobile:w-full mobile:h-screen tablet:w-full tablet:h-screen laptop:w-150 laptop:h-200 computer:w-150 computer:h-200 overflow-y-auto relative"
         >
-          <h4 className="text-2xl font-semibold text-gray-700 mb-4">
+          <h4 className="flex items-center justify-between text-2xl font-semibold text-gray-700 mb-4">
             Edit Your Profile
+            <span onClick={onClose} className='cursor-pointer'>
+              <GrClose size={24} />
+            </span>
           </h4>
 
           {!image && (
@@ -160,7 +164,7 @@ const Edite = ({ setActive }) => {
 
           <div className="mt-3.5">
             <input
-              className="w-full h-[50px] rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-200 bg-white"
+              className="w-full h-12.5 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-200 bg-white"
               type="text"
               placeholder="Your bio..."
             />
@@ -180,23 +184,25 @@ const Edite = ({ setActive }) => {
             <span className="text-[16px] font-inter font-semibold text-gray-500">
               Who can see your Status ?
             </span>
-            <select className="w-full h-[50px] mt-2 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 bg-white">
+            <select className="w-full h-12.5 mt-2 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 bg-white">
               <option>Everyone</option>
               <option>My Friends</option>
               <option>Only Me</option>
             </select>
           </div>
-          <div className="mt-3.5">
+          <div className="mt-3.5 mb-12.5">
             <span className="text-[16px] font-inter font-semibold text-gray-500">
               Who can see your Friend List ?
             </span>
-            <select className="w-full h-[50px] mt-2 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 bg-white">
+            <select className="w-full h-12.5 mt-2 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 bg-white">
               <option>Everyone</option>
               <option>My Friends</option>
               <option>Only Me</option>
             </select>
           </div>
-          <button className='text-[16px] font-semibold font-inter text-white bg-green-500 px-6 cursor-pointer py-2 rounded-md mt-6 flex items-center justify-center mx-auto'>Save</button>
+          <button className="text-[16px] font-semibold font-inter text-white bg-purple-500 w-full cursor-pointer py-2 rounded-md mt-6 flex items-center justify-center mx-auto">
+            Save
+          </button>
         </div>
       </section>
     </>

@@ -18,7 +18,6 @@ export default function VoiceRecorder() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      // recorder setup
       mediaRecorderRef.current = new MediaRecorder(stream);
       chunksRef.current = [];
 
@@ -34,7 +33,6 @@ export default function VoiceRecorder() {
       mediaRecorderRef.current.start();
       setIsRecording(true);
 
-      // LIVE waveform
       audioContextRef.current = new AudioContext();
       const source = audioContextRef.current.createMediaStreamSource(stream);
 
@@ -71,10 +69,8 @@ export default function VoiceRecorder() {
     if (audioContextRef.current) audioContextRef.current.close();
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
-    // stop mic
     streamRef.current?.getTracks().forEach(t => t.stop());
 
-    // Reset bars to flat line
    setBars(new Array(20).fill(20));
   };
 
@@ -113,7 +109,7 @@ export default function VoiceRecorder() {
       {!isRecording && !tempAudio && (
         <button
           onClick={startRecording}
-          className="px-6 py-3 rounded bg-blue-600 text-white"
+          className="px-6 py-3 rounded bg-purple-600 text-[16px] font-semibold font-inter text-white"
         >
           Start Recording
         </button>

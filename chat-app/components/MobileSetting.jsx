@@ -95,7 +95,7 @@ const MobileSetting = () => {
           </div>
           <div className="flex flex-col items-center justify-between border-b border-gray-400 pb-5 mobile:mt-5 tablet:mt-0 laptop:mt-0">
             <div className="relative mb-3.5">
-              <h3 className="uppercase flex items-center gap-3.5 mobile:text-[21px] tablet:text-2xl laptop:text-2xl font-bold font-inter text-white">
+              <h3 className="uppercase flex items-center gap-3.5 mobile:text-[22px] tablet:text-2xl laptop:text-2xl font-bold font-inter text-white">
                 mahammud hassan limon
                 <span className="mobile:hidden tablet:flex laptop:flex items-center gap-1 text-sm bg-gray-700 w-30 justify-center h-10 border border-gray-500 rounded-full">
                   Creator
@@ -114,7 +114,7 @@ const MobileSetting = () => {
                   />
                 </span>
               </h3>
-              <h3 className="text-sm font-normal font-inter text-white mobile:mt-5 tablet:mt-3.5 laptop:mt-3.5">
+              <h3 className="text-sm font-normal font-inter text-white mobile:my-4 tablet:mt-3.5 laptop:mt-3.5">
                 I'm Full stack Developer || Web Designer || MERN stack Developer
               </h3>
             </div>
@@ -134,7 +134,9 @@ const MobileSetting = () => {
           <AllFriend />
           <Stories />
           <BlockUser />
-          {active.edite && <Edite setActive={setActive} />}
+          {active.edite && (
+            <Edite setActive={setActive} onClose={() => setActive(false)} />
+          )}
           {active.StoryUpload && <AddStory onClose={() => setActive(false)} />}
           {active.story && (
             <ShowStatus src="/kawasaki.mp4" onClose={() => setActive(false)} />

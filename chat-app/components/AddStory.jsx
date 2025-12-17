@@ -365,7 +365,7 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
     <div className="fixed w-full inset-0 z-50 flex items-center justify-center bg-black/70 mobile:p-0 tablet:p-0 laptop:p-0 computer:p-4">
       <div
         ref={editorRef}
-        className="relative w-[420px] h-[720px] bg-black rounded-xl overflow-hidden shadow-2xl"
+        className="relative mobile:w-full mobile:h-screen tablet:w-full tablet:h-screen laptop:w-full laptop:h-screen computer:w-105 computer:h-180 bg-black rounded-xl overflow-hidden shadow-2xl"
       >
         <div className="absolute top-3 left-3 z-40 flex gap-2">
           <label className="cursor-pointer text-white/90 bg-white/10 px-2 py-1 rounded">
@@ -395,7 +395,7 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
             }}
             className="bg-white/10 text-white px-2 py-1 rounded flex items-center gap-1"
           >
-            <Pencil size={24} /> 
+            <Pencil size={24} />
           </button>
           <button
             onClick={handleSave}
@@ -409,8 +409,8 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
             onClick={onClose}
             className="bg-white/10 text-white px-2 py-1 rounded"
           >
-            {' '}
-            <X size={16} />{' '}
+            
+            <X size={16} />
           </button>
         </div>
 
