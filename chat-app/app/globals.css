@@ -29,3 +29,24 @@ audio::-webkit-media-controls-play-button {
   animation: wave 0.7s infinite ease-in-out;
 }
 
+
+
+
+
+@keyframes float {
+  0% {
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    transform: translateY(-30px) translateX(20px);
+  }
+  100% {
+    transform: translateY(0) translateX(0);
+  }
+}
+
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
+
+
