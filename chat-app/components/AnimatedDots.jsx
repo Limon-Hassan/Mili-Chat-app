@@ -287,7 +287,7 @@ export default function AnimatedDots({
   if (dots.length === 0) return null;
 
   return (
-    <div className="ads-container" aria-hidden>
+    <div className="mobile:hidden computer:block ads-container" aria-hidden>
       {dots.map(d => (
         <span
           key={d.key}
