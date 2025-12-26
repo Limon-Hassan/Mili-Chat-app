@@ -9,6 +9,9 @@ let userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    trim: true,
+    set: v => (typeof v === 'string' ? v.replace(/\s+/g, '') : v),
+    match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
   },
   password: {
     type: String,

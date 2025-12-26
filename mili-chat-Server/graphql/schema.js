@@ -1,33 +1,23 @@
-const { GraphQLSchema, GraphQLObjectType, GraphQLString } = require('graphql');
+const { GraphQLSchema, GraphQLObjectType } = require('graphql');
 
-const UserType = new GraphQLObjectType({
-  name: 'User',
-  fields: {
-    id: { type: GraphQLString },
-    name: { type: GraphQLString },
-    email: { type: GraphQLString },
-  },
-});
+const userQuery = require('./queries/userQuery');
+const userResolver = require('./resolver/userResolver');
 
 const RootQuery = new GraphQLObjectType({
   name: 'Query',
   fields: {
-    user: {
-      type: UserType,
-      args: {
-        id: { type: GraphQLString },
-      },
-      resolve(parent, args) {
-        return {
-          id: args.id,
-          name: 'Test User',
-          email: 'test@mail.com',
-        };
-      },
-    },
+    ...userQuery, 
+  },
+});
+
+const RootMutation = new GraphQLObjectType({
+  name: 'Mutation',
+  fields: {
+    ...userResolver, 
   },
 });
 
 module.exports = new GraphQLSchema({
   query: RootQuery,
+  mutation: RootMutation,
 });
