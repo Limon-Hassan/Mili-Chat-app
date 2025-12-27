@@ -1,6 +1,11 @@
 const { GraphQLString } = require('graphql');
 const { UserType, AuthType } = require('../types/userType');
-const { registation, login } = require('../../Controller/AuthController');
+const {
+  registation,
+  login,
+  googleLogin,
+  refreshToken,
+} = require('../../Controller/AuthController');
 
 module.exports = {
   register: {
@@ -26,13 +31,23 @@ module.exports = {
     },
   },
 
-  //   deleteUser: {
-  //     type: UserType,
-  //     args: {
-  //       id: { type: GraphQLString },
-  //     },
-  //     resolve(parent, args) {
-  //       return deleteUser(args.id);
-  //     },
-  //   },
+  googleLogin: {
+    type: AuthType,
+    args: {
+      token: { type: GraphQLString },
+    },
+    resolve(parent, args) {
+      return googleLogin(args);
+    },
+  },
+
+  refreshToken: {
+    type: AuthType,
+    args: {
+      refreshToken: { type: GraphQLString },
+    },
+    resolve(parent, args) {
+      return refreshToken(args);
+    },
+  },  
 };

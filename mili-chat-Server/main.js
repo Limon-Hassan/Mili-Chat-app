@@ -16,6 +16,10 @@ async function startServer() {
 
   let server = new ApolloServer({
     schema,
+    context: ({ req }) => {
+      const token = req.headers.authorization || '';
+      return { token };
+    },
   });
 
   await server.start();

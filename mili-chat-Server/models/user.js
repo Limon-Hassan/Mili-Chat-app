@@ -21,6 +21,14 @@ let userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+
+  googleId: String,
+  provider: {
+    type: String,
+    enum: ['local', 'google', 'facebook'],
+    default: 'local',
+  },
+  avatar: String,
 });
 
 module.exports = mongoose.model('User', userSchema);
