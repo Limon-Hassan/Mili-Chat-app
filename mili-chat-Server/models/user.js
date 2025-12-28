@@ -29,6 +29,7 @@ let userSchema = new mongoose.Schema({
     default: 'local',
   },
   avatar: String,
+  friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 });
 
 module.exports = mongoose.model('User', userSchema);
