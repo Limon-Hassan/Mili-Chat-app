@@ -6,7 +6,7 @@ let friendsQuery = {
   friendRequests: {
     type: new GraphQLList(FriendRequestType),
 
-    resolver(parent, args, context) {
+    resolve(parent, args, context) {
       if (!context.userId) {
         throw new Error('Unauthorized');
       }

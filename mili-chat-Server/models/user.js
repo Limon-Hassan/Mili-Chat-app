@@ -23,6 +23,7 @@ let userSchema = new mongoose.Schema({
   },
 
   googleId: String,
+  facebookId: String,
   provider: {
     type: String,
     enum: ['local', 'google', 'facebook'],
@@ -30,6 +31,7 @@ let userSchema = new mongoose.Schema({
   },
   avatar: String,
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -1,3 +1,4 @@
+const axios = require('axios');
 const user = require('../models/user');
 const bcrypt = require('bcrypt');
 const { OAuth2Client } = require('google-auth-library');
@@ -116,6 +117,60 @@ async function googleLogin({ token }) {
   }
 }
 
+async function facebookLogin({ accessToken }) {
+  if (!accessToken) {
+    throw new Error('Token is required');
+  }
+  try {
+    const fbResponse = await axios.get(
+      `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${accessToken}`
+    );
+
+    const { id: facebookId, name, email, picture } = fbResponse.data;
+
+    let loggedInUser = await user.findOne({ email });
+    if (!loggedInUser) {
+      loggedInUser = await user.create({
+        name,
+        email,
+        avatar: picture?.data?.url || '',
+        facebookId,
+        provider: 'facebook',
+      });
+    }
+
+    const token = jwt.sign(
+      { userId: loggedInUser._id },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: '15m',
+      }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: loggedInUser._id },
+      process.env.REFRESH_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    return {
+      token,
+      refreshToken,
+      user: {
+        id: loggedInUser._id.toString(),
+        name: loggedInUser.name,
+        email: loggedInUser.email,
+      },
+    };
+  } catch (error) {
+    console.error(
+      'Facebook login error:',
+      error.response?.data || error.message
+    );
+    throw new Error('Facebook login failed');
+  }
+}
+
 async function refreshToken({ refreshToken }) {
   if (!refreshToken) {
     throw new Error('Refresh token is required');
@@ -149,9 +204,22 @@ async function refreshToken({ refreshToken }) {
   };
 }
 
+async function logout(context) {
+  if (context.res && context.res.clearCookie) {
+    context.res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+    });
+  }
+
+  return { message: 'Logged out successfully' };
+}
+
 module.exports = {
   registation,
   login,
   googleLogin,
   refreshToken,
+  facebookLogin,
+  logout,
 };

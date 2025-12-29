@@ -5,7 +5,10 @@ const {
   login,
   googleLogin,
   refreshToken,
+  facebookLogin,
+  logout,
 } = require('../../Controller/AuthController');
+const LogoutType = require('../types/LogoutType');
 
 module.exports = {
   register: {
@@ -40,6 +43,15 @@ module.exports = {
       return googleLogin(args);
     },
   },
+  facebookLogin: {
+    type: AuthType,
+    args: {
+      accessToken: { type: GraphQLString },
+    },
+    resolve(parent, args) {
+      return facebookLogin(args);
+    },
+  },
 
   refreshToken: {
     type: AuthType,
@@ -49,5 +61,12 @@ module.exports = {
     resolve(parent, args) {
       return refreshToken(args);
     },
-  },  
+  },
+
+  logout: {
+    type: LogoutType,
+    resolve(parent, args, context) {
+      return logout(context);
+    },
+  },
 };
