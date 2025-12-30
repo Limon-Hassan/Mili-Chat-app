@@ -11,10 +11,14 @@ async function getMe(context) {
     process.env.JWT_SECRET
   );
 
-  const user = await user.findById(decoded.userId);
-  if (!user) throw new Error('User not found');
+  const User = await user
+    .findById(decoded.userId)
+    .populate('friends', 'id name email')
+    .populate('blockedUsers', 'id name email');
 
-  return user;
+  if (!User) throw new Error('User not found');
+
+  return User;
 }
 
 module.exports = { getMe };

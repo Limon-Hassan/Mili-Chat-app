@@ -4,12 +4,19 @@ const userQuery = require('./queries/userQuery');
 const userResolver = require('./resolver/userResolver');
 const friendsQuery = require('./queries/friendRequestQueries');
 const friendRequestResolver = require('./resolver/friendRequestResolver');
+const notificationQuery = require('./queries/notificationQuery');
+const NotificationResolver = require('./resolver/NotificationResolver');
+const groupQuery = require('./queries/groupQueries');
+const groupMutation = require('./resolver/groupResolver');
+
 
 const RootQuery = new GraphQLObjectType({
   name: 'Query',
   fields: {
     ...userQuery, 
     ...friendsQuery,
+    ...notificationQuery,
+    ...groupQuery,
   },
 });
 
@@ -18,6 +25,8 @@ const RootMutation = new GraphQLObjectType({
   fields: {
     ...userResolver, 
     ...friendRequestResolver,
+    ...NotificationResolver,
+    ...groupMutation,
   },
 });
 

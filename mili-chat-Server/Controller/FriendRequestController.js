@@ -1,44 +1,57 @@
 const friendRequest = require('../models/friendRequest');
 const user = require('../models/user');
+const { createNotify } = require('./NotificationContoller');
 
 async function sendFriendRequest({ toUserId }, context) {
   if (!context.userId) {
     throw new Error('Authentication required');
   }
 
-  let toUser = await user.findById(toUserId);
-  if (!toUser) {
-    throw new Error('User not found');
-  }
   if (context.userId === toUserId) {
     throw new Error('Cannot send friend request to yourself');
   }
-  let me = await user.findById(context.userId);
+
+  const toUser = await user.findById(toUserId);
+  if (!toUser) {
+    throw new Error('User not found');
+  }
+
+  const me = await user.findById(context.userId);
+
   if (me.friends?.includes(toUserId)) {
     throw new Error('User is already your friend');
   }
+
   if (me.blockedUsers?.includes(toUserId)) {
-    throw new Error(
-      'Should you need to unblock this user then you can send friend request'
-    );
+    throw new Error('Unblock user first to send friend request');
   }
+
   if (toUser.blockedUsers?.includes(context.userId)) {
     throw new Error('You are blocked by this user');
   }
 
-  let existingRequest = await friendRequest.findOne({
-    from: context.userId,
-    to: toUserId,
+  const existingRequest = await friendRequest.findOne({
     status: 'pending',
+    $or: [
+      { from: context.userId, to: toUserId },
+      { from: toUserId, to: context.userId },
+    ],
   });
 
   if (existingRequest) {
-    throw new Error('Friend request already sent and pending');
+    throw new Error('Friend request already exists between you two');
   }
 
   const newRequestDoc = await friendRequest.create({
     from: context.userId,
     to: toUserId,
+  });
+
+  await createNotify({
+    userId: toUserId,
+    type: 'friend_request',
+    message: `${me.name} has sent you a friend request.`,
+    relatedUserId: context.userId,
   });
 
   await newRequestDoc.populate('from to', 'id name email');
@@ -76,6 +89,12 @@ async function acceptFriendRequest({ requestId }, context) {
   });
 
   await friendRequest.findByIdAndDelete(requestId);
+  await createNotify({
+    userId: request.from._id,
+    type: 'friend_request_accepted',
+    message: `${request.to.name} has accepted your friend request.`,
+    relatedUserId: request.to._id,
+  });
 
   return request;
 }
@@ -96,6 +115,12 @@ async function requestRejected({ requestId }, context) {
 
   request.status = 'rejected';
   await request.save();
+  await createNotify({
+    userId: request.from,
+    type: 'friend_request_rejected',
+    message: `Your friend request has been rejected.`,
+    relatedUserId: request.to,
+  });
   return request;
 }
 

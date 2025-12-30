@@ -6,11 +6,11 @@ let friendsQuery = {
   friendRequests: {
     type: new GraphQLList(FriendRequestType),
 
-    resolve(parent, args, context) {
+    async resolve(parent, args, context) {
       if (!context.userId) {
         throw new Error('Unauthorized');
       }
-      return friendRequest
+      return await friendRequest
         .find({
           to: context.userId,
           status: 'pending',
