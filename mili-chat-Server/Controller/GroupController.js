@@ -22,6 +22,10 @@ async function createGroup({ name, members = [], photo }, context) {
     Admin: context.userId,
   });
   await newGroup.save();
+  await newGroup.populate([
+    { path: 'Admin', select: 'id name email' },
+    { path: 'members', select: 'id name email' },
+  ]);
   return newGroup;
 }
 
@@ -47,6 +51,10 @@ async function addMembers({ groupId, members = [] }, context) {
     throw new Error('You can only add your friends');
   }
 
+  if (Group.members.map(id => id.toString()).includes(validMembers[0])) {
+    throw new Error('User is already a member');
+  }
+
   let updatedMembers = Array.from(
     new Set([
       ...Group.members.map(id => id.toString()),
@@ -56,6 +64,10 @@ async function addMembers({ groupId, members = [] }, context) {
 
   Group.members = updatedMembers;
   await Group.save();
+  await Group.populate([
+    { path: 'Admin', select: 'id name email' },
+    { path: 'members', select: 'id name email' },
+  ]);
   return Group;
 }
 
@@ -83,6 +95,10 @@ async function removeMember({ groupId, memberId }, context) {
 
   Group.members = Group.members.filter(id => id.toString() !== memberId);
   await Group.save();
+  await Group.populate([
+    { path: 'Admin', select: 'id name email' },
+    { path: 'members', select: 'id name email' },
+  ]);
   return Group;
 }
 
@@ -106,6 +122,10 @@ async function leaveGroup({ groupId }, context) {
 
   Group.members = Group.members.filter(id => id.toString() !== context.userId);
   await Group.save();
+  await Group.populate([
+    { path: 'Admin', select: 'id name email' },
+    { path: 'members', select: 'id name email' },
+  ]);
   return Group;
 }
 
@@ -147,6 +167,10 @@ async function requestToJoinGroup({ groupId }, context) {
     message: `${me.name} wants to join your group`,
     relatedUserId: context.userId,
   });
+  await group.populate([
+    { path: 'Admin', select: 'id name email' },
+    { path: 'members', select: 'id name email' },
+  ]);
   return group;
 }
 
@@ -170,6 +194,10 @@ async function handleJoinRequest({ groupId, userId, action }, context) {
   );
 
   await group.save();
+  await group.populate([
+    { path: 'Admin', select: 'id name email' },
+    { path: 'members', select: 'id name email' },
+  ]);
   return group;
 }
 

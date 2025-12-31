@@ -32,6 +32,11 @@ let userSchema = new mongoose.Schema({
   avatar: String,
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  storyPrivacy: {
+    type: String,
+    enum: ['public', 'friends', 'Only Me'],
+    default: 'public',
+  },
 });
 
 module.exports = mongoose.model('User', userSchema);

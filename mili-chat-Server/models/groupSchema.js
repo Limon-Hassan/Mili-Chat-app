@@ -6,7 +6,7 @@ let groupModel = new mongoose.Schema(
     members: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     createdAt: { type: Date, default: Date.now },
     photo: { type: String },
-    Admin: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    Admin: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     pendingRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   },
   { timestamps: true }
