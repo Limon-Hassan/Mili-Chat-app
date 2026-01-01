@@ -6,20 +6,21 @@ const storySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: true,
+      unique: true,
     },
 
-    privacy: {
-      type: String,
-      enum: ['public', 'friends', 'onlyme'],
-      default: 'public',
-    },
     stories: [
       {
-        video: { type: String, required: true },
+        video: {
+          type: String,
+          required: true,
+        },
+
         expiresAt: {
           type: Date,
           required: true,
         },
+
         seenBy: [
           {
             user: {
@@ -32,6 +33,7 @@ const storySchema = new mongoose.Schema(
             },
           },
         ],
+
         reactions: [
           {
             user: {
@@ -39,7 +41,7 @@ const storySchema = new mongoose.Schema(
               ref: 'User',
             },
             type: {
-              type: String, 
+              type: String,
               required: true,
             },
             reactedAt: {
@@ -48,11 +50,11 @@ const storySchema = new mongoose.Schema(
             },
           },
         ],
+        expiredNotified: { type: Boolean, default: false },
       },
     ],
   },
   { timestamps: true }
 );
-
 
 module.exports = mongoose.model('Story', storySchema);
