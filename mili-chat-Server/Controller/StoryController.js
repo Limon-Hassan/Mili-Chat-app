@@ -89,33 +89,6 @@ async function markAsSeen({ storyId, storyItemId }, context) {
   return story;
 }
 
-// async function markAsSeen({ storyId, storyItemId }, context) {
-//   if (!context.userId) throw new Error('Authentication required');
-//   let story = await storyModel.findById(storyId);
-//   if (!story) {
-//     throw new Error('Story not found');
-//   }
-
-//   let storyItem = story.stories.id(storyItemId);
-//   if (!storyItem) {
-//     throw new Error('Story item not found');
-//   }
-
-//   const alreadySeen = storyItem.seenBy.some(
-//     s => s.user.toString() === context.userId
-//   );
-
-//   if (!alreadySeen) {
-//     storyItem.seenBy.push({
-//       user: context.userId,
-//       seenAt: new Date(),
-//     });
-
-//     await story.save();
-//   }
-//   return true;
-// }
-
 async function storyReaction({ storyId, storyItemId, reaction }, context) {
   if (!context.userId) throw new Error('Authentication required');
   let story = await storyId.findById(storyId);
@@ -141,7 +114,7 @@ async function storyReaction({ storyId, storyItemId, reaction }, context) {
   } else {
     storyItem.reactions.push({
       user: context.userId,
-      type: reactionType,
+      type: reaction,
       reactedAt: now,
     });
   }
