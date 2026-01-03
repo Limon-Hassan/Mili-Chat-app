@@ -10,6 +10,8 @@ const groupQuery = require('./queries/groupQueries');
 const groupMutation = require('./resolver/groupResolver');
 const storyResolver = require('./resolver/storyResolver');
 const storyQuery = require('./queries/storyQuery');
+const messageQueries = require('./queries/messageQueries');
+const messageResolver = require('./resolver/messageResolver');
 
 const RootQuery = new GraphQLObjectType({
   name: 'Query',
@@ -19,6 +21,7 @@ const RootQuery = new GraphQLObjectType({
     ...notificationQuery,
     ...groupQuery,
     ...storyQuery,
+    ...messageQueries,
   },
 });
 
@@ -30,6 +33,7 @@ const RootMutation = new GraphQLObjectType({
     ...NotificationResolver,
     ...groupMutation,
     ...storyResolver,
+    ...messageResolver,
   },
 });
 
