@@ -1,3 +1,4 @@
+const conversionSchema = require('../models/conversionSchema');
 const groupSchema = require('../models/groupSchema');
 const user = require('../models/user');
 const { createNotify } = require('./NotificationContoller');
@@ -22,6 +23,13 @@ async function createGroup({ name, members = [], photo }, context) {
     Admin: context.userId,
   });
   await newGroup.save();
+  let GroupConversation = await conversionSchema.create({
+    participants: uniqueMembers,
+    group: newGroup._id,
+    lastMessage: '',
+    lastMessageAt: new Date(),
+  });
+  await GroupConversation.populate('participants', 'id name email');
   await newGroup.populate([
     { path: 'Admin', select: 'id name email' },
     { path: 'members', select: 'id name email' },

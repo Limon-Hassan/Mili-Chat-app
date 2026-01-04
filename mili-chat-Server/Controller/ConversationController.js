@@ -120,24 +120,24 @@ async function sendMessageWithId(
     throw new Error('You are not a participant in this conversation');
   }
 
-  const receiverId = conversation.participants.find(
-    id => id.toString() !== context.userId
-  );
+  let receiverId = null;
 
+  if (!conversation.group) {
+    receiverId = conversation.participants.find(
+      id => id.toString() !== context.userId
+    );
 
-  if (!receiverId) throw new Error('No receiver found');
+    if (me.blockedUsers.includes(receiverId))
+      throw new Error('User is blocked');
 
-
-  if (me.blockedUsers.includes(receiverId)) throw new Error('User is blocked');
-
-  if (!me.friends.includes(receiverId)) {
-    throw new Error('You are not friends with this user');
+    if (!me.friends.includes(receiverId))
+      throw new Error('You are not friends with this user');
   }
 
   const message = await messageModel.create({
     conversation: conversationId,
     sender: context.userId,
-    receiver: receiverId,
+    receiver: conversation.group ? null : receiverId,
     type,
     text: type === 'text' || type === 'link' ? text : undefined,
     mediaUrl: mediaUrl || undefined,
@@ -188,17 +188,40 @@ async function getConversation(context) {
     .lean();
 
   const formatted = conversations.map(conv => {
+    if (conv.group) {
+      return {
+        id: conv._id,
+        isGroup: true,
+        group: conv.group,
+        lastMessage: conv.lastMessage,
+        lastMessageType: conv.lastMessageType,
+        lastMessageAt: conv.lastMessageAt,
+      };
+    }
+
     const otherUser = conv.participants.find(
       p => p._id.toString() !== context.userId
     );
 
     return {
       id: conv._id,
+      isGroup: false,
       otherUser,
       lastMessage: conv.lastMessage,
       lastMessageType: conv.lastMessageType,
       lastMessageAt: conv.lastMessageAt,
     };
+    // const otherUser = conv.participants.find(
+    //   p => p._id.toString() !== context.userId
+    // );
+
+    // return {
+    //   id: conv._id,
+    //   otherUser,
+    //   lastMessage: conv.lastMessage,
+    //   lastMessageType: conv.lastMessageType,
+    //   lastMessageAt: conv.lastMessageAt,
+    // };
   });
 
   return formatted;
@@ -206,18 +229,35 @@ async function getConversation(context) {
 
 async function markMassageAsDelivery({ conversationId }, context) {
   if (!context.userId) throw new Error('Authentication required');
-  let msg = await messageModel.updateMany(
-    {
-      conversation: conversationId,
-      receiver: context.userId,
-      deliveryStatus: 'sent',
-    },
-    {
-      $set: {
-        deliveryStatus: 'delivered',
+  let conversation = await conversionSchema.findById(conversationId);
+  if (!conversation) throw new Error('Conversation not found');
+
+  if (!conversation.group) {
+    await messageModel.updateMany(
+      {
+        conversation: conversationId,
+        receiver: context.userId,
+        deliveryStatus: 'sent',
       },
-    }
-  );
+      {
+        $set: {
+          deliveryStatus: 'delivered',
+        },
+      }
+    );
+  } else {
+    await messageModel.updateMany(
+      {
+        conversation: conversationId,
+        deliveryStatus: 'sent',
+      },
+      {
+        $set: {
+          deliveryStatus: 'delivered',
+        },
+      }
+    );
+  }
 
   return true;
 }
@@ -231,19 +271,32 @@ async function markMessagesAsRead({ conversationId }, context) {
   const isParticipant = conversation.participants.some(
     id => id.toString() === context.userId
   );
-  if (!isParticipant) throw new Error('Access denied');
 
-  await messageModel.updateMany(
-    {
-      conversation: conversationId,
-      receiver: context.userId,
-      isRead: false,
-      deliveryStatus: 'delivered',
-    },
-    {
-      $set: { isRead: true, deliveryStatus: 'seen', readAt: new Date() },
-    }
-  );
+  if (!isParticipant) throw new Error('Access denied');
+  if (!conversation.group) {
+    await messageModel.updateMany(
+      {
+        conversation: conversationId,
+        receiver: context.userId,
+        isRead: false,
+        deliveryStatus: 'delivered',
+      },
+      {
+        $set: { isRead: true, deliveryStatus: 'seen', readAt: new Date() },
+      }
+    );
+  } else {
+    await messageModel.updateMany(
+      {
+        conversation: conversationId,
+        isRead: false,
+        deliveryStatus: 'delivered',
+      },
+      {
+        $set: { isRead: true, deliveryStatus: 'seen', readAt: new Date() },
+      }
+    );
+  }
 
   return true;
 }
@@ -254,11 +307,8 @@ async function deleteMessage({ messageId }, context) {
   let message = await messageModel.findById(messageId);
   if (!message) throw new Error('Message not found');
 
-  let allowedUsers =
-    message.sender.toString() === context.userId ||
-    message.receiver.toString() === context.userId;
-
-  if (!allowedUsers) throw new Error('Access denied');
+  if (message.sender.toString() !== context.userId)
+    throw new Error('Access denied');
 
   await messageModel.findByIdAndDelete(messageId);
   return true;
@@ -310,7 +360,9 @@ async function editMessage({ messageId, newText }, context) {
   await message.save();
 
   await message.populate('sender', 'id name');
-  await message.populate('receiver', 'id name');
+  if (message.receiver) {
+    await message.populate('receiver', 'id name');
+  }
 
   return message;
 }
@@ -342,7 +394,9 @@ async function reactToMessage({ messageId, emoji }, context) {
 
   await message.save();
   await message.populate('sender', 'id name');
-  await message.populate('receiver', 'id name');
+  if (message.receiver) {
+    await message.populate('receiver', 'id name');
+  }
   return message;
 }
 
