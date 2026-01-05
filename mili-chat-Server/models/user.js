@@ -21,6 +21,20 @@ let userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  avatar: {
+    type: String,
+  },
+
+  bio: {
+    type: String,
+    maxLength: 150,
+    default: '',
+  },
+
+  voiceIntro: {
+    url: String,
+    duration: Number,
+  },
 
   googleId: String,
   facebookId: String,
@@ -29,12 +43,16 @@ let userSchema = new mongoose.Schema({
     enum: ['local', 'google', 'facebook'],
     default: 'local',
   },
-  avatar: String,
+  friendListPrivacy: {
+    type: String,
+    enum: ['public', 'friends', 'onlyMe'],
+    default: 'friends',
+  },
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   storyPrivacy: {
     type: String,
-    enum: ['public', 'friends', 'Only Me'],
+    enum: ['public', 'friends', 'onlyme'],
     default: 'public',
   },
 });

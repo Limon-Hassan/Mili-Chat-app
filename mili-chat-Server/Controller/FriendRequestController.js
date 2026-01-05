@@ -54,7 +54,7 @@ async function sendFriendRequest({ toUserId }, context) {
     relatedUserId: context.userId,
   });
 
-  await newRequestDoc.populate('from to', 'id name email');
+  await newRequestDoc.populate('from to', 'id name email avatar');
 
   return newRequestDoc;
 }
@@ -66,8 +66,8 @@ async function acceptFriendRequest({ requestId }, context) {
 
   let request = await friendRequest
     .findById(requestId)
-    .populate('from', 'id name email')
-    .populate('to', 'id name email');
+    .populate('from', 'id name email avatar')
+    .populate('to', 'id name email avatar');
 
   if (!request) {
     throw new Error('Friend request not found');
@@ -181,7 +181,7 @@ async function BlockUser({ blockUserId }, context) {
   blockUser.friends = blockUser.friends.filter(
     friendId => friendId.toString() !== context.userId
   );
-  await currentUser.populate('blockedUsers', 'id name email');
+  await currentUser.populate('blockedUsers', 'id name email avatar');
   await currentUser.save();
   await blockUser.save();
   return currentUser;
@@ -204,7 +204,7 @@ async function unblock({ unblockUserId }, context) {
   );
 
   await currentUser.save();
-  await currentUser.populate('blockedUsers', 'id name email');
+  await currentUser.populate('blockedUsers', 'id name email avatar');
   return currentUser;
 }
 

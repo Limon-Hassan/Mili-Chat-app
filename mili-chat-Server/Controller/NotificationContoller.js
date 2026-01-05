@@ -24,7 +24,7 @@ async function getNotification(userId) {
     let notifications = await notification
       .find({ user: userId })
       .sort({ createdAt: -1 })
-      .populate('relatedUser', 'id name email');
+      .populate('relatedUser', 'id name email avatar');
     return notifications;
   } catch (error) {
     console.error('Error fetching notifications:', error);

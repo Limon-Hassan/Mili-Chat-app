@@ -29,10 +29,10 @@ async function createGroup({ name, members = [], photo }, context) {
     lastMessage: '',
     lastMessageAt: new Date(),
   });
-  await GroupConversation.populate('participants', 'id name email');
+  await GroupConversation.populate('participants', 'id name email avatar');
   await newGroup.populate([
-    { path: 'Admin', select: 'id name email' },
-    { path: 'members', select: 'id name email' },
+    { path: 'Admin', select: 'id name email avatar' },
+    { path: 'members', select: 'id name email avatar' },
   ]);
   return newGroup;
 }
@@ -73,8 +73,8 @@ async function addMembers({ groupId, members = [] }, context) {
   Group.members = updatedMembers;
   await Group.save();
   await Group.populate([
-    { path: 'Admin', select: 'id name email' },
-    { path: 'members', select: 'id name email' },
+    { path: 'Admin', select: 'id name email avatar' },
+    { path: 'members', select: 'id name email avatar' },
   ]);
   return Group;
 }
@@ -104,8 +104,8 @@ async function removeMember({ groupId, memberId }, context) {
   Group.members = Group.members.filter(id => id.toString() !== memberId);
   await Group.save();
   await Group.populate([
-    { path: 'Admin', select: 'id name email' },
-    { path: 'members', select: 'id name email' },
+    { path: 'Admin', select: 'id name email avatar' },
+    { path: 'members', select: 'id name email avatar' },
   ]);
   return Group;
 }
@@ -131,8 +131,8 @@ async function leaveGroup({ groupId }, context) {
   Group.members = Group.members.filter(id => id.toString() !== context.userId);
   await Group.save();
   await Group.populate([
-    { path: 'Admin', select: 'id name email' },
-    { path: 'members', select: 'id name email' },
+    { path: 'Admin', select: 'id name email avatar' },
+    { path: 'members', select: 'id name email avatar' },
   ]);
   return Group;
 }
@@ -176,8 +176,8 @@ async function requestToJoinGroup({ groupId }, context) {
     relatedUserId: context.userId,
   });
   await group.populate([
-    { path: 'Admin', select: 'id name email' },
-    { path: 'members', select: 'id name email' },
+    { path: 'Admin', select: 'id name email avatar' },
+    { path: 'members', select: 'id name email avatar' },
   ]);
   return group;
 }
@@ -203,8 +203,8 @@ async function handleJoinRequest({ groupId, userId, action }, context) {
 
   await group.save();
   await group.populate([
-    { path: 'Admin', select: 'id name email' },
-    { path: 'members', select: 'id name email' },
+    { path: 'Admin', select: 'id name email avatar' },
+    { path: 'members', select: 'id name email avatar' },
   ]);
   return group;
 }

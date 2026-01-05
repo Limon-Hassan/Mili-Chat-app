@@ -40,8 +40,8 @@ async function sendFirstMessage(
     deliveryStatus: 'sent',
   });
 
-  await message.populate('sender', 'id name email');
-  await message.populate('receiver', 'id name email');
+  await message.populate('sender', 'id name email avatar');
+  await message.populate('receiver', 'id name email avatar');
 
   return message;
 }
@@ -150,8 +150,8 @@ async function sendMessageWithId(
   conversation.lastMessageAt = new Date();
   await conversation.save();
 
-  await message.populate('sender', 'id name email');
-  await message.populate('receiver', 'id name email');
+  await message.populate('sender', 'id name email avatar');
+  await message.populate('receiver', 'id name email avatar');
 
   return message;
 }
@@ -359,9 +359,9 @@ async function editMessage({ messageId, newText }, context) {
 
   await message.save();
 
-  await message.populate('sender', 'id name');
+  await message.populate('sender', 'id name avatar');
   if (message.receiver) {
-    await message.populate('receiver', 'id name');
+    await message.populate('receiver', 'id name avatar');
   }
 
   return message;
@@ -393,9 +393,9 @@ async function reactToMessage({ messageId, emoji }, context) {
   }
 
   await message.save();
-  await message.populate('sender', 'id name');
+  await message.populate('sender', 'id name avatar');
   if (message.receiver) {
-    await message.populate('receiver', 'id name');
+    await message.populate('receiver', 'id name avatar');
   }
   return message;
 }

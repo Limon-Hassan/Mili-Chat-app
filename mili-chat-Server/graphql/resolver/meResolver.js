@@ -13,8 +13,8 @@ async function getMe(context) {
 
   const User = await user
     .findById(decoded.userId)
-    .populate('friends', 'id name email')
-    .populate('blockedUsers', 'id name email');
+    .populate('friends', 'id name email avatar')
+    .populate('blockedUsers', 'id name email avatar');
 
   if (!User) throw new Error('User not found');
 

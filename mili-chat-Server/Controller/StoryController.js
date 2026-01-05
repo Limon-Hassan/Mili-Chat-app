@@ -18,7 +18,7 @@ async function createStory({ videoUrl }, context) {
     storyDoc.stories.push({ video: videoUrl, expiresAt });
     await storyDoc.save();
   }
-  await storyDoc.populate('user', 'name id privacy');
+  await storyDoc.populate('user', 'name id avatar storyPrivacy');
   return storyDoc;
 }
 
@@ -31,13 +31,13 @@ async function getStories(context) {
 
   const allStories = await storyModel
     .find({})
-    .populate('user', 'name privacy')
+    .populate('user', 'name storyPrivacy id avatar reactions stories.seenBy')
     .lean();
 
   const now = new Date();
 
   const visibleStories = allStories.map(story => {
-    const privacy = story.user.privacy;
+    const privacy = story.user.storyPrivacy;
 
     const stories = story.stories.filter(s => {
       if (s.expiresAt < now) return false;
@@ -63,8 +63,8 @@ async function markAsSeen({ storyId, storyItemId }, context) {
 
   let story = await storyModel
     .findById(storyId)
-    .populate('user', 'id name')
-    .populate('stories.seenBy.user', 'id name');
+    .populate('user', 'id name avatar')
+    .populate('stories.seenBy.user', 'id name avatar');
 
   if (!story) throw new Error('Story not found');
 
@@ -84,7 +84,7 @@ async function markAsSeen({ storyId, storyItemId }, context) {
     await story.save();
   }
 
-  await story.populate('stories.seenBy.user', 'id name');
+  await story.populate('stories.seenBy.user', 'id name avatar');
 
   return story;
 }
@@ -120,12 +120,12 @@ async function storyReaction({ storyId, storyItemId, reaction }, context) {
   }
 
   await story.save();
+  await story.populate('stories.reactions.user', 'id name avatar');
   return true;
 }
 
 async function expireStory() {
   let now = new Date();
-
   let story = await storyModel.find({ 'stories.expiresAt': { $lt: now } });
 
   for (let storyDoc of story) {
