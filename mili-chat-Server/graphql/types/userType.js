@@ -4,6 +4,7 @@ const {
   GraphQLID,
   GraphQLList,
 } = require('graphql');
+const FriendType = require('./FriendType');
 
 const UserType = new GraphQLObjectType({
   name: 'User',
@@ -13,10 +14,10 @@ const UserType = new GraphQLObjectType({
     email: { type: GraphQLString },
 
     friends: {
-      type: new GraphQLList(UserType),
+      type: new GraphQLList(FriendType),
     },
     blockedUsers: {
-      type: new GraphQLList(UserType),
+      type: new GraphQLList(FriendType),
     },
   }),
 });

@@ -4,17 +4,17 @@ const Story = require('../../models/storyModel');
 async function getUserStories(_, { userId }, context) {
   const viewerId = context.userId;
 
-  const user = await user.findById(userId).lean();
-  if (!user) throw new Error('User not found');
+  const tergetUser = await user.findById(userId).lean();
+  if (!tergetUser) throw new Error('User not found');
 
   const isOwner = viewerId && viewerId === userId;
-  const friend = viewerId ? isFriend(user, viewerId) : false;
+  const friend = viewerId ? isFriend(tergetUser, viewerId) : false;
 
-  if (user.storyPrivacy === 'onlyme' && !isOwner) {
+  if (tergetUser.storyPrivacy === 'onlyme' && !isOwner) {
     return [];
   }
 
-  if (user.storyPrivacy === 'friends' && !isOwner && !friend) {
+  if (tergetUser.storyPrivacy === 'friends' && !isOwner && !friend) {
     return [];
   }
 

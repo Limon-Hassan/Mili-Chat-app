@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const user = require('../../models/user');
+const storyModel = require('../../models/storyModel');
 
 async function getMe(context) {
   if (!context.token) {
@@ -14,9 +15,18 @@ async function getMe(context) {
   const User = await user
     .findById(decoded.userId)
     .populate('friends', 'id name email avatar')
-    .populate('blockedUsers', 'id name email avatar');
+    .populate('blockedUsers', 'id name email avatar')
+    .lean();
 
   if (!User) throw new Error('User not found');
+
+  const stories = await storyModel
+    .find({ user: User._id })
+    .populate('stories.seenBy.user', 'id name avatar')
+    .sort({ createdAt: -1 })
+    .lean();
+
+  User.stories = stories;
 
   return User;
 }

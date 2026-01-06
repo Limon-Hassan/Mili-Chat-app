@@ -6,12 +6,12 @@ const {
   GraphQLBoolean,
 } = require('graphql');
 const { UserType } = require('./userType');
-const user = require('../../models/user');
+const { StoryUserType } = require('./StoryUserType');
 
 let ReactionType = new GraphQLObjectType({
   name: 'Reaction',
   fields: () => ({
-    user: { type: UserType },
+    user: { type: StoryUserType },
     type: { type: GraphQLString },
     reactedAt: { type: GraphQLString },
   }),
@@ -20,7 +20,7 @@ let ReactionType = new GraphQLObjectType({
 let SeenType = new GraphQLObjectType({
   name: 'Seen',
   fields: () => ({
-    user: { type: UserType },
+    user: { type: StoryUserType },
     seenAt: { type: GraphQLString },
   }),
 });
@@ -41,7 +41,7 @@ let StoryType = new GraphQLObjectType({
   name: 'Story',
   fields: () => ({
     id: { type: GraphQLID },
-    user: { type: UserType },
+    user: { type: StoryUserType },
     stories: { type: new GraphQLList(storyItemType) },
     privacy: { type: GraphQLString },
     createdAt: { type: GraphQLString },

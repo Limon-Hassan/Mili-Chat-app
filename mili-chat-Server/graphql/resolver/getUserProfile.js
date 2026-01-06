@@ -1,28 +1,31 @@
-const User = require('../../models/user');
+const user = require('../../models/user');
 
 async function getUserProfile(_, { userId }, context) {
   const viewerId = context.userId;
 
-  const user = await User.findById(userId).populate('friends', '_id').lean();
+  const tergetUser = await user
+    .findById(userId)
+    .populate('friends', '_id')
+    .lean();
 
-  if (!user) throw new Error('User not found');
+  if (!tergetUser) throw new Error('User not found');
 
   const isOwner = viewerId && viewerId === userId;
-  const friend = viewerId ? isFriend(user, viewerId) : false;
+  const friend = viewerId ? isFriend(tergetUser, viewerId) : false;
 
   let profile = {
-    id: user._id,
-    name: user.name,
-    avatar: user.avatar,
+    id: tergetUser._id,
+    name: tergetUser.name,
+    avatar: tergetUser.avatar,
   };
 
   if (
     isOwner ||
-    user.storyPrivacy === 'public' ||
-    (user.storyPrivacy === 'friends' && friend)
+    tergetUser.storyPrivacy === 'public' ||
+    (tergetUser.storyPrivacy === 'friends' && friend)
   ) {
-    profile.bio = user.bio;
-    profile.voiceIntro = user.voiceIntro;
+    profile.bio = tergetUser.bio;
+    profile.voiceIntro = tergetUser.voiceIntro;
   }
 
   return profile;
@@ -31,6 +34,5 @@ async function getUserProfile(_, { userId }, context) {
 function isFriend(user, viewerId) {
   return user.friends.some(id => id.toString() === viewerId.toString());
 }
-
 
 module.exports = getUserProfile;

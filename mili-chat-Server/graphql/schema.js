@@ -12,6 +12,9 @@ const storyResolver = require('./resolver/storyResolver');
 const storyQuery = require('./queries/storyQuery');
 const messageQueries = require('./queries/messageQueries');
 const messageResolver = require('./resolver/messageResolver');
+const userProfileQuery = require('./queries/userProfileQuery');
+const userFriendQuery = require('./queries/userFriendQuery');
+const userStoriesQuery = require('./queries/userStoriesQuery');
 
 const RootQuery = new GraphQLObjectType({
   name: 'Query',
@@ -22,6 +25,9 @@ const RootQuery = new GraphQLObjectType({
     ...groupQuery,
     ...storyQuery,
     ...messageQueries,
+    ...userFriendQuery,
+    ...userStoriesQuery,
+    ...userProfileQuery,
   },
 });
 
