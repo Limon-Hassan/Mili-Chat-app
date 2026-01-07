@@ -3,14 +3,15 @@ let cors = require('cors');
 require('dotenv').config();
 let dbConfig = require('./Config/dbConfig');
 let jwt = require('jsonwebtoken');
-
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@apollo/server/express4');
 const schema = require('./graphql/schema');
+let http = require('http');
+const { init: initSocket } = require('./socket_server');
 
 async function startServer() {
   let app = express();
-
+  const httpServer = http.createServer(app);
   app.use(cors());
   app.use(express.json());
   dbConfig();
@@ -51,9 +52,8 @@ async function startServer() {
   app.get('/', (req, res) => {
     res.send('Mili server is running');
   });
-
-
-  app.listen(process.env.Server_port, () => {
+  initSocket(httpServer);
+  httpServer.listen(process.env.Server_port, () => {
     console.log('Server is running on port', process.env.Server_port);
   });
 }

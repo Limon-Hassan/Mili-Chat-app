@@ -1,6 +1,7 @@
 const friendRequest = require('../models/friendRequest');
 const user = require('../models/user');
 const { createNotify } = require('./NotificationContoller');
+const { getIO, getSocketIds } = require('../socket_server');
 
 async function sendFriendRequest({ toUserId }, context) {
   if (!context.userId) {
@@ -53,6 +54,15 @@ async function sendFriendRequest({ toUserId }, context) {
     message: `${me.name} has sent you a friend request.`,
     relatedUserId: context.userId,
   });
+  const io = getIO();
+  const receivers = getSocketIds(toUserId);
+
+  receivers.forEach(socketId => {
+    io.to(socketId).emit('friendRequestReceived', {
+      fromUserId: context.userId,
+      message: `${me.name} sent you a friend request`,
+    });
+  });
 
   await newRequestDoc.populate('from to', 'id name email avatar');
 
@@ -96,6 +106,16 @@ async function acceptFriendRequest({ requestId }, context) {
     relatedUserId: request.to._id,
   });
 
+  const io = getIO();
+  const receivers = getSocketIds(request.from._id.toString());
+
+  receivers.forEach(socketId => {
+    io.to(socketId).emit('friendRequestAccepted', {
+      fromUserId: request.to._id,
+      message: `${request.to.name} accepted your friend request`,
+    });
+  });
+
   return request;
 }
 
@@ -104,7 +124,7 @@ async function requestRejected({ requestId }, context) {
     throw new Error('Authentication required');
   }
 
-  let request = await friendRequest.findById(requestId);
+  let request = await friendRequest.findById(requestId).populate('to', 'name');
   if (!request) {
     throw new Error('Friend request not found');
   }
@@ -118,9 +138,19 @@ async function requestRejected({ requestId }, context) {
   await createNotify({
     userId: request.from,
     type: 'friend_request_rejected',
-    message: `Your friend request has been rejected.`,
+    message: `${request.to.name} has rejected your friend request`,
     relatedUserId: request.to,
   });
+  const io = getIO();
+  const receivers = getSocketIds(request.from.toString());
+
+  receivers.forEach(socketId => {
+    io.to(socketId).emit('friendRequestRejected', {
+      fromUserId: request.to.toString(),
+      message: `${request.to.name} has rejected your friend request`,
+    });
+  });
+
   return request;
 }
 
