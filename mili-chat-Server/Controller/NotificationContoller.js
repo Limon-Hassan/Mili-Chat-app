@@ -1,4 +1,5 @@
 const notification = require('../models/notification');
+const { getIO, getSocketIds } = require('../socket_server');
 
 async function createNotify({ userId, type, message, relatedUserId }) {
   try {
@@ -9,6 +10,11 @@ async function createNotify({ userId, type, message, relatedUserId }) {
       relatedUser: relatedUserId,
     });
     await notify.save();
+
+    const io = getIO();
+    getSocketIds(userId).forEach(sid => {
+      io.to(sid).emit('newNotification', notify);
+    });
     return notify;
   } catch (error) {
     console.error('Error creating notification:', error);
@@ -42,6 +48,10 @@ async function markAsSeen(userId) {
       { user: userId, isRead: false },
       { $set: { isRead: true } }
     );
+    const io = getIO();
+    getSocketIds(userId).forEach(sid => {
+      io.to(sid).emit('notificationSeen');
+    });
 
     return true;
   } catch (error) {

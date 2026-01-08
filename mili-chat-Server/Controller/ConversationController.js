@@ -1,6 +1,7 @@
 const conversionSchema = require('../models/conversionSchema');
 const messageModel = require('../models/messageModel');
 const user = require('../models/user');
+const { getIO, getSocketIds } = require('../socket_server');
 
 async function sendFirstMessage(
   { text, receiverId, type, mediaUrl, duration },
@@ -42,7 +43,13 @@ async function sendFirstMessage(
 
   await message.populate('sender', 'id name email avatar');
   await message.populate('receiver', 'id name email avatar');
-
+  const io = getIO();
+  getSocketIds(receiverId).forEach(sid => {
+    io.to(sid).emit('newMessage', {
+      message,
+      conversation: newConversation,
+    });
+  });
   return message;
 }
 
@@ -152,6 +159,19 @@ async function sendMessageWithId(
 
   await message.populate('sender', 'id name email avatar');
   await message.populate('receiver', 'id name email avatar');
+  let io = getIO();
+  if (!conversation.group) {
+    getSocketIds(receiverId).forEach(sid => {
+      io.to(sid).emit('newMessage', { message });
+    });
+  }
+  conversation.participants.forEach(uid => {
+    if (uid.toString() !== context.userId) {
+      getSocketIds(uid.toString()).forEach(sid => {
+        io.to(sid).emit('newMessage', { message });
+      });
+    }
+  });
 
   return message;
 }
@@ -259,6 +279,18 @@ async function markMassageAsDelivery({ conversationId }, context) {
     );
   }
 
+  let io = getIO();
+  conversation.participants.forEach(uid => {
+    if (uid.toString() !== context.userId) {
+      getSocketIds(uid.toString()).forEach(sid => {
+        io.to(sid).emit('messageDelivered', {
+          conversationId,
+          deliveredBy: context.userId,
+        });
+      });
+    }
+  });
+
   return true;
 }
 
@@ -298,6 +330,19 @@ async function markMessagesAsRead({ conversationId }, context) {
     );
   }
 
+  let io = getIO();
+
+  conversation.participants.forEach(uid => {
+    if (uid.toString() !== context.userId) {
+      getSocketIds(uid.toString()).forEach(sid => {
+        io.to(sid).emit('messageSeen', {
+          conversationId,
+          seenBy: context.userId,
+        });
+      });
+    }
+  });
+
   return true;
 }
 
@@ -311,6 +356,9 @@ async function deleteMessage({ messageId }, context) {
     throw new Error('Access denied');
 
   await messageModel.findByIdAndDelete(messageId);
+  let io = getIO();
+
+  io.to(message.conversation.toString()).emit('messageDeleted', { messageId });
   return true;
 }
 
@@ -364,6 +412,16 @@ async function editMessage({ messageId, newText }, context) {
     await message.populate('receiver', 'id name avatar');
   }
 
+  let conversation = await conversionSchema.findById(message.conversation);
+  let io = getIO();
+  conversation.participants.forEach(uid => {
+    if (uid.toString() !== context.userId) {
+      getSocketIds(uid.toString()).forEach(sid => {
+        io.to(sid).emit('messageEdited', { message });
+      });
+    }
+  });
+
   return message;
 }
 
@@ -397,6 +455,17 @@ async function reactToMessage({ messageId, emoji }, context) {
   if (message.receiver) {
     await message.populate('receiver', 'id name avatar');
   }
+
+  let conversation = await conversionSchema.findById(message.conversation);
+  let io = getIO();
+  conversation.participants.forEach(uid => {
+    if (uid.toString() !== context.userId) {
+      getSocketIds(uid.toString()).forEach(sid => {
+        io.to(sid).emit('messageReaction', { message });
+      });
+    }
+  });
+
   return message;
 }
 

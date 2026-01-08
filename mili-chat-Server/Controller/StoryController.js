@@ -1,6 +1,7 @@
 const storyModel = require('../models/storyModel');
 const user = require('../models/user');
 const { createNotify } = require('./NotificationContoller');
+const { getIO, getSocketIds } = require('../socket_server');
 
 async function createStory({ videoUrl }, context) {
   if (!context.userId) throw new Error('Authentication required');
@@ -18,7 +19,29 @@ async function createStory({ videoUrl }, context) {
     storyDoc.stories.push({ video: videoUrl, expiresAt });
     await storyDoc.save();
   }
+
   await storyDoc.populate('user', 'name id avatar storyPrivacy');
+
+  const me = await user.findById(context.userId).populate('friends', '_id');
+
+  const io = getIO();
+
+  for (let friend of me.friends) {
+    await createNotify({
+      userId: friend._id,
+      type: 'new_story',
+      message: `${me.name} added a new story`,
+      relatedUserId: context.userId,
+    });
+
+    getSocketIds(friend._id.toString()).forEach(sid => {
+      io.to(sid).emit('newStory', {
+        userId: context.userId,
+        userName: me.name,
+        avatar: me.avatar,
+      });
+    });
+  }
   return storyDoc;
 }
 
@@ -85,13 +108,26 @@ async function markAsSeen({ storyId, storyItemId }, context) {
   }
 
   await story.populate('stories.seenBy.user', 'id name avatar');
+  const io = getIO();
+  const ownerId = story.user._id.toString();
+
+  getSocketIds(ownerId).forEach(sid => {
+    io.to(sid).emit('storySeen', {
+      storyId,
+      storyItemId,
+      seenBy: {
+        userId: context.userId,
+        seenAt: new Date(),
+      },
+    });
+  });
 
   return story;
 }
 
 async function storyReaction({ storyId, storyItemId, reaction }, context) {
   if (!context.userId) throw new Error('Authentication required');
-  let story = await storyId.findById(storyId);
+  let story = await storyModel.findById(storyId);
   if (!story) {
     throw new Error('Story not found');
   }
@@ -121,6 +157,16 @@ async function storyReaction({ storyId, storyItemId, reaction }, context) {
 
   await story.save();
   await story.populate('stories.reactions.user', 'id name avatar');
+  let io = getIO();
+
+  getSocketIds(story.user._id.toString()).forEach(sid => {
+    io.to(sid).emit('storyReaction', {
+      storyId,
+      storyItemId,
+      reaction,
+      userId: context.userId,
+    });
+  });
   return true;
 }
 
@@ -158,6 +204,17 @@ async function expireStory() {
           relatedUserId: null,
         });
         storyItem.expiredNotified = true;
+
+        let io = getIO();
+        getSocketIds(storyDoc.user.toString()).forEach(sid => {
+          io.to(sid).emit('storyExpired', {
+            storyId: storyDoc._id.toString(),
+            storyItemId: storyItem._id.toString(),
+            totalSeen,
+            topReaction,
+            maxCount,
+          });
+        });
       }
     }
 

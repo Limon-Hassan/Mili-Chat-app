@@ -2,6 +2,7 @@ const conversionSchema = require('../models/conversionSchema');
 const groupSchema = require('../models/groupSchema');
 const user = require('../models/user');
 const { createNotify } = require('./NotificationContoller');
+const { getIO, getSocketIds } = require('../socket_server');
 
 async function createGroup({ name, members = [], photo }, context) {
   if (!context.userId) {
@@ -34,6 +35,19 @@ async function createGroup({ name, members = [], photo }, context) {
     { path: 'Admin', select: 'id name email avatar' },
     { path: 'members', select: 'id name email avatar' },
   ]);
+
+  const io = getIO();
+
+  uniqueMembers.forEach(memberId => {
+    if (memberId !== context.userId) {
+      getSocketIds(memberId).forEach(sid => {
+        io.to(sid).emit('addedToGroup', {
+          group: newGroup,
+        });
+      });
+    }
+  });
+
   return newGroup;
 }
 
@@ -59,8 +73,14 @@ async function addMembers({ groupId, members = [] }, context) {
     throw new Error('You can only add your friends');
   }
 
-  if (Group.members.map(id => id.toString()).includes(validMembers[0])) {
-    throw new Error('User is already a member');
+  const existingMembers = Group.members.map(id => id.toString());
+
+  const alreadyAdded = validMembers.filter(memberId =>
+    existingMembers.includes(memberId)
+  );
+
+  if (alreadyAdded.length > 0) {
+    throw new Error('One or more users are already members');
   }
 
   let updatedMembers = Array.from(
@@ -76,6 +96,17 @@ async function addMembers({ groupId, members = [] }, context) {
     { path: 'Admin', select: 'id name email avatar' },
     { path: 'members', select: 'id name email avatar' },
   ]);
+
+  const io = getIO();
+
+  validMembers.forEach(memberId => {
+    const socketIds = getSocketIds(memberId);
+    socketIds.forEach(sid => {
+      io.to(sid).emit('addedToGroup', {
+        group: Group,
+      });
+    });
+  });
   return Group;
 }
 
@@ -107,6 +138,15 @@ async function removeMember({ groupId, memberId }, context) {
     { path: 'Admin', select: 'id name email avatar' },
     { path: 'members', select: 'id name email avatar' },
   ]);
+
+  const io = getIO();
+  const socketIds = getSocketIds(memberId);
+
+  socketIds.forEach(sid => {
+    io.to(sid).emit('removedFromGroup', {
+      groupId,
+    });
+  });
   return Group;
 }
 
@@ -134,6 +174,17 @@ async function leaveGroup({ groupId }, context) {
     { path: 'Admin', select: 'id name email avatar' },
     { path: 'members', select: 'id name email avatar' },
   ]);
+
+  const io = getIO();
+
+  Group.members.forEach(memberId => {
+    getSocketIds(memberId.toString()).forEach(sid => {
+      io.to(sid).emit('memberLeftGroup', {
+        groupId,
+        userId: context.userId,
+      });
+    });
+  });
   return Group;
 }
 
@@ -150,6 +201,17 @@ async function deleteGroup({ groupId }, context) {
   }
 
   await groupSchema.findByIdAndDelete(groupId);
+  const io = getIO();
+
+  const members = Group.members.map(id => id.toString());
+
+  members.forEach(memberId => {
+    if (memberId !== context.userId) {
+      getSocketIds(memberId).forEach(sid => {
+        io.to(sid).emit('groupDeleted', { groupId });
+      });
+    }
+  });
   return true;
 }
 
@@ -179,6 +241,15 @@ async function requestToJoinGroup({ groupId }, context) {
     { path: 'Admin', select: 'id name email avatar' },
     { path: 'members', select: 'id name email avatar' },
   ]);
+
+  const io = getIO();
+  getSocketIds(group.Admin.toString()).forEach(sid => {
+    io.to(sid).emit('groupJoinRequest', {
+      groupId,
+      message: `${me.name} wants to join your group`,
+      user: me,
+    });
+  });
   return group;
 }
 
@@ -206,6 +277,15 @@ async function handleJoinRequest({ groupId, userId, action }, context) {
     { path: 'Admin', select: 'id name email avatar' },
     { path: 'members', select: 'id name email avatar' },
   ]);
+  if (action === 'accept') {
+    const io = getIO();
+    getSocketIds(userId).forEach(sid => {
+      io.to(sid).emit('joinRequestAccepted', {
+        group,
+      });
+    });
+  }
+
   return group;
 }
 
