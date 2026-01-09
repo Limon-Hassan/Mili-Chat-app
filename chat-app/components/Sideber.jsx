@@ -34,7 +34,7 @@ const Sideber = ({ setActivePage }) => {
     <>
       <nav
         className="
-    fixed top-0 left-0 w-full h-[100px] 
+    fixed top-0 left-0 w-full h-20 
     border-b-2 border-white p-5
     mobile:block tablet:block laptop:block computer:hidden
   "
@@ -162,7 +162,7 @@ const Sideber = ({ setActivePage }) => {
                 hoveredButton.home
                   ? 'bg-white border-r-4 border-purple-600 rounded-r-lg text-purple-600 scale-110'
                   : 'border border-gray-400 scale-100'
-              } ease-in-out duration-300 cursor-pointer mx-auto w-[90px] h-20 flex items-center justify-center`}
+              } ease-in-out duration-300 cursor-pointer mx-auto w-23 h-15 flex items-center justify-center`}
             >
               <GoHome />
             </button>
@@ -175,7 +175,7 @@ const Sideber = ({ setActivePage }) => {
                 hoveredButton.message
                   ? 'bg-white border-r-4 border-purple-600 rounded-r-lg text-purple-600 scale-110'
                   : 'border border-gray-400 scale-100'
-              } ease-in-out duration-300 cursor-pointer mx-auto w-[90px] h-20 flex items-center justify-center`}
+              } ease-in-out duration-300 cursor-pointer mx-auto w-23 h-15 flex items-center justify-center`}
             >
               <LuMessageCircleMore />
             </button>
@@ -188,7 +188,7 @@ const Sideber = ({ setActivePage }) => {
                 hoveredButton.notification
                   ? 'bg-white border-r-4 border-purple-600 rounded-r-lg text-purple-600 scale-110'
                   : 'border border-gray-400 scale-100'
-              } ease-in-out duration-300 cursor-pointer mx-auto w-[90px] h-20 flex items-center justify-center`}
+              } ease-in-out duration-300 cursor-pointer mx-auto w-23 h-15 flex items-center justify-center`}
             >
               <IoMdNotificationsOutline />
             </button>
@@ -201,7 +201,7 @@ const Sideber = ({ setActivePage }) => {
                 hoveredButton.settings
                   ? 'bg-white border-r-4 border-purple-600 rounded-r-lg text-purple-600 scale-110'
                   : 'border border-gray-400 scale-100'
-              } ease-in-out duration-300 cursor-pointer mx-auto w-[90px] h-20 flex items-center justify-center`}
+              } ease-in-out duration-300 cursor-pointer mx-auto w-23 h-15 flex items-center justify-center`}
             >
               <IoSettingsOutline />
             </button>
@@ -214,7 +214,7 @@ const Sideber = ({ setActivePage }) => {
                 hoveredButton.logout
                   ? 'bg-white border-r-4 border-purple-600 rounded-r-lg text-purple-600 scale-110'
                   : 'border border-gray-400 scale-100'
-              } ease-in-out duration-300 cursor-pointer mx-auto w-[90px] h-20 flex items-center justify-center`}
+              } ease-in-out duration-300 cursor-pointer mx-auto w-23 h-15 flex items-center justify-center`}
             >
               <GrLogout />
             </button>

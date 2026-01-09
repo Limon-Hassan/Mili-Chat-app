@@ -1,15 +1,22 @@
 'use client';
+import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 import React from 'react';
 import { LuMessageCircleMore } from 'react-icons/lu';
 
 const MobileFriends = () => {
+  let dynamic = useDynamicHeight({
+    baseHeight: 555,
+    basePx: 230,
+    maxPx: 480,
+  });
+
   let handleMessage = () => {
     window.location.href = '/message';
   };
 
   return (
     <>
-      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-[390px] mobile:h-auto tablet:h-auto laptop:h-auto bg-transparent border border-white p-2 rounded-lg mobile:absolute mobile:top-[110px] mobile:left-0 tablet:absolute tablet:top-[110px] tablet:left-0 laptop:absolute laptop:top-[110px] laptop:left-0 ">
+      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-[390px] mobile:h-auto tablet:h-auto laptop:h-auto bg-transparent border border-white p-3 rounded-lg mobile:absolute mobile:top-[100px] mobile:left-0 tablet:absolute tablet:top-[110px] tablet:left-0 laptop:absolute laptop:top-[110px] laptop:left-0 ">
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
           Friends
         </h1>
@@ -24,7 +31,10 @@ const MobileFriends = () => {
           </div>
         </div>
         <div className="bg-white h-px w-full my-3"></div>
-        <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full max-h-[55dvh] min-h-[40dvh]">
+        <ul
+          className="flex flex-col gap-1 mt-5 overflow-auto w-full"
+          style={{ maxHeight: `${dynamic}px` }}
+        >
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
             <div className="flex items-center gap-2.5">
               <img

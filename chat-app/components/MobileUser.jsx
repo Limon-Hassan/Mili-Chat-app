@@ -1,16 +1,23 @@
+import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 import { UserPlus } from 'lucide-react';
 
 const MobileUser = () => {
+  const dynamic = useDynamicHeight({
+    baseHeight: 555,
+    basePx: 180,
+    maxPx: 430,
+  });
+
   return (
     <>
       <section
-        className={`mobile:w-full tablet:w-full laptop:w-full computer:w-0 h-auto  bg-transparent border border-white p-5 rounded-lg mobile:absolute mobile:top-43.75 mobile:left-0 tablet:absolute tablet:top-46.25 tablet:left-0 laptop:absolute laptop:top-46.25 laptop:left-0 computer:hidden`}
+        className={`mobile:w-full tablet:w-full laptop:w-full computer:w-0 bg-transparent border border-white mobile:p-4 tablet:p-5 laptop:p-5 rounded-lg mobile:absolute mobile:top-38.75 mobile:left-0 tablet:absolute tablet:top-46.25 tablet:left-0 laptop:absolute laptop:top-46.25 laptop:left-0 computer:hidden`}
       >
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
           Add user
         </h1>
 
-        <div className="mt-5">
+        <div className="mobile:mt-2.5 tablet:mt-5 laptop:mt-5">
           <div className=" w-full h-10 bg-white rounded-full mr-1.5">
             <input
               className="w-full h-full bg-transparent outline-none px-3 text-black"
@@ -20,7 +27,10 @@ const MobileUser = () => {
           </div>
         </div>
         <div className="bg-white h-px w-full my-3"></div>
-        <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full max-h-[44dvh]  min-h-[30dvh]">
+        <ul
+          className={`flex flex-col gap-1 mt-5 overflow-auto w-full scrollbar-hide transition-all ease-in-out duration-400 `}
+          style={{ maxHeight: `${dynamic}px` }}
+        >
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
             <div className="flex items-center gap-2.5">
               <img

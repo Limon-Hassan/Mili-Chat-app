@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { use, useState } from 'react';
 import VoiceChatCard from './VoiceChatCard';
 import AllFriend from './AllFriend';
 import { Plus } from 'lucide-react';
@@ -12,8 +12,10 @@ import ShowStatus from './ShowStatus';
 import SeeProfileFicture from './SeeProfileFicture';
 import AddStory from './AddStory';
 import BlockUser from './BlockUser';
+import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 
 const MobileSetting = () => {
+  let dynamic = useDynamicHeight({ baseHeight: 555, basePx: 255, maxPx: 500 });
   const [active, setActive] = useState({
     status: false,
     story: false,
@@ -29,7 +31,7 @@ const MobileSetting = () => {
 
   return (
     <>
-      <section className="mobile:w-full tablet:w-full laptop:w-full p-2 bg-gray-400/30 rounded-lg border border-gray-300 mobile:absolute mobile:top-27.5 mobile:left-0 tablet:absolute tablet:top-27.5 tablet:left-0 laptop:absolute laptop:top-27.5 laptop:left-0 ">
+      <section className="mobile:w-full tablet:w-full laptop:w-full p-2 bg-gray-400/30 rounded-lg border border-gray-300 mobile:absolute mobile:top-22.5 mobile:left-0 tablet:absolute tablet:top-27.5 tablet:left-0 laptop:absolute laptop:top-27.5 laptop:left-0 ">
         <div className="border-b border-gray-400">
           <h2 className="text-[34px] font-bold font-inter text-white">
             Account
@@ -38,7 +40,10 @@ const MobileSetting = () => {
             Manage your account settings and set e-mail preferences.
           </p>
         </div>
-        <div className="mobile:mt-6 tablet:mt-10 laptop:mt-10 flex flex-col mx-auto gap-5 p-2 overflow-y-auto max-h-[56dvh] min-h-[40dvh]">
+        <div
+          className="mobile:mt-6 tablet:mt-10 laptop:mt-10 flex flex-col mx-auto gap-5 p-2 overflow-y-auto"
+          style={{ maxHeight: `${dynamic}px` }}
+        >
           <div className="relative">
             <button
               onClick={() => toggoleActive('edite')}

@@ -1,16 +1,22 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 
 const Group = () => {
+  let dynamic = useDynamicHeight({
+    baseHeight: 555,
+    basePx: 180,
+    maxPx: 430,
+  });
 
   return (
     <>
-      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-[390px] mobile:h-auto tablet:h-auto laptop:h-auto computer:h-[430px] bg-transparent border border-white p-5 rounded-lg mobile:absolute mobile:top-[175px] mobile:left-0 tablet:absolute tablet:top-[185px] tablet:left-0 laptop:absolute laptop:top-[185px] laptop:left-0 computer:relative computer:top-0">
+      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-[390px]  tablet:h-auto laptop:h-auto computer:h-[430px] bg-transparent border border-white mobile:p-4 tablet:p-5 laptop:p-5 computer:p-5 rounded-lg mobile:absolute mobile:top-38.75 mobile:left-0 tablet:absolute tablet:top-[185px] tablet:left-0 laptop:absolute laptop:top-[185px] laptop:left-0 computer:relative computer:top-0">
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
           Group
         </h1>
 
-        <div className="mt-5 flex items-center justify-between">
+        <div className="mobile:mt-2.5 tablet:mt-5 laptop:mt-5 computer:mt-5 flex items-center justify-between">
           <div className=" w-full h-10 bg-white rounded-full mr-1.5">
             <input
               className="w-full h-full bg-transparent outline-none px-3 text-black"
@@ -24,8 +30,8 @@ const Group = () => {
         </div>
         <div className="bg-white h-px w-full my-3"></div>
         <ul
-          className="flex flex-col gap-1 mt-5 overflow-auto w-full mobile:max-h-[44dvh] mobile:min-h-[30dvh] computer:max-h-60"
-       
+          className="flex flex-col gap-1 mt-5 overflow-auto w-full  computer:max-h-60 transition-all ease-in-out duration-400"
+          style={{ maxHeight: `${dynamic}px` }}
         >
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
             <div className="flex items-center gap-2.5">

@@ -14,7 +14,7 @@ const MobileSideIcons = () => {
 
   return (
     <>
-      <div className="relative flex items-center gap-2 mt-[85px] mobile:flex tablet:flex laptop:flex computer:hidden ">
+      <div className="relative flex items-center gap-2 mt-17.5 mobile:flex tablet:flex laptop:flex computer:hidden ">
         <button
           onClick={() => handleActive('a')}
           className={`${

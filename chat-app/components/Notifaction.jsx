@@ -1,8 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 
 export default function Notification() {
+  let dynamic = useDynamicHeight({
+    baseHeight: 555,
+    basePx: 280,
+    maxPx: 530,
+  });
   const notifications = [
     {
       id: 1,
@@ -87,12 +92,15 @@ export default function Notification() {
   ];
 
   return (
-    <div className="mobile:w-full tablet:w-full laptop:w-full computer:w-[400px] h-auto bg-transparent border border-white p-2 rounded-lg mobile:absolute mobile:top-[110px] mobile:left-0 tablet:absolute tablet:top-[110px] tablet:left-0 laptop:absolute laptop:top-[110px] laptop:left-0 computer:relative computer:top-0">
+    <div className="mobile:w-full tablet:w-full laptop:w-full computer:w-[400px] h-auto bg-transparent border border-white p-3 rounded-lg mobile:absolute mobile:top-25 mobile:left-0 tablet:absolute tablet:top-[110px] tablet:left-0 laptop:absolute laptop:top-[110px] laptop:left-0 computer:relative computer:top-0">
       <div className="px-4 py-3 border-b">
         <h3 className="font-bold text-[24px]">Notifications</h3>
       </div>
 
-      <div className="flex flex-col gap-1 mt-5 overflow-auto w-full computer:max-h-200 mobile:max-h-[62dvh] mobile:min-h-[45dvh]">
+      <div
+        className="flex flex-col gap-1 mt-5 overflow-auto w-full computer:max-h-200"
+        style={{ maxHeight: `${dynamic}px` }}
+      >
         {notifications.map(n => (
           <div
             key={n.id}
