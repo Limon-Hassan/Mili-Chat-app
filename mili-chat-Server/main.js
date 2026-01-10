@@ -12,7 +12,25 @@ const { init: initSocket } = require('./socket_server');
 async function startServer() {
   let app = express();
   const httpServer = http.createServer(app);
-  app.use(cors(['http://localhost:3000', 'https://mili-chat-app.vercel.app']));
+  app.use(
+    cors({
+      origin: function (origin, callback) {
+        if (!origin) return callback(null, true);
+
+        const allowedOrigins = [
+          'http://localhost:3000',
+          'https://mili-chat-app.vercel.app',
+        ];
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true, 
+    })
+  );
 
   app.use(express.json());
   dbConfig();

@@ -1,7 +1,7 @@
 'use client';
 import React, { useRef } from 'react';
 
-function FloatingInput({ label, type, id }) {
+function FloatingInput({ label, type, value, onChange, id }) {
   const inputRef = useRef(null);
   const labelRef = useRef(null);
 
@@ -47,6 +47,8 @@ function FloatingInput({ label, type, id }) {
         required
         onFocus={handleFocus}
         onBlur={handleBlur}
+        value={value}
+        onChange={onChange}
         className="w-full h-full rounded-md border border-white bg-transparent px-4 text-[16px] font-semibold font-open_sens text-white outline-none focus:border-blue-500 transition-all duration-300"
       />
       <label

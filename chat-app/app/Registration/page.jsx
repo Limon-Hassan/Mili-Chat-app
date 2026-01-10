@@ -3,9 +3,18 @@
 import { useEffect, useRef, useState } from 'react';
 import Container from '../../components/container/Container';
 import FloatingInput from '../../components/FloatingInputs';
+import { useGraphQL } from '@/components/Hook/useGraphQL';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const page = () => {
+  const { request, loading, error } = useGraphQL();
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+  });
   const [active, setActive] = useState(false);
+  let [passShow, setPassShow] = useState(false);
   let menuRef = useRef(null);
 
   useEffect(() => {
@@ -20,27 +29,78 @@ const page = () => {
     };
   }, []);
 
+  const handleChange = e => {
+    setFormData(prev => ({ ...prev, [e.target.id]: e.target.value }));
+  };
+
+  let handleSubmit = async () => {
+    setActive(true);
+    const REGISTER_MUTATION = `
+      mutation RegisterUser($name:String!, $email:String!, $password:String!) {
+        register(name:$name, email:$email, password:$password) {
+          id
+          name
+          email
+        }
+      }
+    `;
+
+    try {
+      let data = await request(REGISTER_MUTATION, formData);
+      console.log(data);
+    } catch (error) {
+      console.log(error);
+      console.error(error);
+    }
+  };
+
   return (
     <section className="relative z-10">
       <Container>
         <div className="flex justify-center items-center h-screen">
-          <div className="mobile:w-full target:w-full laptop:w-[660px] computer:w-[660px] h-auto p-8 rounded-lg border border-white   shadow-2xl shadow-blue-600">
+          <div className="mobile:w-full target:w-full laptop:w-165 computer:w-165 h-auto p-8 rounded-lg border border-white shadow-2xl shadow-blue-600">
             <h1
               style={{
                 fontSize: 'clamp(25px, 2vw + 1rem, 36px)',
               }}
               className=" font-bold font-inter text-white leading-6
-              flex items-center justify-center mb-[50px]"
+              flex items-center justify-center mb-12.5"
             >
               Register Your Account
             </h1>
-            <FloatingInput label="Username" type="text" id="name" />
-            <FloatingInput label="Email" type="email" id="email" />
-            <FloatingInput label="Password" type="password" id="password" />
+            <FloatingInput
+              onChange={handleChange}
+              value={formData.name}
+              label="Username"
+              type="text"
+              id="name"
+            />
+            <FloatingInput
+              onChange={handleChange}
+              value={formData.email}
+              label="Email"
+              type="email"
+              id="email"
+            />
+            <div className="relative">
+              <FloatingInput
+                onChange={handleChange}
+                value={formData.password}
+                label="Password"
+                type={passShow ? 'text' : 'password'}
+                id="password"
+              />
+              <span
+                onClick={() => setPassShow(!passShow)}
+                className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-gray-100 text-[20px]"
+              >
+                {passShow ? <FaEye /> : <FaEyeSlash />}
+              </span>
+            </div>
             <button
-              onClick={() => setActive(true)}
+              onClick={handleSubmit}
               ref={menuRef}
-              className="relative overflow-hidden text-[18px] font-inter font-bold text-white mobile:w-full target:w-full laptop:w-[300px] computer:w-[300px] h-[50px] border border-white mt-3 flex items-center justify-center mx-auto group cursor-pointer"
+              className="relative overflow-hidden text-[18px] font-inter font-bold text-white mobile:w-full target:w-full laptop:w-75 computer:w-75 h-12.5 border border-white mt-3 flex items-center justify-center mx-auto group cursor-pointer"
             >
               <span
                 className={`relative group-hover:text-black ${
