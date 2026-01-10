@@ -35,7 +35,7 @@ function getSocketIds(userId) {
 function init(server) {
   io = new Server(server, {
     cors: {
-      origin: '*',
+      origin: ['http://localhost:3000', 'https://mili-chat-app.vercel.app'],
       methods: ['GET', 'POST'],
     },
   });
@@ -45,7 +45,7 @@ function init(server) {
 
     socket.on('joinUser', ({ userId }) => {
       registerUser(socket, userId);
-      socket.join(userId); 
+      socket.join(userId);
       console.log(`👤 User ${userId} joined their private room`);
     });
 

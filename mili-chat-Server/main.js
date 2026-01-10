@@ -12,7 +12,8 @@ const { init: initSocket } = require('./socket_server');
 async function startServer() {
   let app = express();
   const httpServer = http.createServer(app);
-  app.use(cors());
+  app.use(cors(['http://localhost:3000', 'https://mili-chat-app.vercel.app']));
+
   app.use(express.json());
   dbConfig();
 
