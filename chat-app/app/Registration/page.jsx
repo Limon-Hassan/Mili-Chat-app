@@ -6,6 +6,7 @@ import FloatingInput from '../../components/FloatingInputs';
 import { useGraphQL } from '@/components/Hook/useGraphQL';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import Loader from '@/components/Loader';
+import { useGoogleLogin } from '@react-oauth/google';
 
 const page = () => {
   const { request, loading, error } = useGraphQL();
@@ -99,12 +100,50 @@ const page = () => {
   `;
 
       const data = await request(FACEBOOK_LOGIN, { accessToken });
-      
+
       localStorage.setItem('userId', data.facebookLogin.user.id);
     } catch (error) {
       console.error(error);
       console.log(error);
     }
+  };
+
+  const googleLogin = useGoogleLogin({
+    flow: 'implicit',
+    onSuccess: async tokenResponse => {
+      try {
+        const GOOGLE_LOGIN = `
+        mutation GoogleLogin($token: String!) {
+          googleLogin(token: $token) {
+            token
+            refreshToken
+            user {
+              id
+              name
+              email
+            }
+          }
+        }
+      `;
+
+        const data = await request(GOOGLE_LOGIN, {
+          token: tokenResponse.access_token,
+        });
+
+        localStorage.setItem('userId', data.googleLogin.user.id);
+        console.log('Google login success');
+      } catch (err) {
+        console.log(err)
+        console.error('Google login failed', err);
+      }
+    },
+    onError: () => {
+      console.log('Google Login Failed', error);
+    },
+  });
+
+  let handleGoogle = () => {
+    googleLogin();
   };
 
   return (
@@ -181,7 +220,10 @@ const page = () => {
             </button>
             <div className="relative w-full my-10 border-t-2 border-dashed border-white after:content-['or'] after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:bg-[#F3F4F6] after:px-2 after:text-black after:font-semibold"></div>
             <div className="flex items-center gap-3 mt-3">
-              <button className="text-[18px] font-inter font-bold text-black  bg-white mobile:hidden tablet:hidden computer:flex laptop:flex items-center gap-2 laptop:w-[300px] mx-auto justify-center computer:w-[300px] h-[50px] cursor-pointer">
+              <button
+                onClick={handleGoogle}
+                className="text-[18px] font-inter font-bold text-black  bg-white mobile:hidden tablet:hidden computer:flex laptop:flex items-center gap-2 laptop:w-[300px] mx-auto justify-center computer:w-[300px] h-[50px] cursor-pointer"
+              >
                 Login with
                 <img
                   className="w-[30px] h-[30px] object-cover"
@@ -190,7 +232,10 @@ const page = () => {
                 />
                 google
               </button>
-              <button className="text-[10px] font-inter font-bold text-black  bg-white items-center computer:hidden laptop:hidden mobile:flex flex-col tablet:flex w-full  mx-auto  h-[50px] cursor-pointer">
+              <button
+                onClick={handleGoogle}
+                className="text-[10px] font-inter font-bold text-black  bg-white items-center computer:hidden laptop:hidden mobile:flex flex-col tablet:flex w-full  mx-auto  h-[50px] cursor-pointer"
+              >
                 <img
                   className="w-[30px] h-[30px] object-cover"
                   src="/google.png"

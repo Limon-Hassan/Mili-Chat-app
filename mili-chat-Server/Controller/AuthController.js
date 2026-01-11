@@ -68,6 +68,7 @@ async function login({ email, password }, context) {
 }
 
 async function googleLogin({ token }, context) {
+  console.log(token);
   if (!token) {
     throw new Error('Token is required');
   }
@@ -117,6 +118,8 @@ async function googleLogin({ token }, context) {
       },
     };
   } catch (error) {
+    console.log(error);
+    console.log(error.message);
     console.error('Google login error:', error);
     throw new Error('Google login failed');
   }
