@@ -5,6 +5,7 @@ import Container from '../../components/container/Container';
 import FloatingInput from '../../components/FloatingInputs';
 import { useGraphQL } from '@/components/Hook/useGraphQL';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import Loader from '@/components/Loader';
 
 const page = () => {
   const { request, loading, error } = useGraphQL();
@@ -34,6 +35,7 @@ const page = () => {
   };
 
   let handleSubmit = async () => {
+    if (!formData.name || !formData.email || !formData.password) return;
     setActive(true);
     const REGISTER_MUTATION = `
       mutation RegisterUser($name:String!, $email:String!, $password:String!) {
@@ -47,10 +49,63 @@ const page = () => {
 
     try {
       let data = await request(REGISTER_MUTATION, formData);
-      console.log(data);
+      setFormData({
+        name: '',
+        email: '',
+        password: '',
+      });
+      localStorage.setItem('userId', data.register.id);
     } catch (error) {
       console.log(error);
       console.error(error);
+    }
+  };
+
+  let handleFacebook = () => {
+    if (!window.FB) {
+      console.error('Facebook SDK not loaded');
+      return;
+    }
+
+    window.FB.login(
+      function (response) {
+        if (response.authResponse) {
+          const accessToken = response.authResponse.accessToken;
+          console.log('🟢 FB access token:', accessToken);
+
+          facebookLoginToBackend(accessToken);
+        } else {
+          console.log('❌ User cancelled login');
+        }
+      },
+      { scope: 'public_profile,email' }
+    );
+  };
+
+  const facebookLoginToBackend = async accessToken => {
+    try {
+      const FACEBOOK_LOGIN = `
+    mutation FacebookLogin($accessToken: String!) {
+      facebookLogin(accessToken: $accessToken) {
+        token
+        refreshToken
+        user {
+          id
+          name
+          email
+        }
+      }
+    }
+  `;
+
+      const data = await request(FACEBOOK_LOGIN, { accessToken });
+      console.log(data);
+      localStorage.setItem('token', data.facebookLogin.token);
+      localStorage.setItem('refreshToken', data.facebookLogin.refreshToken);
+      localStorage.setItem('userId', data.facebookLogin.user.id);
+    } catch (error) {
+      console.error(error);
+      console.log(error);
     }
   };
 
@@ -75,13 +130,20 @@ const page = () => {
               type="text"
               id="name"
             />
-            <FloatingInput
-              onChange={handleChange}
-              value={formData.email}
-              label="Email"
-              type="email"
-              id="email"
-            />
+            <div className="relative">
+              <FloatingInput
+                onChange={handleChange}
+                value={formData.email}
+                label="Email"
+                type="email"
+                id="email"
+              />
+              {error && (
+                <p className="text-red-600 absolute -bottom-5 left-0">
+                  <p>This email already exist !</p>
+                </p>
+              )}
+            </div>
             <div className="relative">
               <FloatingInput
                 onChange={handleChange}
@@ -97,20 +159,24 @@ const page = () => {
                 {passShow ? <FaEye /> : <FaEyeSlash />}
               </span>
             </div>
+
             <button
               onClick={handleSubmit}
               ref={menuRef}
+              disabled={!formData.name || !formData.email || !formData.password}
               className="relative overflow-hidden text-[18px] font-inter font-bold text-white mobile:w-full target:w-full laptop:w-75 computer:w-75 h-12.5 border border-white mt-3 flex items-center justify-center mx-auto group cursor-pointer"
             >
               <span
-                className={`relative group-hover:text-black ${
+                className={`relative group-hover:text-black flex items-center gap-3 ${
                   active ? 'text-black' : ''
                 } transition-all duration-600 ease-in-out z-10 `}
               >
                 Register
+                {loading && <Loader />}
               </span>
+
               <span
-                className={`absolute left-0 top-0 ${
+                className={`absolute left-0 top-0  ${
                   active ? 'w-full' : ''
                 } w-0 h-full bg-white transition-all duration-600 ease-in-out group-hover:w-full `}
               ></span>
@@ -134,7 +200,10 @@ const page = () => {
                 />
                 Login with google
               </button>
-              <button className="text-[18px] font-inter font-bold text-black  bg-white mobile:hidden tablet:hidden computer:flex laptop:flex items-center gap-2 laptop:w-[300px] mx-auto justify-center computer:w-[300px] h-[50px] cursor-pointer">
+              <button
+                onClick={handleFacebook}
+                className="text-[18px] font-inter font-bold text-black  bg-white mobile:hidden tablet:hidden computer:flex laptop:flex items-center gap-2 laptop:w-[300px] mx-auto justify-center computer:w-[300px] h-[50px] cursor-pointer"
+              >
                 Login with
                 <img
                   className="w-[30px] h-[30px] object-cover"
@@ -143,7 +212,10 @@ const page = () => {
                 />
                 facebook
               </button>
-              <button className="text-[10px] font-inter font-bold text-black  bg-white items-center computer:hidden laptop:hidden mobile:flex tablet:flex flex-col w-full mx-auto  h-[50px] cursor-pointer">
+              <button
+                onClick={handleFacebook}
+                className="text-[10px] font-inter font-bold text-black  bg-white items-center computer:hidden laptop:hidden mobile:flex tablet:flex flex-col w-full mx-auto  h-[50px] cursor-pointer"
+              >
                 <img
                   className="w-[30px] h-[30px] object-cover"
                   src="/facebook.png"

@@ -118,6 +118,7 @@ async function googleLogin({ token }) {
 }
 
 async function facebookLogin({ accessToken }) {
+  console.log(accessToken);
   if (!accessToken) {
     throw new Error('Token is required');
   }
