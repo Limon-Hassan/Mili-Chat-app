@@ -7,7 +7,9 @@ let userSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: true,
+    required: function () {
+      return this.provider === 'local';
+    },
     unique: true,
     trim: true,
     set: v => (typeof v === 'string' ? v.replace(/\s+/g, '') : v),
@@ -15,7 +17,9 @@ let userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: function () {
+      return this.provider === 'local';
+    },
   },
   createdAt: {
     type: Date,

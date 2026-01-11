@@ -3,6 +3,7 @@ const user = require('../models/user');
 const bcrypt = require('bcrypt');
 const { OAuth2Client } = require('google-auth-library');
 const jwt = require('jsonwebtoken');
+const setAuthCookies = require('../Helper/setAuthCookies');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 async function registation({ name, email, password }) {
@@ -30,7 +31,7 @@ async function registation({ name, email, password }) {
   }
 }
 
-async function login({ email, password }) {
+async function login({ email, password }, context) {
   if (!email || !password) {
     throw new Error('All fields are required');
   }
@@ -53,6 +54,8 @@ async function login({ email, password }) {
     { expiresIn: '1d' }
   );
 
+  setAuthCookies(context.res, token, refreshToken);
+
   return {
     token,
     refreshToken,
@@ -64,7 +67,7 @@ async function login({ email, password }) {
   };
 }
 
-async function googleLogin({ token }) {
+async function googleLogin({ token }, context) {
   if (!token) {
     throw new Error('Token is required');
   }
@@ -102,6 +105,8 @@ async function googleLogin({ token }) {
       { expiresIn: '1d' }
     );
 
+    setAuthCookies(context.res, accessToken, refreshToken);
+
     return {
       token: accessToken,
       refreshToken,
@@ -117,8 +122,7 @@ async function googleLogin({ token }) {
   }
 }
 
-async function facebookLogin({ accessToken }) {
-  console.log(accessToken);
+async function facebookLogin({ accessToken }, context) {
   if (!accessToken) {
     throw new Error('Token is required');
   }
@@ -154,6 +158,8 @@ async function facebookLogin({ accessToken }) {
       { expiresIn: '1d' }
     );
 
+    setAuthCookies(context.res, token, refreshToken);
+
     return {
       token,
       refreshToken,
@@ -164,6 +170,8 @@ async function facebookLogin({ accessToken }) {
       },
     };
   } catch (error) {
+    console.log(error);
+    console.log(error.message);
     console.error(
       'Facebook login error:',
       error.response?.data || error.message

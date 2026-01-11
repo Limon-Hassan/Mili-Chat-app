@@ -1,6 +1,7 @@
 let express = require('express');
 let cors = require('cors');
 require('dotenv').config();
+let cookie = require('cookie-parser');
 let dbConfig = require('./Config/dbConfig');
 let jwt = require('jsonwebtoken');
 const { ApolloServer } = require('@apollo/server');
@@ -28,10 +29,11 @@ async function startServer() {
           callback(new Error('Not allowed by CORS'));
         }
       },
-      credentials: true, 
+      credentials: true,
     })
   );
 
+  app.use(cookie());
   app.use(express.json());
   dbConfig();
 
@@ -44,7 +46,7 @@ async function startServer() {
   app.use(
     '/graphql',
     expressMiddleware(server, {
-      context: async ({ req }) => {
+      context: async ({ req, res }) => {
         const authHeader = req.headers.authorization;
 
         if (!authHeader) {
@@ -58,6 +60,7 @@ async function startServer() {
           return {
             userId: decoded.userId,
             token: token,
+            res: res,
           };
         } catch (err) {
           console.log('JWT error:', err.message);

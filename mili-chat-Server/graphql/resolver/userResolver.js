@@ -29,8 +29,8 @@ module.exports = {
       email: { type: GraphQLString },
       password: { type: GraphQLString },
     },
-    resolve(parent, args) {
-      return login(args);
+    resolve(parent, args, context) {
+      return login(args, context);
     },
   },
 
@@ -39,8 +39,8 @@ module.exports = {
     args: {
       token: { type: GraphQLString },
     },
-    resolve(parent, args) {
-      return googleLogin(args);
+    resolve(parent, args, context) {
+      return googleLogin(args, context);
     },
   },
   facebookLogin: {
@@ -48,8 +48,8 @@ module.exports = {
     args: {
       accessToken: { type: GraphQLString },
     },
-    resolve(parent, args) {
-      return facebookLogin(args);
+    resolve(parent, args, context) {
+      return facebookLogin(args, context);
     },
   },
 

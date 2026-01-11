@@ -71,11 +71,11 @@ const page = () => {
       function (response) {
         if (response.authResponse) {
           const accessToken = response.authResponse.accessToken;
-          console.log('🟢 FB access token:', accessToken);
+          console.log(' FB access token:', accessToken);
 
           facebookLoginToBackend(accessToken);
         } else {
-          console.log('❌ User cancelled login');
+          console.log(' User cancelled login');
         }
       },
       { scope: 'public_profile,email' }
@@ -99,9 +99,7 @@ const page = () => {
   `;
 
       const data = await request(FACEBOOK_LOGIN, { accessToken });
-      console.log(data);
-      localStorage.setItem('token', data.facebookLogin.token);
-      localStorage.setItem('refreshToken', data.facebookLogin.refreshToken);
+      
       localStorage.setItem('userId', data.facebookLogin.user.id);
     } catch (error) {
       console.error(error);
