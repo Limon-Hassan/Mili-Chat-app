@@ -2,6 +2,7 @@ import { Inter, Open_Sans } from 'next/font/google';
 import './globals.css';
 import { ClientProvider } from './ClientProvider';
 import FacebookSDK from '@/components/Hook/facebookSKD';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -23,6 +24,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${inter.variable} ${open_sens.variable} antialiased `}>
+        <SpeedInsights />
         <FacebookSDK />
         <ClientProvider>{children}</ClientProvider>
       </body>

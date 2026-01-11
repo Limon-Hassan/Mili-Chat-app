@@ -47,26 +47,22 @@ async function startServer() {
     '/graphql',
     expressMiddleware(server, {
       context: async ({ req, res }) => {
+        const context = { req, res };
+
         const authHeader = req.headers.authorization;
+        if (authHeader) {
+          try {
+            const token = authHeader.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-        if (!authHeader) {
-          return {};
+            context.userId = decoded.userId;
+            context.token = token;
+          } catch (err) {
+            console.log('JWT error:', err.message);
+          }
         }
 
-        try {
-          const token = authHeader.split(' ')[1];
-          const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-          return {
-            userId: decoded.userId,
-            token: token,
-            res: res,
-          };
-        } catch (err) {
-          console.log('JWT error:', err.message);
-          console.log(err);
-          return {};
-        }
+        return context; 
       },
     })
   );
