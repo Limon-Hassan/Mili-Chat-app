@@ -57,12 +57,38 @@ async function startServer() {
 
             context.userId = decoded.userId;
             context.token = token;
+            return context;
           } catch (err) {
             console.log('JWT error:', err.message);
           }
         }
 
-        return context; 
+        if (!context.token && req.cookies?.accessToken) {
+          try {
+            const token = req.cookies.accessToken;
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            context.userId = decoded.userId;
+            context.token = token;
+            return context;
+          } catch (err) {
+            console.log('JWT error (cookie):', err.message);
+          }
+        }
+
+        if (req.cookies?.refreshToken) {
+          try {
+            const decoded = jwt.verify(
+              req.cookies.refreshToken,
+              process.env.REFRESH_SECRET
+            );
+            context.userId = decoded.userId;
+            context.refreshValid = true; 
+          } catch (err) {
+            console.log('Refresh token invalid');
+          }
+        }
+
+        return context;
       },
     })
   );

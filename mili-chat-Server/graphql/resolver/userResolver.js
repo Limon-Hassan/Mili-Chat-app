@@ -37,7 +37,7 @@ module.exports = {
   googleLogin: {
     type: AuthType,
     args: {
-      token: { type: GraphQLString },
+      accessToken: { type: GraphQLString },
     },
     resolve(parent, args, context) {
       return googleLogin(args, context);
@@ -55,11 +55,8 @@ module.exports = {
 
   refreshToken: {
     type: AuthType,
-    args: {
-      refreshToken: { type: GraphQLString },
-    },
-    resolve(parent, args) {
-      return refreshToken(args);
+    resolve(parent, args, context) {
+      return refreshToken(context);
     },
   },
 

@@ -56,6 +56,8 @@ const page = () => {
         password: '',
       });
       localStorage.setItem('userId', data.register.id);
+      setActive(false);
+      if (data.register.id) window.location.href = '/Login';
     } catch (error) {
       console.log(error);
       console.error(error);
@@ -100,7 +102,7 @@ const page = () => {
   `;
 
       const data = await request(FACEBOOK_LOGIN, { accessToken });
-
+      if (data.facebookLogin.user) window.location.href = '/';
       localStorage.setItem('userId', data.facebookLogin.user.id);
     } catch (error) {
       console.error(error);
@@ -109,42 +111,32 @@ const page = () => {
   };
 
   const googleLogin = useGoogleLogin({
-    flow: 'implicit',
     onSuccess: async tokenResponse => {
-      try {
-        const GOOGLE_LOGIN = `
-        mutation GoogleLogin($token: String!) {
-          googleLogin(token: $token) {
-            token
-            refreshToken
-            user {
-              id
-              name
-              email
-            }
+      const GOOGLE_LOGIN = `
+      mutation GoogleLogin($accessToken: String!) {
+        googleLogin(accessToken: $accessToken) {
+          token
+          refreshToken
+          user {
+            id
+            name
+            email
           }
         }
-      `;
+      }
+    `;
 
-        const data = await request(GOOGLE_LOGIN, {
-          token: tokenResponse.access_token,
-        });
+      await request(GOOGLE_LOGIN, {
+        accessToken: tokenResponse.access_token,
+      });
 
-        localStorage.setItem('userId', data.googleLogin.user.id);
-        console.log('Google login success');
-      } catch (err) {
-        console.log(err)
-        console.error('Google login failed', err);
+      localStorage.setItem('userId', tokenResponse.user_id);
+      if (tokenResponse) {
+        window.location.href = '/';
       }
     },
-    onError: () => {
-      console.log('Google Login Failed', error);
-    },
+    onError: () => console.log('Google login failed'),
   });
-
-  let handleGoogle = () => {
-    googleLogin();
-  };
 
   return (
     <section className="relative z-10">
@@ -221,7 +213,7 @@ const page = () => {
             <div className="relative w-full my-10 border-t-2 border-dashed border-white after:content-['or'] after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:bg-[#F3F4F6] after:px-2 after:text-black after:font-semibold"></div>
             <div className="flex items-center gap-3 mt-3">
               <button
-                onClick={handleGoogle}
+                onClick={() => googleLogin()}
                 className="text-[18px] font-inter font-bold text-black  bg-white mobile:hidden tablet:hidden computer:flex laptop:flex items-center gap-2 laptop:w-[300px] mx-auto justify-center computer:w-[300px] h-[50px] cursor-pointer"
               >
                 Login with
@@ -233,7 +225,7 @@ const page = () => {
                 google
               </button>
               <button
-                onClick={handleGoogle}
+                onClick={() => googleLogin()}
                 className="text-[10px] font-inter font-bold text-black  bg-white items-center computer:hidden laptop:hidden mobile:flex flex-col tablet:flex w-full  mx-auto  h-[50px] cursor-pointer"
               >
                 <img

@@ -37,11 +37,11 @@ async function login({ email, password }, context) {
   }
   let existingUser = await user.findOne({ email });
   if (!existingUser) {
-    throw new Error('Invalid email or password');
+    throw new Error('Not Account Found!');
   }
   let isPasswordMatch = await bcrypt.compare(password, existingUser.password);
   if (!isPasswordMatch) {
-    throw new Error('Invalid email or password');
+    throw new Error('Invalid password');
   }
 
   const token = jwt.sign({ userId: existingUser._id }, process.env.JWT_SECRET, {
@@ -67,20 +67,26 @@ async function login({ email, password }, context) {
   };
 }
 
-async function googleLogin({ token }, context) {
-  console.log(token);
-  if (!token) {
-    throw new Error('Token is required');
+async function googleLogin({ accessToken }, context) {
+  if (!accessToken) {
+    throw new Error('Access token required');
   }
 
   try {
-    let ticket = await client.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
+    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
     });
 
-    let payload = ticket.getPayload();
-    let { email, name, sub, picture } = payload;
+    if (!res.ok) {
+      throw new Error('Failed to fetch Google user info');
+    }
+
+    const data = await res.json();
+
+    const { email, name, picture, sub } = data;
+
     let loggedInUser = await user.findOne({ email });
     if (!loggedInUser) {
       loggedInUser = await user.create({
@@ -92,12 +98,10 @@ async function googleLogin({ token }, context) {
       });
     }
 
-    const accessToken = jwt.sign(
+    const accessTokenJWT = jwt.sign(
       { userId: loggedInUser._id },
       process.env.JWT_SECRET,
-      {
-        expiresIn: '15m',
-      }
+      { expiresIn: '15m' }
     );
 
     const refreshToken = jwt.sign(
@@ -106,10 +110,10 @@ async function googleLogin({ token }, context) {
       { expiresIn: '1d' }
     );
 
-    setAuthCookies(context.res, accessToken, refreshToken);
+    setAuthCookies(context.res, accessTokenJWT, refreshToken);
 
     return {
-      token: accessToken,
+      token: accessTokenJWT,
       refreshToken,
       user: {
         id: loggedInUser._id.toString(),
@@ -118,8 +122,6 @@ async function googleLogin({ token }, context) {
       },
     };
   } catch (error) {
-    console.log(error);
-    console.log(error.message);
     console.error('Google login error:', error);
     throw new Error('Google login failed');
   }
@@ -183,25 +185,18 @@ async function facebookLogin({ accessToken }, context) {
   }
 }
 
-async function refreshToken({ refreshToken }) {
-  if (!refreshToken) {
-    throw new Error('Refresh token is required');
+async function refreshToken(context) {
+  if (!context.refreshValid) {
+    throw new Error('Refresh token required or invalid');
   }
-  let decoded;
-  try {
-    decoded = jwt.verify(refreshToken, process.env.REFRESH_SECRET);
-  } catch (error) {
-    throw new Error('Invalid refresh token');
-  }
-  let existingUser = await user.findById(decoded.userId);
+
+  let existingUser = await user.findById(context.userId);
   if (!existingUser) {
     throw new Error('User not found');
   }
 
   let newAccessToken = jwt.sign(
-    {
-      userId: existingUser._id,
-    },
+    { userId: existingUser._id },
     process.env.JWT_SECRET,
     { expiresIn: '15m' }
   );

@@ -77,10 +77,14 @@ import MobileSideIcons from './MobileSideIcons';
 import useIsMobile from './Hook/useIsMobile';
 import MobileFriends from './MobileFriends';
 import MobileSetting from './MobileSetting';
+import { useGraphQL } from './Hook/useGraphQL';
+import Big_Loading from './Big_Loading';
 
 const HomePage = () => {
   let [activePage, setActivePage] = useState('home');
+  let { request, loading, error } = useGraphQL();
   let [show, setShow] = useState(false);
+  const [authorized, setAuthorized] = useState(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -88,11 +92,37 @@ const HomePage = () => {
     if (!mobile) {
       setShow(true);
     }
-  }, []);
+
+    let checkAUTH = async () => {
+      try {
+        const query = `
+            query {
+              me {
+                id
+                name
+                email
+              }
+            }
+          `;
+
+        let data = await request(query);
+        setAuthorized(true);
+      } catch (error) {
+        console.log(error.message);
+        console.error(error);
+        setAuthorized(false);
+        window.location.href = '/Login';
+      }
+    };
+    checkAUTH();
+  }, [request]);
+
+  if (authorized === null) return <Big_Loading />;
 
   return (
     <>
-      <div className="flex gap-[30px] p-6 mobile:overflow-x-auto tablet:overflow-x-auto laptop:overflow-x-auto computer:overflow-hidden">
+      {loading && <Big_Loading />}
+      <div className="flex gap-7.5 p-6 mobile:overflow-x-auto tablet:overflow-x-auto laptop:overflow-x-auto computer:overflow-hidden">
         <Sideber setActivePage={setActivePage} />
 
         <div className="flex-1 mobile:hidden tablet:hidden laptop:hidden computer:block">
@@ -110,7 +140,7 @@ const HomePage = () => {
 
           {activePage === 'messages' && (
             <div className="flex items-center">
-              <div className="flex flex-col gap-[30px] ">
+              <div className="flex flex-col gap-7.5 ">
                 <Friends />
                 <MyGroup />
               </div>
