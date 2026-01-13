@@ -106,6 +106,7 @@ const HomePage = () => {
           `;
 
         let data = await request(query);
+        console.log(data);
         setAuthorized(true);
       } catch (error) {
         console.log(error.message);

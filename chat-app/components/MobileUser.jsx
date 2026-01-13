@@ -1,12 +1,37 @@
 import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 import { UserPlus } from 'lucide-react';
+import { useEffect } from 'react';
+import { useGraphQL } from './Hook/useGraphQL';
 
 const MobileUser = () => {
+  let { request, loading, error } = useGraphQL();
+  let [users, setUsers] = useState([]);
   const dynamic = useDynamicHeight({
     baseHeight: 555,
     basePx: 180,
     maxPx: 430,
   });
+
+  useEffect(() => {
+    let userFetch = async () => {
+      try {
+        const query = `query {
+          users {
+            id
+            name
+            email
+          }
+        }`;
+        let data = await request(query);
+        setUsers(data.users);
+      } catch (error) {
+        console.log(error.message);
+        console.error(error);
+      }
+    };
+
+    userFetch();
+  }, []);
 
   return (
     <>
@@ -31,156 +56,26 @@ const MobileUser = () => {
           className={`flex flex-col gap-1 mt-5 overflow-auto w-full scrollbar-hide transition-all ease-in-out duration-400 `}
           style={{ maxHeight: `${dynamic}px` }}
         >
-          <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
-            <div className="flex items-center gap-2.5">
-              <img
-                className="w-[60px] h-[60px] object-cover bg-center rounded-full"
-                src="/Image.jpg"
-                alt="group"
-              />
-              <h5 className="text-[14px] h-[22px] font-open_sens font-semibold text-white">
-                mahammud hassan limon
-              </h5>
-            </div>
-            <button className="text-[28px] h-10 font-inter font-semibold bg-green-600 px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 ">
-              <UserPlus />
-            </button>
-          </li>
-          <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
-            <div className="flex items-center gap-2.5">
-              <img
-                className="w-[60px] h-[60px] object-cover bg-center rounded-full"
-                src="/Image.jpg"
-                alt="group"
-              />
-              <h5 className="text-[14px] h-[22px] font-open_sens font-semibold text-white">
-                mahammud hassan limon
-              </h5>
-            </div>
-            <button className="text-[28px] h-10 font-inter font-semibold bg-green-600 px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 ">
-              <UserPlus />
-            </button>
-          </li>{' '}
-          <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
-            <div className="flex items-center gap-2.5">
-              <img
-                className="w-[60px] h-[60px] object-cover bg-center rounded-full"
-                src="/Image.jpg"
-                alt="group"
-              />
-              <h5 className="text-[14px] h-[22px] font-open_sens font-semibold text-white">
-                mahammud hassan limon
-              </h5>
-            </div>
-            <button className="text-[28px] h-10 font-inter font-semibold bg-green-600 px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 ">
-              <UserPlus />
-            </button>
-          </li>{' '}
-          <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
-            <div className="flex items-center gap-2.5">
-              <img
-                className="w-[60px] h-[60px] object-cover bg-center rounded-full"
-                src="/Image.jpg"
-                alt="group"
-              />
-              <h5 className="text-[14px] h-[22px] font-open_sens font-semibold text-white">
-                mahammud hassan limon
-              </h5>
-            </div>
-            <button className="text-[28px] h-10 font-inter font-semibold bg-green-600 px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 ">
-              <UserPlus />
-            </button>
-          </li>{' '}
-          <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
-            <div className="flex items-center gap-2.5">
-              <img
-                className="w-[60px] h-[60px] object-cover bg-center rounded-full"
-                src="/Image.jpg"
-                alt="group"
-              />
-              <h5 className="text-[14px] h-[22px] font-open_sens font-semibold text-white">
-                mahammud hassan limon
-              </h5>
-            </div>
-            <button className="text-[28px] h-10 font-inter font-semibold bg-green-600 px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 ">
-              <UserPlus />
-            </button>
-          </li>{' '}
-          <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
-            <div className="flex items-center gap-2.5">
-              <img
-                className="w-[60px] h-[60px] object-cover bg-center rounded-full"
-                src="/Image.jpg"
-                alt="group"
-              />
-              <h5 className="text-[14px] h-[22px] font-open_sens font-semibold text-white">
-                mahammud hassan limon
-              </h5>
-            </div>
-            <button className="text-[28px] h-10 font-inter font-semibold bg-green-600 px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 ">
-              <UserPlus />
-            </button>
-          </li>{' '}
-          <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
-            <div className="flex items-center gap-2.5">
-              <img
-                className="w-[60px] h-[60px] object-cover bg-center rounded-full"
-                src="/Image.jpg"
-                alt="group"
-              />
-              <h5 className="text-[14px] h-[22px] font-open_sens font-semibold text-white">
-                mahammud hassan limon
-              </h5>
-            </div>
-            <button className="text-[28px] h-10 font-inter font-semibold bg-green-600 px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 ">
-              <UserPlus />
-            </button>
-          </li>{' '}
-          <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
-            <div className="flex items-center gap-2.5">
-              <img
-                className="w-[60px] h-[60px] object-cover bg-center rounded-full"
-                src="/Image.jpg"
-                alt="group"
-              />
-              <h5 className="text-[14px] h-[22px] font-open_sens font-semibold text-white">
-                mahammud hassan limon
-              </h5>
-            </div>
-            <button className="text-[28px] h-10 font-inter font-semibold bg-green-600 px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 ">
-              <UserPlus />
-            </button>
-          </li>{' '}
-          <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
-            <div className="flex items-center gap-2.5">
-              <img
-                className="w-[60px] h-[60px] object-cover bg-center rounded-full"
-                src="/Image.jpg"
-                alt="group"
-              />
-              <h5 className="text-[14px] h-[22px] font-open_sens font-semibold text-white">
-                mahammud hassan limon
-              </h5>
-            </div>
-            <button className="text-[28px] h-10 font-inter font-semibold bg-green-600 px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 ">
-              <UserPlus />
-            </button>
-          </li>{' '}
-          <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
-            <div className="flex items-center gap-2.5">
-              <img
-                className="w-[60px] h-[60px] object-cover bg-center rounded-full"
-                src="/Image.jpg"
-                alt="group"
-              />
-              <h5 className="text-[14px] h-[22px] font-open_sens font-semibold text-white">
-                mahammud hassan limon
-              </h5>
-            </div>
-            <button className="text-[28px] h-10 font-inter font-semibold bg-green-600 px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 ">
-              <UserPlus />
-            </button>
-          </li>
+          {users.map((u, index) => (
+            <li
+              key={index}
+              className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2"
+            >
+              <div className="flex items-center gap-2.5">
+                <img
+                  className="w-15 h-15 object-cover bg-center rounded-full"
+                  src={u.avatar || 'defult.jpg'}
+                  alt="group"
+                />
+                <h5 className="text-[14px] h-5.5 font-open_sens font-semibold text-white">
+                  {u.name}
+                </h5>
+              </div>
+              <button className="text-[28px] h-10 font-inter font-semibold bg-green-600 px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 ">
+                <UserPlus />
+              </button>
+            </li>
+          ))}
         </ul>
       </section>
     </>

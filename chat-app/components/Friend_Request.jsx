@@ -7,10 +7,11 @@ const Friend_Request = () => {
     baseHeight: 555,
     basePx: 180,
     maxPx: 430,
+    computerHeight: 265,
   });
   return (
     <>
-      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-97.5 tablet:h-auto laptop:h-auto computer:h-107.5 bg-transparent border border-white mobile:p-4 tablet:p-5 laptop:p-5 computer:p-5 rounded-lg mobile:absolute mobile:top-38.75 mobile:left-0 tablet:absolute tablet:top-46.25 tablet:left-0 laptop:absolute laptop:top-46.25 laptop:left-0 computer:relative computer:top-0">
+      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-97.5 tablet:h-auto laptop:h-auto computer:h-107.5 bg-transparent border border-white mobile:p-4 tablet:p-5 laptop:p-5 computer:p-4 rounded-lg mobile:absolute mobile:top-38.75 mobile:left-0 tablet:absolute tablet:top-46.25 tablet:left-0 laptop:absolute laptop:top-46.25 laptop:left-0 computer:relative computer:top-0">
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
           Friend Requests
         </h1>
@@ -26,7 +27,7 @@ const Friend_Request = () => {
         </div>
         <div className="bg-white h-px w-full my-3"></div>
         <ul
-          className="flex flex-col gap-1 mt-5 overflow-auto w-full   computer:max-h-60 transition-all ease-in-out duration-400"
+          className="flex flex-col gap-1 mt-5 overflow-auto w-full   computer:max-h-66.25 transition-all ease-in-out duration-400"
           style={{ maxHeight: `${dynamic}px` }}
         >
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">

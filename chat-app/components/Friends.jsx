@@ -1,12 +1,16 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import { LuMessageCircleMore } from 'react-icons/lu';
-
+import { useGraphQL } from './Hook/useGraphQL';
 
 const Friends = () => {
+  let { request, loading, error } = useGraphQL();
+  let [friends, setFriends] = useState([]);
+  
+
   return (
     <>
-      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-[390px] mobile:h-auto tablet:h-auto laptop:h-auto computer:h-[430px] bg-transparent border border-white p-5 rounded-lg mobile:absolute mobile:top-[110px] mobile:left-0 tablet:absolute tablet:top-[110px] tablet:left-0 laptop:absolute laptop:top-[110px] laptop:left-0 computer:relative computer:top-0">
+      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-97.5 mobile:h-auto tablet:h-auto laptop:h-auto bg-transparent border border-white p-4 rounded-lg mobile:absolute mobile:top-27.5 mobile:left-0 tablet:absolute tablet:top-27.5 tablet:left-0 laptop:absolute laptop:top-27.5 laptop:left-0 computer:relative computer:top-0">
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
           Friends
         </h1>

@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback } from 'react';
 
-const GRAPHQL_URL = 'https://mili-chat-app-server.onrender.com/graphql';
+const GRAPHQL_URL = 'http://localhost:8080/graphql';
 
 export function useGraphQL() {
   const [loading, setLoading] = useState(false);
@@ -24,7 +24,7 @@ export function useGraphQL() {
       const json = await res.json();
 
       if (json.errors) {
-        console.error(json);
+        console.log(json);
         throw new Error(json.errors[0].message);
       }
 

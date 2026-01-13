@@ -10,7 +10,7 @@ const MyGroup = () => {
   });
   return (
     <>
-      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-[390px]  tablet:h-auto laptop:h-auto computer:h-[430px] bg-transparent border border-white mobile:p-4 tablet:p-5 laptop:p-5 computer:p-5 rounded-lg mobile:absolute mobile:top-38.75 mobile:left-0 tablet:absolute tablet:top-46.25 tablet:left-0 laptop:absolute laptop:top-46.25 laptop:left-0 computer:relative computer:top-0">
+      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-97.5  tablet:h-auto laptop:h-auto  bg-transparent border border-white mobile:p-4 tablet:p-5 laptop:p-5 computer:p-4 rounded-lg mobile:absolute mobile:top-38.75 mobile:left-0 tablet:absolute tablet:top-46.25 tablet:left-0 laptop:absolute laptop:top-46.25 laptop:left-0 computer:relative computer:top-0">
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
           My Group
         </h1>

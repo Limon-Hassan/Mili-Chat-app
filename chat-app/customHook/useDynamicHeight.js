@@ -37,12 +37,19 @@ export function useDynamicHeight({
   baseHeight = 555,
   basePx = 180,
   maxPx = 430,
+  computerHeight = 265,
 } = {}) {
   const [height, setHeight] = useState(maxPx);
 
   useEffect(() => {
     const calculateHeight = () => {
       const h = window.innerHeight;
+      let isComputer = window.innerWidth > 1024;
+
+      if (isComputer) {
+        setHeight(computerHeight);
+        return;
+      }
 
       if (h <= baseHeight) {
         setHeight(basePx);

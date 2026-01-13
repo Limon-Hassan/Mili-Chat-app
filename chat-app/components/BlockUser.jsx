@@ -3,7 +3,7 @@ import React from 'react';
 const BlockUser = () => {
   return (
     <>
-      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-[390px] mobile:h-auto tablet:h-auto laptop:h-auto computer:h-[430px] bg-transparent border border-white p-5 rounded-lg">
+      <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-97.5 mobile:h-auto tablet:h-auto laptop:h-auto bg-transparent border border-white p-4 rounded-lg">
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
           BlockUser
         </h1>
