@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback } from 'react';
 
-const GRAPHQL_URL = 'http://localhost:8080/graphql';
+const GRAPHQL_URL = 'https://mili-chat-app-server.onrender.com/graphql';
 
 export function useGraphQL() {
   const [loading, setLoading] = useState(false);
