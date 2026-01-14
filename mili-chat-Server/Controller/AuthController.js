@@ -32,39 +32,49 @@ async function registation({ name, email, password }) {
 }
 
 async function login({ email, password }, context) {
-  if (!email || !password) {
-    throw new Error('All fields are required');
+  try {
+    if (!email || !password) {
+      throw new Error('All fields are required');
+    }
+    let existingUser = await user.findOne({ email });
+    if (!existingUser) {
+      throw new Error('Not Account Found!');
+    }
+
+    let isPasswordMatch = await bcrypt.compare(password, existingUser.password);
+    if (!isPasswordMatch) {
+      throw new Error('Invalid password');
+    }
+
+    const token = jwt.sign(
+      { userId: existingUser._id.toString() },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: '15m',
+      }
+    );
+
+    const refreshToken = jwt.sign(
+      { userId: existingUser._id.toString() },
+      process.env.REFRESH_SECRET,
+      { expiresIn: '1d' }
+    );
+
+    setAuthCookies(context.res, token, refreshToken);
+
+    return {
+      token,
+      refreshToken,
+      user: {
+        id: existingUser._id?.toString() || '',
+        name: existingUser.name,
+        email: existingUser.email,
+      },
+    };
+  } catch (error) {
+    console.log(error);
+    throw new Error(error.message);
   }
-  let existingUser = await user.findOne({ email });
-  if (!existingUser) {
-    throw new Error('Not Account Found!');
-  }
-  let isPasswordMatch = await bcrypt.compare(password, existingUser.password);
-  if (!isPasswordMatch) {
-    throw new Error('Invalid password');
-  }
-
-  const token = jwt.sign({ userId: existingUser._id }, process.env.JWT_SECRET, {
-    expiresIn: '15m',
-  });
-
-  const refreshToken = jwt.sign(
-    { userId: existingUser._id },
-    process.env.REFRESH_SECRET,
-    { expiresIn: '1d' }
-  );
-
-  setAuthCookies(context.res, token, refreshToken);
-
-  return {
-    token,
-    refreshToken,
-    user: {
-      id: existingUser._id.toString(),
-      name: existingUser.name,
-      email: existingUser.email,
-    },
-  };
 }
 
 async function googleLogin({ accessToken }, context) {
@@ -186,7 +196,7 @@ async function facebookLogin({ accessToken }, context) {
 }
 
 async function refreshToken(context) {
-  if (!context.refreshValid) {
+  if (!context.refreshToken) {
     throw new Error('Refresh token required or invalid');
   }
 
@@ -200,6 +210,13 @@ async function refreshToken(context) {
     process.env.JWT_SECRET,
     { expiresIn: '15m' }
   );
+  context.res.cookie('accessToken', newAccessToken, {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax',
+    maxAge: 15 * 60 * 1000,
+    path: '/',
+  });
 
   return {
     token: newAccessToken,

@@ -18,6 +18,23 @@ let friendsQuery = {
         .populate('from');
     },
   },
+
+  sentFriendRequests: {
+    type: new GraphQLList(FriendRequestType),
+
+    async resolve(parent, args, context) {
+      if (!context.userId) {
+        throw new Error('Unauthorized');
+      }
+
+      return await friendRequest
+        .find({
+          from: context.userId,
+          status: 'pending',
+        })
+        .populate('to');
+    },
+  },
 };
 
 module.exports = friendsQuery;

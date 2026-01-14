@@ -53,12 +53,6 @@ module.exports = {
     },
   },
 
-  refreshToken: {
-    type: AuthType,
-    resolve(parent, args, context) {
-      return refreshToken(context);
-    },
-  },
 
   logout: {
     type: LogoutType,

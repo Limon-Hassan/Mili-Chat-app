@@ -1,4 +1,4 @@
-const { GraphQLID } = require('graphql');
+const { GraphQLID, GraphQLBoolean } = require('graphql');
 const {
   sendFriendRequest,
   acceptFriendRequest,
@@ -22,16 +22,17 @@ let friendRequestResolver = {
   },
 
   acceptFriendRequest: {
-    type: FriendRequestType,
+    type: GraphQLBoolean,
     args: {
       requestId: { type: GraphQLID },
     },
-    resolve(parent, args, context) {
+    resolve(perent, args, context) {
       return acceptFriendRequest(args, context);
     },
   },
+
   requestRejected: {
-    type: FriendRequestType,
+    type: GraphQLBoolean,
     args: {
       requestId: { type: GraphQLID },
     },
@@ -59,6 +60,7 @@ let friendRequestResolver = {
       return BlockUser(args, context);
     },
   },
+
   unBlock: {
     type: UserType,
     args: {

@@ -4,7 +4,7 @@ let socket;
 
 export function getSocket() {
   if (!socket) {
-    socket = io('https://mili-chat-app-server.onrender.com', {
+    socket = io('http://localhost:8080', {
       withCredentials: true,
       autoConnect: false,
       transports: ['polling', 'websocket'],

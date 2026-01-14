@@ -1,11 +1,15 @@
+'use client';
 import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 import { UserPlus } from 'lucide-react';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useGraphQL } from './Hook/useGraphQL';
+import { FaUserClock } from 'react-icons/fa';
 
 const MobileUser = () => {
   let { request, loading, error } = useGraphQL();
   let [users, setUsers] = useState([]);
+  let [pendingRequests, setPendingRequests] = useState({});
+  let [pendingMsgs, setPendingMsgs] = useState('');
   const dynamic = useDynamicHeight({
     baseHeight: 555,
     basePx: 180,
@@ -33,6 +37,66 @@ const MobileUser = () => {
     userFetch();
   }, []);
 
+  useEffect(() => {
+    const fetchPendingSent = async () => {
+      try {
+        const query = `
+          query {
+            sentFriendRequests {
+              to { id }
+              status
+            }
+          }
+        `;
+
+        const data = await request(query);
+        const pendingMap = {};
+        data.sentFriendRequests.forEach(req => {
+          if (req.status === 'pending') {
+            pendingMap[req.to.id] = true;
+          }
+        });
+
+        setPendingRequests(pendingMap);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchPendingSent();
+  }, []);
+
+  let handleSendFriendREQ = async frdId => {
+    const query = `
+        mutation SendFriendRequest($toUserId: ID!) {
+          sendFriendRequest(toUserId: $toUserId) {
+            id
+            status
+            from { id name email avatar }
+            to { id name email avatar }
+          }
+        }
+      `;
+
+    try {
+      let data = await request(query, { toUserId: frdId });
+
+      setPendingRequests(prev => ({
+        ...prev,
+        [frdId]: true,
+      }));
+    } catch (error) {
+      console.log(error);
+      console.error(error);
+    }
+  };
+
+  let handlependingMsg = () => {
+    setPendingMsgs("Can't send again until accepted");
+    setTimeout(() => {
+      setPendingMsgs('');
+    }, 3000);
+  };
   return (
     <>
       <section
@@ -64,20 +128,34 @@ const MobileUser = () => {
               <div className="flex items-center gap-2.5">
                 <img
                   className="w-15 h-15 object-cover bg-center rounded-full"
-                  src={u.avatar || 'defult.jpg'}
+                  src={u.avatar || 'defult.png'}
                   alt="group"
                 />
                 <h5 className="text-[14px] h-5.5 font-open_sens font-semibold text-white">
                   {u.name}
                 </h5>
               </div>
-              <button className="text-[28px] h-10 font-inter font-semibold bg-green-600 px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 ">
-                <UserPlus />
+              <button
+                onClick={() =>
+                  pendingRequests[u.id]
+                    ? handlependingMsg()
+                    : handleSendFriendREQ(u.id)
+                }
+                className={`text-[28px] h-10 font-inter font-semibold ${
+                  pendingRequests[u.id] ? 'bg-red-300' : 'bg-green-600'
+                } px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 `}
+              >
+                {pendingRequests[u.id] ? <FaUserClock /> : <UserPlus />}
               </button>
             </li>
           ))}
         </ul>
       </section>
+      {pendingMsgs && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-black/80 text-white w-55 h-10 rounded-full flex items-center justify-center text-sm z-9999">
+          {pendingMsgs}
+        </div>
+      )}
     </>
   );
 };

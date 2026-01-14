@@ -2,12 +2,15 @@
 import { UserPlus } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useGraphQL } from './Hook/useGraphQL';
-import { FaUserClock } from 'react-icons/fa';
+import { FaUserClock, FaUserFriends } from 'react-icons/fa';
 
 const AddUser = () => {
   let { request, loading, error } = useGraphQL();
   let [users, setUsers] = useState([]);
   let [pendingRequests, setPendingRequests] = useState({});
+  let [pendingMsgs, setPendingMsgs] = useState('');
+  let [receivedRequests, setReceivedRequests] = useState({});
+  let [friendsMap, setFriendsMap] = useState({});
 
   useEffect(() => {
     let userFetch = async () => {
@@ -30,6 +33,86 @@ const AddUser = () => {
     userFetch();
   }, []);
 
+  useEffect(() => {
+    const fetchPendingSent = async () => {
+      try {
+        const query = `
+        query {
+          sentFriendRequests {
+            to { id }
+            status
+          }
+        }
+      `;
+
+        const data = await request(query);
+        const pendingMap = {};
+        data.sentFriendRequests.forEach(req => {
+          if (req.status === 'pending') {
+            pendingMap[req.to.id] = true;
+          }
+        });
+
+        setPendingRequests(pendingMap);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchPendingSent();
+  }, []);
+
+  useEffect(() => {
+    let FetchReceive = async () => {
+      try {
+        const query = `
+        query {
+          friendRequests {
+            from { id }
+            status
+          }
+        }
+      `;
+
+        const data = await request(query);
+
+        const receivedMap = {};
+        data.friendRequests.forEach(req => {
+          if (req.status === 'pending') {
+            receivedMap[req.from.id] = true;
+          }
+        });
+
+        setReceivedRequests(receivedMap);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    FetchReceive();
+  }, []);
+
+  useEffect(() => {
+    let FetchMe = async () => {
+      try {
+        const query = `query {me {friends { id }}}`;
+
+        const data = await request(query);
+        const fMap = {};
+
+        data.me.friends.forEach(f => {
+          fMap[f.id] = true;
+        });
+
+        setFriendsMap(fMap);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    FetchMe();
+  }, []);
+
   let handleSendFriendREQ = async frdId => {
     const query = `
       mutation SendFriendRequest($toUserId: ID!) {
@@ -44,16 +127,24 @@ const AddUser = () => {
 
     try {
       let data = await request(query, { toUserId: frdId });
+
       setPendingRequests(prev => ({
         ...prev,
-        [frdId]: data.sendFriendRequest.status,
+        [frdId]: true,
       }));
-      console.log(data);
     } catch (error) {
       console.log(error);
       console.error(error);
     }
   };
+
+  let handlependingMsg = () => {
+    setPendingMsgs("Can't send again until accepted");
+    setTimeout(() => {
+      setPendingMsgs('');
+    }, 3000);
+  };
+
   return (
     <>
       <section
@@ -90,10 +181,27 @@ const AddUser = () => {
                 </h5>
               </div>
               <button
-                onClick={() => handleSendFriendREQ(u.id)}
-                className="text-[28px] h-10 font-inter font-semibold bg-green-600 px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 "
+                onClick={() => {
+                  if (friendsMap[u.id]) {
+                    return;
+                  }
+                  if (pendingMsgs[u.id] || receivedRequests[u.id]) {
+                    handlependingMsg();
+                  } else {
+                    handleSendFriendREQ(u.id);
+                  }
+                }}
+                className={`text-[28px] h-10 font-inter font-semibold ${
+                  friendsMap[u.id]
+                    ? 'bg-blue-600'
+                    : pendingMsgs[u.id] || receivedRequests[u.id]
+                    ? 'bg-red-300'
+                    : 'bg-green-600'
+                } px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 `}
               >
-                {pendingRequests[u.id] === 'pending' ? (
+                {friendsMap[u.id] ? (
+                  <FaUserFriends />
+                ) : pendingMsgs[u.id] || receivedRequests[u.id] ? (
                   <FaUserClock />
                 ) : (
                   <UserPlus />
@@ -103,6 +211,11 @@ const AddUser = () => {
           ))}
         </ul>
       </section>
+      {pendingMsgs && (
+        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 bg-black/80 text-white px-4 py-2 rounded-full text-sm animate-fadeIn">
+          {pendingMsgs}
+        </div>
+      )}
     </>
   );
 };

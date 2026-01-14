@@ -3,12 +3,12 @@ const user = require('../../models/user');
 const storyModel = require('../../models/storyModel');
 
 async function getMe(context) {
-  if (!context.token) {
+  if (!context.accessToken) {
     throw new Error('Not authenticated');
   }
 
   const decoded = jwt.verify(
-    context.token.replace('Bearer ', ''),
+    context.accessToken.replace('Bearer ', ''),
     process.env.JWT_SECRET
   );
 
@@ -17,6 +17,8 @@ async function getMe(context) {
     .populate('friends', 'id name email avatar')
     .populate('blockedUsers', 'id name email avatar')
     .lean();
+  User.friends = User.friends || [];
+  User.blockedUsers = User.blockedUsers || [];
 
   if (!User) throw new Error('User not found');
 

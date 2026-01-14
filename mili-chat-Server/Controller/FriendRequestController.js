@@ -116,7 +116,7 @@ async function acceptFriendRequest({ requestId }, context) {
     });
   });
 
-  return request;
+  return true;
 }
 
 async function requestRejected({ requestId }, context) {
@@ -124,34 +124,40 @@ async function requestRejected({ requestId }, context) {
     throw new Error('Authentication required');
   }
 
-  let request = await friendRequest.findById(requestId).populate('to', 'name');
+  let request = await friendRequest
+    .findById(requestId)
+    .populate('from', 'id name email avatar')
+    .populate('to', 'id name email avatar');
+
   if (!request) {
     throw new Error('Friend request not found');
   }
 
-  if (request.to.toString() !== context.userId) {
+  if (request.to._id.toString() !== context.userId) {
     throw new Error('Not authorized to reject this friend request');
   }
 
   request.status = 'rejected';
   await request.save();
   await createNotify({
-    userId: request.from,
+    userId: request.from._id.toString(),
     type: 'friend_request_rejected',
     message: `${request.to.name} has rejected your friend request`,
-    relatedUserId: request.to,
+    relatedUserId: request.to._id.toString(),
   });
   const io = getIO();
   const receivers = getSocketIds(request.from.toString());
 
+  await friendRequest.findByIdAndDelete(requestId);
+
   receivers.forEach(socketId => {
     io.to(socketId).emit('friendRequestRejected', {
-      fromUserId: request.to.toString(),
+      fromUserId: request.to._id.toString(),
       message: `${request.to.name} has rejected your friend request`,
     });
   });
 
-  return request;
+  return true;
 }
 
 async function unfriend({ friendId }, context) {

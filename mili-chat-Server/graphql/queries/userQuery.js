@@ -7,8 +7,9 @@ const { getMe } = require('../resolver/meResolver');
 const userQuery = {
   users: {
     type: new GraphQLList(UserType),
-    resolve: async () => {
-      return await user.find();
+    resolve: async (parent, args, context) => {
+      if (!context.userId) throw new Error('Unauthorized');
+      return await user.find({ _id: { $ne: context.userId } });
     },
   },
 
