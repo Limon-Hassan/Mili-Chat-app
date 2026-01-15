@@ -70,15 +70,16 @@ import Friend_Request from './Friend_Request';
 import BlockUser from './BlockUser';
 import AddUser from './AddUser';
 import Message from './Message';
-import MyGroup from './MyGroup';
 import Notifaction from './Notifaction';
 import Setting from './Setting';
 import MobileSideIcons from './MobileSideIcons';
 import useIsMobile from './Hook/useIsMobile';
-import MobileFriends from './MobileFriends';
-import MobileSetting from './MobileSetting';
+import MobileFriends from './Mobile/MobileFriends';
+import MobileSetting from './Mobile/MobileSetting';
 import { useGraphQL } from './Hook/useGraphQL';
 import Big_Loading from './Big_Loading';
+import Mobile_Notification from './Mobile/Mobile_Notification';
+import MsgFriends from './MsgFriends';
 
 const HomePage = () => {
   let [activePage, setActivePage] = useState('home');
@@ -106,7 +107,6 @@ const HomePage = () => {
           `;
 
         let data = await request(query);
-        console.log(data);
         setAuthorized(true);
       } catch (error) {
         console.log(error.message);
@@ -123,17 +123,16 @@ const HomePage = () => {
   return (
     <>
       {loading && <Big_Loading />}
-      <div className="flex gap-7.5 p-6 mobile:overflow-x-auto tablet:overflow-x-auto laptop:overflow-x-auto computer:overflow-hidden">
+      <div className="flex gap-15 p-6 mobile:overflow-x-auto tablet:overflow-x-auto laptop:overflow-x-auto computer:overflow-hidden">
         <Sideber setActivePage={setActivePage} />
 
         <div className="flex-1 mobile:hidden tablet:hidden laptop:hidden computer:block">
           {activePage === 'home' && (
             <>
-              <div className="grid grid-cols-3 gap-5">
+              <div className="grid grid-cols-2 gap-7.5">
                 <Group />
                 <Friends />
                 <Friend_Request />
-                <MyGroup />
                 <BlockUser />
               </div>
             </>
@@ -142,8 +141,7 @@ const HomePage = () => {
           {activePage === 'messages' && (
             <div className="flex items-center">
               <div className="flex flex-col gap-7.5 ">
-                <Friends />
-                <MyGroup />
+                <MsgFriends />
               </div>
               <Message />
             </div>
@@ -157,7 +155,7 @@ const HomePage = () => {
 
         {isMobile && activePage === 'home' && <MobileSideIcons />}
         {isMobile && activePage === 'messages' && <MobileFriends />}
-        {isMobile && activePage === 'notification' && <Notifaction />}
+        {isMobile && activePage === 'notification' && <Mobile_Notification />}
         {isMobile && activePage === 'settings' && <MobileSetting />}
       </div>
     </>

@@ -28,7 +28,7 @@ const Setting = () => {
 
   return (
     <>
-      <section className="w-[1200px] p-5 bg-gray-400/30 rounded-lg border border-gray-300">
+      <section className="w-300 p-5 bg-gray-400/30 rounded-lg border border-gray-300">
         <div className="border-b border-gray-400">
           <h2 className="text-[34px] font-bold font-inter text-white">
             Account

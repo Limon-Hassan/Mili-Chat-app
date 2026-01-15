@@ -22,7 +22,7 @@ const UserType = new GraphQLObjectType({
     friends: {
       type: new GraphQLList(FriendType),
     },
-    blockedUsers: {
+    blockedByMe: {
       type: new GraphQLList(FriendType),
     },
   }),

@@ -1,6 +1,13 @@
 'use client';
 
-export default function Notification() {
+import { useDynamicHeight } from '@/customHook/useDynamicHeight';
+
+export default function Mobile_Notification() {
+  let dynamic = useDynamicHeight({
+    baseHeight: 555,
+    basePx: 280,
+    maxPx: 530,
+  });
   const notifications = [
     {
       id: 1,
@@ -42,15 +49,58 @@ export default function Notification() {
       time: '1h',
       unread: false,
     },
+    {
+      id: 6,
+      user: 'Rahim',
+      text: 'sent you a friend request',
+      avatar: 'https://i.pravatar.cc/40?u=2',
+      time: '1h',
+      unread: false,
+    },
+    {
+      id: 7,
+      user: 'Rahim',
+      text: 'sent you a friend request',
+      avatar: 'https://i.pravatar.cc/40?u=2',
+      time: '1h',
+      unread: false,
+    },
+    {
+      id: 8,
+      user: 'Rahim',
+      text: 'sent you a friend request',
+      avatar: 'https://i.pravatar.cc/40?u=2',
+      time: '1h',
+      unread: false,
+    },
+    {
+      id: 9,
+      user: 'Rahim',
+      text: 'sent you a friend request',
+      avatar: 'https://i.pravatar.cc/40?u=2',
+      time: '1h',
+      unread: false,
+    },
+    {
+      id: 10,
+      user: 'Rahim',
+      text: 'sent you a friend request',
+      avatar: 'https://i.pravatar.cc/40?u=2',
+      time: '1h',
+      unread: false,
+    },
   ];
 
   return (
-    <div className=" laptop:w-full computer:w-125 h-auto bg-transparent border border-white p-3 rounded-lg laptop:absolute laptop:top-27.5 laptop:left-0 computer:relative computer:top-0">
+    <div className="mobile:w-full tablet:w-full h-auto bg-transparent border border-white p-3 rounded-lg mobile:absolute mobile:top-25 mobile:left-0 tablet:absolute tablet:top-27.5 tablet:left-0 ">
       <div className="px-4 py-3 border-b">
         <h3 className="font-bold text-[24px]">Notifications</h3>
       </div>
 
-      <div className="flex flex-col gap-1 mt-5 overflow-auto w-full computer:h-200">
+      <div
+        className="flex flex-col gap-1 mt-5 overflow-auto w-full "
+        style={{ maxHeight: `${dynamic}px` }}
+      >
         {notifications.map(n => (
           <div
             key={n.id}

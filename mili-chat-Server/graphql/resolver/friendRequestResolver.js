@@ -42,7 +42,7 @@ let friendRequestResolver = {
   },
 
   unfriend: {
-    type: UserType,
+    type: GraphQLBoolean,
     args: {
       friendId: { type: GraphQLID },
     },
@@ -54,7 +54,7 @@ let friendRequestResolver = {
   blockUser: {
     type: UserType,
     args: {
-      blockUserId: { type: GraphQLID },
+      blockerId: { type: GraphQLID },
     },
     resolve(parent, args, context) {
       return BlockUser(args, context);

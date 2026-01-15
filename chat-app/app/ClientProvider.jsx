@@ -1,8 +1,9 @@
 import AnimatedDots from '@/components/AnimatedDots';
 import React from 'react';
 import ViewportFix from './ViewportFix';
-import MobileAnimatedDots from '@/components/MobileAnimatedDots';
+import MobileAnimatedDots from '@/components/Mobile/MobileAnimatedDots';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import WelcomePage from './welcome/page';
 
 export const ClientProvider = ({ children }) => {
   return (

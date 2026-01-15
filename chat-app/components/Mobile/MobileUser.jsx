@@ -1,36 +1,43 @@
 'use client';
+import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 import { UserPlus } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
-import { useGraphQL } from './Hook/useGraphQL';
+import { useEffect, useState } from 'react';
+import { useGraphQL } from '../Hook/useGraphQL';
 import { FaUserClock, FaUserFriends } from 'react-icons/fa';
 
-const AddUser = () => {
+const MobileUser = () => {
   let { request, loading, error } = useGraphQL();
   let [users, setUsers] = useState([]);
-  let [pendingRequests, setPendingRequests] = useState({});
   let [pendingMsgs, setPendingMsgs] = useState('');
+  let [pendingRequests, setPendingRequests] = useState({});
   let [receivedRequests, setReceivedRequests] = useState({});
   let [friendsMap, setFriendsMap] = useState({});
   let [openFriendAction, setOpenFriendAction] = useState(null);
 
-  let userFetch = async () => {
-    try {
-      const query = `query {       
+  const dynamic = useDynamicHeight({
+    baseHeight: 555,
+    basePx: 180,
+    maxPx: 430,
+  });
+
+  useEffect(() => {
+    let userFetch = async () => {
+      try {
+        const query = `query {
           users {
             id
             name
             email
           }
         }`;
-      let data = await request(query);
-      setUsers(data.users);
-    } catch (error) {
-      console.log(error.message);
-      console.error(error);
-    }
-  };
+        let data = await request(query);
+        setUsers(data.users);
+      } catch (error) {
+        console.log(error.message);
+        console.error(error);
+      }
+    };
 
-  useEffect(() => {
     userFetch();
   }, []);
 
@@ -38,13 +45,13 @@ const AddUser = () => {
     const fetchPendingSent = async () => {
       try {
         const query = `
-        query {
-          sentFriendRequests {
-            to { id }
-            status
+          query {
+            sentFriendRequests {
+              to { id }
+              status
+            }
           }
-        }
-      `;
+        `;
 
         const data = await request(query);
         const pendingMap = {};
@@ -67,13 +74,13 @@ const AddUser = () => {
     let FetchReceive = async () => {
       try {
         const query = `
-        query {
-          friendRequests {
-            from { id }
-            status
+          query {
+            friendRequests {
+              from { id }
+              status
+            }
           }
-        }
-      `;
+        `;
 
         const data = await request(query);
 
@@ -105,7 +112,7 @@ const AddUser = () => {
           fMap[f.id] = true;
         });
 
-        setFriendsMap(fMap);
+        setFriendReq(fMap);
       } catch (error) {
         console.log(error);
       }
@@ -116,15 +123,15 @@ const AddUser = () => {
 
   let handleSendFriendREQ = async frdId => {
     const query = `
-      mutation SendFriendRequest($toUserId: ID!) {
-        sendFriendRequest(toUserId: $toUserId) {
-          id
-          status
-          from { id name email avatar }
-          to { id name email avatar }
+        mutation SendFriendRequest($toUserId: ID!) {
+          sendFriendRequest(toUserId: $toUserId) {
+            id
+            status
+            from { id name email avatar }
+            to { id name email avatar }
+          }
         }
-      }
-    `;
+      `;
 
     try {
       let data = await request(query, { toUserId: frdId });
@@ -167,18 +174,16 @@ const AddUser = () => {
       blockUser(blockerId: $blockerId) {
          id
          name
-         email
            blockedByMe {
       id
       name
-      email
       avatar
     }
       }
     }
   `;
 
-      let data = await request(query, { blockUserId: uid });
+      let data = await request(query, { blockerId: uid });
       console.log(data);
       setOpenFriendAction(null);
       setFriendsMap(prev => ({ ...prev, [uid]: false }));
@@ -188,19 +193,16 @@ const AddUser = () => {
     }
   };
 
-
-  //account privet korte hobe kintu
-
   return (
     <>
       <section
-        className={`w-125 h-auto bg-transparent border border-white p-5 rounded-lg `}
+        className={`mobile:w-full tablet:w-full laptop:w-full computer:w-0 bg-transparent border border-white mobile:p-4 tablet:p-5 laptop:p-5 rounded-lg mobile:absolute mobile:top-38.75 mobile:left-0 tablet:absolute tablet:top-46.25 tablet:left-0 laptop:absolute laptop:top-46.25 laptop:left-0 computer:hidden`}
       >
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
           Add user
         </h1>
 
-        <div className="mt-5">
+        <div className="mobile:mt-2.5 tablet:mt-5 laptop:mt-5">
           <div className=" w-full h-10 bg-white rounded-full mr-1.5">
             <input
               className="w-full h-full bg-transparent outline-none px-3 text-black"
@@ -210,7 +212,10 @@ const AddUser = () => {
           </div>
         </div>
         <div className="bg-white h-px w-full my-3"></div>
-        <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full max-h-80">
+        <ul
+          className={`flex flex-col gap-1 mt-5 overflow-auto w-full scrollbar-hide transition-all ease-in-out duration-400 `}
+          style={{ maxHeight: `${dynamic}px` }}
+        >
           {users.map((u, index) => (
             <li
               key={index}
@@ -278,7 +283,7 @@ const AddUser = () => {
         </ul>
       </section>
       {pendingMsgs && (
-        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 bg-black/80 text-white px-4 py-2 rounded-full text-sm animate-fadeIn">
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-black/80 text-white w-55 h-10 rounded-full flex items-center justify-center text-sm z-9999">
           {pendingMsgs}
         </div>
       )}
@@ -286,4 +291,4 @@ const AddUser = () => {
   );
 };
 
-export default AddUser;
+export default MobileUser;

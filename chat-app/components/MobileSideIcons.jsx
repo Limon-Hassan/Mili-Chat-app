@@ -1,9 +1,8 @@
 'use client';
 import React, { useState } from 'react';
-import Group from './Group';
-import Friend_Request from './Friend_Request';
-import MyGroup from './MyGroup';
-import MobileUser from './MobileUser';
+import MobileUser from './Mobile/MobileUser';
+import MobileFriend_Req from './Mobile/MobileFriend_Req';
+import Mobile_Groups from './Mobile/Mobile_Groups';
 
 const MobileSideIcons = () => {
   let [active, setActive] = useState('a');
@@ -19,7 +18,7 @@ const MobileSideIcons = () => {
           onClick={() => handleActive('a')}
           className={`${
             active === 'a' ? 'bg-white text-purple-500' : 'bg-purple-400'
-          } text-[16px] font-inter  w-[150px] h-10 rounded-md flex items-center justify-center `}
+          } text-[16px] font-inter  w-37.5 h-10 rounded-md flex items-center justify-center `}
         >
           User
         </button>
@@ -27,7 +26,7 @@ const MobileSideIcons = () => {
           onClick={() => handleActive('b')}
           className={`${
             active === 'b' ? 'bg-white text-purple-500' : 'bg-purple-400'
-          } text-[16px] font-inter  w-[150px] h-10 rounded-md flex items-center justify-center `}
+          } text-[16px] font-inter  w-37.5 h-10 rounded-md flex items-center justify-center `}
         >
           Groups
         </button>
@@ -35,23 +34,14 @@ const MobileSideIcons = () => {
           onClick={() => handleActive('c')}
           className={`${
             active === 'c' ? 'bg-white text-purple-500' : 'bg-purple-400'
-          } text-[16px] font-inter  w-[150px] h-10 rounded-md flex items-center justify-center `}
+          } text-[16px] font-inter  w-37.5 h-10 rounded-md flex items-center justify-center `}
         >
           Friend Requests
         </button>
-        <button
-          onClick={() => handleActive('d')}
-          className={`${
-            active === 'd' ? 'bg-white text-purple-500' : 'bg-purple-400'
-          } text-[16px] font-inter  w-[150px] h-10 rounded-md flex items-center justify-center `}
-        >
-          My Groups
-        </button>
       </div>
       {active === 'a' && <MobileUser />}
-      {active === 'b' && <Group />}
-      {active === 'c' && <Friend_Request />}
-      {active === 'd' && <MyGroup />}
+      {active === 'b' && <Mobile_Groups />}
+      {active === 'c' && <MobileFriend_Req />}
     </>
   );
 };

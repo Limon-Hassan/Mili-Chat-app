@@ -182,16 +182,14 @@ async function unfriend({ friendId }, context) {
       { new: true }
     );
 
-    return {
-      friendId,
-    };
+    return true;
   } catch (error) {
     console.log(error);
     throw new Error('Error removing friend: ' + error.message);
   }
 }
 
-async function BlockUser({ blockUserId }, context) {
+async function BlockUser({ blockerId }, context) {
   if (!context.userId) {
     throw new Error('Authentication required');
   }
@@ -200,18 +198,18 @@ async function BlockUser({ blockUserId }, context) {
   if (!currentUser) {
     throw new Error('User not found');
   }
-  let blockUser = await user.findById(blockUserId);
+  let blockUser = await user.findById(blockerId);
   if (!blockUser) {
     throw new Error('Block user not found');
   }
 
-  if (currentUser.blockedUsers.includes(blockUserId)) {
+  if (currentUser.blockedUsers.includes(blockerId)) {
     throw new Error('User is already blocked');
   }
 
-  currentUser.blockedUsers.push(blockUserId);
+  currentUser.blockedUsers.push(blockerId);
   currentUser.friends = currentUser.friends.filter(
-    friendId => friendId.toString() !== blockUserId
+    friendId => friendId.toString() !== blockerId
   );
 
   blockUser.friends = blockUser.friends.filter(

@@ -1,17 +1,17 @@
 'use client';
 
 import React, { use, useState } from 'react';
-import VoiceChatCard from './VoiceChatCard';
-import AllFriend from './AllFriend';
+import VoiceChatCard from '../VoiceChatCard';
+import AllFriend from '../AllFriend';
 import { Plus } from 'lucide-react';
 import { RiEdit2Fill } from 'react-icons/ri';
-import Stories from './Stories';
+import Stories from '../Stories';
 import { IoPersonAddSharp } from 'react-icons/io5';
-import Edite from './Edite';
-import ShowStatus from './ShowStatus';
-import SeeProfileFicture from './SeeProfileFicture';
-import AddStory from './AddStory';
-import BlockUser from './BlockUser';
+import Edite from '../Edite';
+import ShowStatus from '../ShowStatus';
+import SeeProfileFicture from '../SeeProfileFicture';
+import AddStory from '../AddStory';
+import BlockUser from '../BlockUser';
 import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 
 const MobileSetting = () => {

@@ -11,7 +11,6 @@ import { useGoogleLogin } from '@react-oauth/google';
 
 const page = () => {
   const { request, loading, error } = useGraphQL();
-  console.log(error);
   const [active, setActive] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -59,7 +58,7 @@ const page = () => {
       localStorage.setItem('userId', data.loginUser.user.id);
       setActive(false);
       setFormData({ email: '', password: '' });
-      if (data.loginUser.user.id) window.location.href = '/';
+      if (data.loginUser.user.id) window.location.href = '/welcome';
     } catch (error) {
       console.error('Login failed:', error);
     }
@@ -87,7 +86,7 @@ const page = () => {
 
       localStorage.setItem('userId', tokenResponse.user_id);
       if (tokenResponse) {
-        window.location.href = '/';
+        window.location.href = '/welcome';
       }
     },
     onError: () => console.log('Google login failed'),
@@ -102,10 +101,13 @@ const page = () => {
               style={{
                 fontSize: 'clamp(25px, 2vw + 1rem, 36px)',
               }}
-              className=" font-bold font-inter text-white leading-6
+              className="flex-col mobile:gap-3 tablet:gap-3 laptop:gap-5 computer:gap-5 font-bold font-inter text-white leading-6
               flex items-center justify-center mb-12.5"
             >
-              Login Your Account
+              <span className="bg-linear-to-r from-white to-purple-600 text-transparent bg-clip-text">
+                Welcome Back !
+              </span>
+              <span>Login Your Account</span>
             </h1>
             <FloatingInput
               onChange={handleLogin}
@@ -128,7 +130,9 @@ const page = () => {
               >
                 {passShow ? <FaEye /> : <FaEyeSlash />}
               </span>
-              {error && <p className="text-red-500 absolute -bottom-6">{error}</p>}
+              {error && (
+                <p className="text-red-500 absolute -bottom-6">{error}</p>
+              )}
             </div>
             <button
               onClick={handleSubmit}

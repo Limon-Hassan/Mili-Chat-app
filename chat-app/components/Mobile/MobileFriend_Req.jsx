@@ -1,11 +1,18 @@
 'use client';
+import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 import React, { useEffect, useState } from 'react';
-import { useGraphQL } from './Hook/useGraphQL';
+import { useGraphQL } from '../Hook/useGraphQL';
 
-const Friend_Request = () => {
+const MobileFriend_Req = () => {
   let { request, loading, error } = useGraphQL();
   let [requests, setRequests] = useState([]);
   let [activeRequestId, setActiveRequestId] = useState(null);
+  let dynamic = useDynamicHeight({
+    baseHeight: 555,
+    basePx: 180,
+    maxPx: 430,
+    computerHeight: 265,
+  });
 
   useEffect(() => {
     let FetchRequest = async () => {
@@ -71,12 +78,12 @@ const Friend_Request = () => {
 
   return (
     <>
-      <section className=" laptop:w-full computer:w-125 laptop:h-auto computer:h-107.5 bg-transparent border border-white laptop:p-5 computer:p-4 rounded-lg laptop:absolute laptop:top-46.25 laptop:left-0 computer:relative computer:top-0">
+      <section className="mobile:w-full tablet:w-full tablet:h-auto bg-transparent border border-white mobile:p-4 tablet:p-5 rounded-lg mobile:absolute mobile:top-38.75 mobile:left-0 tablet:absolute tablet:top-46.25 tablet:left-0">
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
           Friend Requests
         </h1>
 
-        <div className=" laptop:mt-5 computer:mt-5">
+        <div className="mobile:mt-2.5 tablet:mt-5">
           <div className=" w-full h-10 bg-white rounded-full mr-1.5">
             <input
               className="w-full h-full bg-transparent outline-none px-3 text-black"
@@ -86,7 +93,10 @@ const Friend_Request = () => {
           </div>
         </div>
         <div className="bg-white h-px w-full my-3"></div>
-        <ul className="relative flex flex-col gap-1 mt-5 overflow-auto w-full   computer:max-h-66.25 laptop:max-h-66.25">
+        <ul
+          className="relative flex flex-col gap-1 mt-5 overflow-auto w-full transition-all ease-in-out duration-400"
+          style={{ maxHeight: `${dynamic}px` }}
+        >
           {requests.length === 0 && (
             <p className="text-white text-[15px] font-open_sens font-semibold text-center flex items-center justify-center w-full h-screen">
               No Requests Found
@@ -138,4 +148,4 @@ const Friend_Request = () => {
   );
 };
 
-export default Friend_Request;
+export default MobileFriend_Req;

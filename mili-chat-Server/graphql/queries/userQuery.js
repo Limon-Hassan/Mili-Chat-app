@@ -9,7 +9,16 @@ const userQuery = {
     type: new GraphQLList(UserType),
     resolve: async (parent, args, context) => {
       if (!context.userId) throw new Error('Unauthorized');
-      return await user.find({ _id: { $ne: context.userId } });
+      let me = await user.findById(context.userId);
+      return await user.find({
+        _id: {
+          $ne: context.userId,
+          $nin: me.blockedUsers,
+        },
+        blockedUsers: {
+          $ne: context.userId,
+        },
+      });
     },
   },
 

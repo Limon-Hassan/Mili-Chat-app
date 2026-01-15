@@ -102,7 +102,7 @@ const page = () => {
   `;
 
       const data = await request(FACEBOOK_LOGIN, { accessToken });
-      if (data.facebookLogin.user) window.location.href = '/';
+      if (data.facebookLogin.user) window.location.href = '/welcome';
       localStorage.setItem('userId', data.facebookLogin.user.id);
     } catch (error) {
       console.error(error);
@@ -132,7 +132,7 @@ const page = () => {
 
       localStorage.setItem('userId', tokenResponse.user_id);
       if (tokenResponse) {
-        window.location.href = '/';
+        window.location.href = '/welcome';
       }
     },
     onError: () => console.log('Google login failed'),

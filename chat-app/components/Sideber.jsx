@@ -10,7 +10,7 @@ import { FaMoon } from 'react-icons/fa';
 
 const Sideber = ({ setActivePage }) => {
   let [hoveredButton, setHoveredButton] = useState({
-    home: false,
+    home: true,
     message: false,
     notification: false,
     settings: false,
@@ -25,6 +25,7 @@ const Sideber = ({ setActivePage }) => {
       settings: false,
       logout: false,
     });
+    
     setHoveredButton(prevState => ({
       ...prevState,
       [type]: true,
@@ -60,20 +61,20 @@ const Sideber = ({ setActivePage }) => {
         </div>
       </nav>
 
-      <section className="mobile:hidden tablet:hidden laptop:hidden computer:block computer:max-w-[300px]">
-        <div className="flex flex-col gap-3.50 w-[220px] h-auto shadow-2xl border border-white bg-transparent p-5">
-          <div className="w-[120px] h-[120px] rounded-full border-2 border-purple-600 mx-auto">
+      <section className="mobile:hidden tablet:hidden laptop:hidden computer:block computer:max-w-75">
+        <div className="flex flex-col gap-3.50 w-55 h-auto shadow-2xl border border-white bg-transparent p-5">
+          <div className="w-30 h-30 rounded-full border-2 border-purple-600 mx-auto">
             <img
               className="w-full h-full object-cover bg-cover rounded-full"
               src="/Image.jpg"
               alt=""
             />
           </div>
-          <h1 className="w-[188px] text-[20px] font-open_sens text-white leading-6 mt-2.5 text-center mx-auto">
+          <h1 className="w-47 text-[20px] font-open_sens text-white leading-6 mt-2.5 text-center mx-auto">
             Mahammud Hassan Limon
           </h1>
 
-          <div className="flex flex-col gap-[50px] my-[35px]">
+          <div className="flex flex-col gap-12.5 my-8.75">
             <button
               onClick={() => {
                 handleactive('home');
@@ -83,7 +84,7 @@ const Sideber = ({ setActivePage }) => {
                 hoveredButton.home
                   ? 'bg-white border-r-4 border-purple-600 rounded-r-lg text-purple-600 scale-110'
                   : 'border border-gray-400 scale-100'
-              } ease-in-out duration-300 cursor-pointer mx-auto w-[135px] h-20 flex items-center justify-center`}
+              } ease-in-out duration-300 cursor-pointer mx-auto w-33.75 h-20 flex items-center justify-center`}
             >
               <GoHome />
             </button>
