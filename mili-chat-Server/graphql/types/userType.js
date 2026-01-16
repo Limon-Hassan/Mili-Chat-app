@@ -24,6 +24,7 @@ const UserType = new GraphQLObjectType({
     },
     blockedByMe: {
       type: new GraphQLList(FriendType),
+      resolve: parent => parent.blockedUsers || [],
     },
   }),
 });

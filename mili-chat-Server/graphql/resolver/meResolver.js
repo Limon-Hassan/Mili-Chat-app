@@ -14,8 +14,8 @@ async function getMe(context) {
 
   const User = await user
     .findById(decoded.userId)
-    .populate('friends', 'id name email avatar')
-    .populate('blockedUsers', 'id name email avatar')
+    .populate('friends', 'id name  avatar')
+    .populate('blockedUsers', 'id name  avatar')
     .lean();
   User.friends = User.friends || [];
   User.blockedUsers = User.blockedUsers || [];

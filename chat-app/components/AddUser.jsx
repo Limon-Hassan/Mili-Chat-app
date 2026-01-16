@@ -167,18 +167,17 @@ const AddUser = () => {
       blockUser(blockerId: $blockerId) {
          id
          name
-         email
+        
            blockedByMe {
       id
       name
-      email
       avatar
     }
       }
     }
   `;
 
-      let data = await request(query, { blockUserId: uid });
+      let data = await request(query, { blockerId: uid });
       console.log(data);
       setOpenFriendAction(null);
       setFriendsMap(prev => ({ ...prev, [uid]: false }));
@@ -187,7 +186,6 @@ const AddUser = () => {
       console.log(error);
     }
   };
-
 
   //account privet korte hobe kintu
 
@@ -211,6 +209,11 @@ const AddUser = () => {
         </div>
         <div className="bg-white h-px w-full my-3"></div>
         <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full max-h-80">
+          {users.length === 0 && (
+            <p className="text-white text-[15px] font-open_sens font-semibold text-center flex items-center justify-center w-full h-screen">
+              No User Found
+            </p>
+          )}
           {users.map((u, index) => (
             <li
               key={index}

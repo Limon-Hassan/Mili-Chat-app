@@ -1,8 +1,9 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
+import CreateGroup from './CreateGroup';
 
 const Group = () => {
-  
+  let [group, setGroup] = useState(false);
 
   return (
     <>
@@ -19,15 +20,16 @@ const Group = () => {
               placeholder="Search Group"
             />
           </div>
-          <button className="text-sm font-inter font-bold bg-green-400 px-5 py-2.5 rounded-full text-white cursor-pointer hover:opacity-70">
+          <button
+            onClick={() => setGroup(!group)}
+            className="text-sm font-inter font-bold bg-green-400 px-5 py-2.5 rounded-full text-white cursor-pointer hover:opacity-70"
+          >
             Create
           </button>
+          {group && <CreateGroup setGroup={setGroup} />}
         </div>
         <div className="bg-white h-px w-full my-3"></div>
-        <ul
-          className="flex flex-col gap-1 mt-5 overflow-auto w-full  computer:max-h-66.25"
-        
-        >
+        <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full  computer:max-h-66.25">
           <li className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
             <div className="flex items-center gap-2.5">
               <img

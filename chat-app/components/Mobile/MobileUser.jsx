@@ -20,24 +20,24 @@ const MobileUser = () => {
     maxPx: 430,
   });
 
-  useEffect(() => {
-    let userFetch = async () => {
-      try {
-        const query = `query {
+  let userFetch = async () => {
+    try {
+      const query = `query {
           users {
             id
             name
             email
           }
         }`;
-        let data = await request(query);
-        setUsers(data.users);
-      } catch (error) {
-        console.log(error.message);
-        console.error(error);
-      }
-    };
+      let data = await request(query);
+      setUsers(data.users);
+    } catch (error) {
+      console.log(error.message);
+      console.error(error);
+    }
+  };
 
+  useEffect(() => {
     userFetch();
   }, []);
 
@@ -112,7 +112,7 @@ const MobileUser = () => {
           fMap[f.id] = true;
         });
 
-        setFriendReq(fMap);
+        setFriendsMap(fMap);
       } catch (error) {
         console.log(error);
       }
@@ -184,7 +184,6 @@ const MobileUser = () => {
   `;
 
       let data = await request(query, { blockerId: uid });
-      console.log(data);
       setOpenFriendAction(null);
       setFriendsMap(prev => ({ ...prev, [uid]: false }));
       userFetch();

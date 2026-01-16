@@ -65,7 +65,7 @@ const Edite = ({ setActive, onClose = () => {} }) => {
         >
           <h4 className="flex items-center justify-between text-2xl font-semibold text-gray-700 mb-4">
             Edit Your Profile
-            <span onClick={onClose} className='cursor-pointer'>
+            <span onClick={onClose} className="cursor-pointer">
               <GrClose size={24} />
             </span>
           </h4>
@@ -92,7 +92,7 @@ const Edite = ({ setActive, onClose = () => {} }) => {
           )}
 
           {image && !finalImage && (
-            <div className="relative w-full h-[350px] bg-black rounded-lg overflow-hidden">
+            <div className="relative w-full h-87.5 bg-black rounded-lg overflow-hidden">
               <Cropper
                 image={image}
                 crop={crop}
@@ -156,7 +156,7 @@ const Edite = ({ setActive, onClose = () => {} }) => {
           )}
           <div className="mt-3.5">
             <input
-              className="w-full h-[50px] rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-200 bg-white"
+              className="w-full h-12.5 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-200 bg-white"
               type="text"
               placeholder="Your name..."
             />
