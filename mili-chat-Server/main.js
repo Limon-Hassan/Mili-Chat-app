@@ -31,10 +31,12 @@ async function startServer() {
         }
       },
       credentials: true,
-    })
+    }),
   );
 
   app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
   dbConfig();
 
   const server = new ApolloServer({
@@ -65,7 +67,7 @@ async function startServer() {
           try {
             const decoded = jwt.verify(
               refreshToken,
-              process.env.REFRESH_SECRET
+              process.env.REFRESH_SECRET,
             );
 
             userId = decoded.userId;
@@ -73,7 +75,7 @@ async function startServer() {
             const newAccessToken = jwt.sign(
               { userId },
               process.env.JWT_SECRET,
-              { expiresIn: '15m' }
+              { expiresIn: '15m' },
             );
             setAuthCookies(res, newAccessToken, refreshToken);
             // res.cookie('accessToken', newAccessToken, {
@@ -101,7 +103,7 @@ async function startServer() {
 
         return context;
       },
-    })
+    }),
   );
 
   app.get('/', (req, res) => {

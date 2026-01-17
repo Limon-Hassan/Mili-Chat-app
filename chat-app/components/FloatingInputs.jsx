@@ -39,7 +39,7 @@ function FloatingInput({ label, type, value, onChange, id }) {
     }
   };
   return (
-    <div className="relative w-full h-[60px] mb-[30px]">
+    <div className="relative w-full h-15 mb-7.5">
       <input
         type={type}
         id={id}

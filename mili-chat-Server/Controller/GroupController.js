@@ -8,6 +8,11 @@ async function createGroup({ name, members = [], photo }, context) {
   if (!context.userId) {
     throw new Error('Authentication required to create a group.');
   }
+
+  if (!/^[A-Za-z\s]+$/.test(name)) {
+    throw new Error('Group name can only contain letters');
+  }
+
   let me = await user.findById(context.userId);
   if (!me) {
     throw new Error('User not found.');
@@ -76,7 +81,7 @@ async function addMembers({ groupId, members = [] }, context) {
   const existingMembers = Group.members.map(id => id.toString());
 
   const alreadyAdded = validMembers.filter(memberId =>
-    existingMembers.includes(memberId)
+    existingMembers.includes(memberId),
   );
 
   if (alreadyAdded.length > 0) {
@@ -87,7 +92,7 @@ async function addMembers({ groupId, members = [] }, context) {
     new Set([
       ...Group.members.map(id => id.toString()),
       ...validMembers.map(id => id.toString()),
-    ])
+    ]),
   );
 
   Group.members = updatedMembers;
@@ -269,7 +274,7 @@ async function handleJoinRequest({ groupId, userId, action }, context) {
     group.members.push(userId);
   }
   group.pendingRequests = group.pendingRequests.filter(
-    id => id.toString() !== userId
+    id => id.toString() !== userId,
   );
 
   await group.save();

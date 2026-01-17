@@ -1,8 +1,10 @@
 'use client';
-import React from 'react';
+import React, { useState } from 'react';
 import { useDynamicHeight } from '@/customHook/useDynamicHeight';
+import CreateGroup from '../CreateGroup';
 
 const Mobile_Groups = () => {
+  const [isOpen, setIsOpen] = useState(false);
   let dynamic = useDynamicHeight({
     baseHeight: 555,
     basePx: 180,
@@ -24,9 +26,14 @@ const Mobile_Groups = () => {
               placeholder="Search Group"
             />
           </div>
-          <button className="text-sm font-inter font-bold bg-green-400 px-5 py-2.5 rounded-full text-white cursor-pointer hover:opacity-70">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-sm font-inter font-bold bg-green-400 px-5 py-2.5 rounded-full text-white cursor-pointer hover:opacity-70"
+          >
             Create
           </button>
+
+          {isOpen && <CreateGroup setGroup={setIsOpen} />}
         </div>
         <div className="bg-white h-px w-full my-3"></div>
         <ul
@@ -40,7 +47,7 @@ const Mobile_Groups = () => {
                 src="/Image.jpg"
                 alt="group"
               />
-              <h5 className="text-[15px] h-[22px] font-open_sens font-semibold text-white">
+              <h5 className="text-[15px] h-5.5 font-open_sens font-semibold text-white">
                 mahammud hassan limon
               </h5>
             </div>

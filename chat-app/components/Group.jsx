@@ -5,6 +5,8 @@ import CreateGroup from './CreateGroup';
 const Group = () => {
   let [group, setGroup] = useState(false);
 
+  // group ar kaj ta baki
+
   return (
     <>
       <section className=" laptop:w-full computer:w-125 laptop:h-auto  bg-transparent border border-white  laptop:p-5 computer:p-4 rounded-lg  laptop:absolute laptop:top-46.25 laptop:left-0 computer:relative computer:top-0">
