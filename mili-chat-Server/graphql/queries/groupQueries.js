@@ -1,30 +1,48 @@
 const { GraphQLList, GraphQLID } = require('graphql');
-const { GroupType } = require('../types/GroupType');
+const { GroupFullType, GroupPreviewType } = require('../types/GroupType');
 const groupSchema = require('../../models/groupSchema');
+const user = require('../../models/user');
 
 const groupQuery = {
   myGroups: {
-    type: new GraphQLList(GroupType),
-    resolve(parent, args, context) {
+    type: new GraphQLList(GroupFullType),
+    async resolve(parent, args, context) {
       if (!context.userId) throw new Error('Unauthorized');
-      return groupSchema
+      let groups = await groupSchema
         .find({ members: context.userId })
-        .populate('members Admin', 'id name email');
+        .populate('members Admin', 'id name avatar');
+      return groups;
     },
   },
 
-  group: {
-    type: GroupType,
-    args: { groupId: { type: GraphQLID } },
-    async resolve(parent, { groupId }, context) {
-      if (!context.userId) throw new Error('Unauthorized');
-      const group = await groupSchema
-        .findById(groupId)
-        .populate('members Admin', 'id name email');
-      if (!group.members.map(m => m.toString()).includes(context.userId)) {
-        throw new Error('You are not a member of this group.');
+  Allgroup: {
+    type: new GraphQLList(GroupPreviewType),
+    async resolve(parent, args, context) {
+      try {
+        if (!context.userId) throw new Error('Unauthorized');
+        let me = await user
+          .findById(context.userId)
+          .populate('friends', '_id name avatar');
+        let groups = await groupSchema
+          .find({ members: { $ne: me._id } })
+          .populate('members', '_id name avatar');
+
+        return groups.map(group => {
+          const friendsInGroup = me.friends.filter(friend =>
+            group.members.some(m => m._id.toString() === friend._id.toString()),
+          );
+
+          return {
+            id: group._id,
+            name: group.name,
+            photo: group.photo,
+            friendCount: friendsInGroup.length,
+            friends: friendsInGroup,
+          };
+        });
+      } catch (error) {
+        console.log(error);
       }
-      return group;
     },
   },
 };

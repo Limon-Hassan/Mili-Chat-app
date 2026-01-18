@@ -1,48 +1,41 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+import { useGraphQL } from './Hook/useGraphQL';
+
 export default function Notification() {
-  const notifications = [
-    {
-      id: 1,
-      user: 'Sadia',
-      text: 'liked your photo',
-      avatar: 'https://i.pravatar.cc/40?u=1',
-      time: '3m',
-      unread: true,
-    },
-    {
-      id: 2,
-      user: 'Rahim',
-      text: 'sent you a friend request',
-      avatar: 'https://i.pravatar.cc/40?u=2',
-      time: '1h',
-      unread: false,
-    },
-    {
-      id: 3,
-      user: 'Rahim',
-      text: 'sent you a friend request',
-      avatar: 'https://i.pravatar.cc/40?u=2',
-      time: '1h',
-      unread: false,
-    },
-    {
-      id: 4,
-      user: 'Rahim',
-      text: 'sent you a friend request',
-      avatar: 'https://i.pravatar.cc/40?u=2',
-      time: '1h',
-      unread: false,
-    },
-    {
-      id: 5,
-      user: 'Rahim',
-      text: 'sent you a friend request',
-      avatar: 'https://i.pravatar.cc/40?u=2',
-      time: '1h',
-      unread: false,
-    },
-  ];
+  let { request, loading, error } = useGraphQL();
+  let [notifications, setNotifications] = useState([]);
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const query = `
+  query Notifications {
+    notifications {
+      id
+      type
+      message
+      isRead
+      createdAt
+      relatedUser {
+        id
+        name
+        avatar
+      }
+    }
+  }
+`;
+
+        const data = await request(query);
+        setNotifications(data.notifications);
+        console.log(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
 
   return (
     <div className=" laptop:w-full computer:w-125 h-auto bg-transparent border border-white p-3 rounded-lg laptop:absolute laptop:top-27.5 laptop:left-0 computer:relative computer:top-0">
@@ -58,11 +51,15 @@ export default function Notification() {
               n.unread ? 'bg-[#1877F2]/30' : 'bg-gray-400/30'
             }`}
           >
-            <img src={n.avatar} className="w-14 h-14 rounded-full" />
+            <img
+              src={n.avatar || 'defult.png'}
+              className="w-14 h-14 rounded-full"
+            />
 
             <div className="flex-1">
               <p className="text-sm">
-                <span className="font-semibold">{n.user}</span> {n.text}
+                
+                {n.message}
               </p>
               <span className="text-xs text-white">{n.time}</span>
             </div>

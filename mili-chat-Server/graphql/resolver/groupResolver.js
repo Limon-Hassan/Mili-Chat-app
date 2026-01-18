@@ -1,5 +1,10 @@
-const { GraphQLID, GraphQLString, GraphQLList, GraphQLNonNull } = require('graphql');
-const { GroupType } = require('../types/GroupType');
+const {
+  GraphQLID,
+  GraphQLString,
+  GraphQLList,
+  GraphQLNonNull,
+} = require('graphql');
+const { GroupFullType } = require('../types/GroupType');
 const {
   createGroup,
   addMembers,
@@ -12,7 +17,7 @@ const {
 
 const groupMutation = {
   createGroup: {
-    type: GroupType,
+    type: GroupFullType,
     args: {
       name: { type: GraphQLString },
       members: { type: new GraphQLList(GraphQLID) },
@@ -24,7 +29,7 @@ const groupMutation = {
   },
 
   addMembers: {
-    type: GroupType,
+    type: GroupFullType,
     args: {
       groupId: { type: GraphQLID },
       members: { type: new GraphQLList(GraphQLID) },
@@ -35,7 +40,7 @@ const groupMutation = {
   },
 
   removeMember: {
-    type: GroupType,
+    type: GroupFullType,
     args: {
       groupId: { type: GraphQLID },
       memberId: { type: GraphQLID },
@@ -46,7 +51,7 @@ const groupMutation = {
   },
 
   leaveGroup: {
-    type: GroupType,
+    type: GroupFullType,
     args: {
       groupId: { type: GraphQLID },
     },
@@ -65,8 +70,9 @@ const groupMutation = {
       return result ? 'Group deleted successfully' : 'Failed to delete';
     },
   },
+
   requestToJoinGroup: {
-    type: GroupType,
+    type: GroupFullType,
     args: {
       groupId: { type: new GraphQLNonNull(GraphQLID) },
     },
@@ -76,7 +82,7 @@ const groupMutation = {
   },
 
   handleJoinRequest: {
-    type: GroupType,
+    type: GroupFullType,
     args: {
       groupId: { type: new GraphQLNonNull(GraphQLID) },
       userId: { type: new GraphQLNonNull(GraphQLID) },

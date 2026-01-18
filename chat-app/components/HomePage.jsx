@@ -85,6 +85,7 @@ const HomePage = () => {
   let [activePage, setActivePage] = useState('home');
   let { request, loading, error } = useGraphQL();
   let [show, setShow] = useState(false);
+  let [userInfo, setUserInfo] = useState('');
   const [authorized, setAuthorized] = useState(null);
   const isMobile = useIsMobile();
 
@@ -107,6 +108,7 @@ const HomePage = () => {
           `;
 
         let data = await request(query);
+        setUserInfo(data.me);
         setAuthorized(true);
       } catch (error) {
         console.log(error.message);
@@ -124,7 +126,7 @@ const HomePage = () => {
     <>
       {loading && <Big_Loading />}
       <div className="flex gap-15 p-6 mobile:overflow-x-auto tablet:overflow-x-auto laptop:overflow-x-auto computer:overflow-hidden">
-        <Sideber setActivePage={setActivePage} />
+        <Sideber setActivePage={setActivePage} userInfo={userInfo} />
 
         <div className="flex-1 mobile:hidden tablet:hidden laptop:hidden computer:block">
           {activePage === 'home' && (

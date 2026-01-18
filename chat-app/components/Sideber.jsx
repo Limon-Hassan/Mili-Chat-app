@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GoHome } from 'react-icons/go';
 import { IoMdNotificationsOutline } from 'react-icons/io';
 import { IoSettingsOutline } from 'react-icons/io5';
@@ -8,7 +8,7 @@ import { LuMessageCircleMore } from 'react-icons/lu';
 import { GrLogout } from 'react-icons/gr';
 import { FaMoon } from 'react-icons/fa';
 
-const Sideber = ({ setActivePage }) => {
+const Sideber = ({ setActivePage, userInfo }) => {
   let [hoveredButton, setHoveredButton] = useState({
     home: true,
     message: false,
@@ -25,12 +25,13 @@ const Sideber = ({ setActivePage }) => {
       settings: false,
       logout: false,
     });
-    
+
     setHoveredButton(prevState => ({
       ...prevState,
       [type]: true,
     }));
   };
+
   return (
     <>
       <nav
@@ -66,12 +67,12 @@ const Sideber = ({ setActivePage }) => {
           <div className="w-30 h-30 rounded-full border-2 border-purple-600 mx-auto">
             <img
               className="w-full h-full object-cover bg-cover rounded-full"
-              src="/Image.jpg"
+              src={userInfo?.avatar || 'defult.png'}
               alt=""
             />
           </div>
           <h1 className="w-47 text-[20px] font-open_sens text-white leading-6 mt-2.5 text-center mx-auto">
-            Mahammud Hassan Limon
+            {userInfo?.name || 'user'}
           </h1>
 
           <div className="flex flex-col gap-12.5 my-8.75">

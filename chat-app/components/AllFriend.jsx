@@ -32,13 +32,16 @@ const AllFriend = () => {
           </h2>
           <div className="grid mobile:grid-cols-3 tablet:grid-cols-4 laptop:grid-cols-5 computer:grid-cols-6 items-center gap-2.5 border border-gray-400 mobile:p-2 tablet:p-3 laptop:p-5 computer:p-5 rounded-lg">
             {friends.map(friend => (
-              <div key={friend.id} className="flex flex-col items-center justify-center mobile:p-1  tablet:p-2.5 laptop:p-2.5 computer:p-2.5 border border-gray-300 rounded-lg mx-auto">
+              <div
+                key={friend.id}
+                className="flex flex-col items-center justify-center mobile:p-1  tablet:p-2.5 laptop:p-2.5 computer:p-2.5 border border-gray-300 rounded-lg mx-auto"
+              >
                 <img
                   className="w-25 h-25 object-cover rounded-md"
                   src={friend.avatar || 'defult.png'}
                   alt="User"
                 />
-                <h4 className="text-sm text-center mx-auto font-inter font-medium mt-2">
+                <h4 className="text-sm text-center mx-auto font-inter font-medium mt-1 computer:h-10 mobile:h-16.25">
                   {friend.name}
                 </h4>
               </div>

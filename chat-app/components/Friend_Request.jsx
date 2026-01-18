@@ -86,7 +86,7 @@ const Friend_Request = () => {
           </div>
         </div>
         <div className="bg-white h-px w-full my-3"></div>
-        <ul className="relative flex flex-col gap-1 mt-5 overflow-auto w-full   computer:max-h-66.25 laptop:max-h-66.25">
+        <ul className="relative flex flex-col gap-1 mt-5 overflow-auto w-full   computer:h-66.25 laptop:h-66.25">
           {requests.length === 0 && (
             <p className="text-white text-[15px] font-open_sens font-semibold text-center flex items-center justify-center w-full h-screen">
               No Requests Found

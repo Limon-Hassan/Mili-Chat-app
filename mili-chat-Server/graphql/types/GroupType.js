@@ -3,11 +3,14 @@ const {
   GraphQLID,
   GraphQLString,
   GraphQLList,
+  GraphQLInt,
+  GraphQLUnionType,
 } = require('graphql');
 const { UserType } = require('./userType');
+const FriendType = require('./FriendType');
 
-let GroupType = new GraphQLObjectType({
-  name: 'Group',
+let GroupFullType = new GraphQLObjectType({
+  name: 'GroupFull',
   fields: () => ({
     id: { type: GraphQLID },
     name: { type: GraphQLString },
@@ -18,4 +21,27 @@ let GroupType = new GraphQLObjectType({
   }),
 });
 
-module.exports = { GroupType };
+const GroupPreviewType = new GraphQLObjectType({
+  name: 'GroupPreview',
+  fields: () => ({
+    id: { type: GraphQLID },
+    name: { type: GraphQLString },
+    photo: { type: GraphQLString },
+
+    friendCount: { type: GraphQLInt },
+    friends: { type: new GraphQLList(FriendType) },
+  }),
+});
+
+const GroupResultType = new GraphQLUnionType({
+  name: 'GroupResult',
+  types: [GroupFullType, GroupPreviewType],
+  resolveType(value) {
+    if (value.members) {
+      return GroupFullType;
+    }
+    return GroupPreviewType;
+  },
+});
+
+module.exports = { GroupFullType, GroupPreviewType, GroupResultType };

@@ -195,7 +195,7 @@ const AddUser = () => {
         className={`w-125 h-auto bg-transparent border border-white p-5 rounded-lg `}
       >
         <h1 className="text-[25px] font-open_sens font-semibold text-white">
-          Add user
+          Add users
         </h1>
 
         <div className="mt-5">
