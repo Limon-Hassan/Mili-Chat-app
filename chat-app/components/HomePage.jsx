@@ -145,7 +145,6 @@ const HomePage = () => {
               <div className="flex flex-col gap-7.5 ">
                 <MsgFriends />
               </div>
-              <Message />
             </div>
           )}
 

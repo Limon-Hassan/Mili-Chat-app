@@ -1,29 +1,25 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import {
-  Phone,
-  Video,
-  MoreVertical,
-  Cross,
-  Send,
-  StopCircle,
-} from 'lucide-react';
+import { Phone, Video, MoreVertical, Send } from 'lucide-react';
 import useScrollToBottom from '@/customHook/useScrollToBottom';
 import NormalChatUI from './NormalChatUI';
 import LiveWaveform from './LiveWaveform';
-import VoiceChatCard from './VoiceChatCard';
 import { IoIosCloseCircleOutline } from 'react-icons/io';
 import AudioPlayer from './AudioPlayer';
+import { useGraphQL } from './Hook/useGraphQL';
 
-export default function Message() {
+export default function Message({ chatUserId, conversationId }) {
+  console.log(conversationId);
+  let { request, loading, error } = useGraphQL();
+  let [messages, setMessages] = useState([]);
+
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [recordTime, setRecordTime] = useState(0);
   const timerRef = useRef(null);
-
   const [analyser, setAnalyser] = useState(null);
 
   const startRecording = async () => {
@@ -57,58 +53,6 @@ export default function Message() {
     setAnalyser(null);
   };
 
-  const [messages, setMessages] = useState([
-    { id: 1, text: 'Hello! How can I help you today?', sender: 'other' },
-    { id: 2, text: 'I want to know about your services.', sender: 'me' },
-    {
-      id: 3,
-      text: 'Sure! Tell me what exactly you are looking for.',
-      sender: 'other',
-    },
-    {
-      id: 4,
-      text: 'Sure! Tell me what exactly you are looking for.',
-      sender: 'other',
-    },
-    {
-      id: 5,
-      text: 'I want to know about your services. I want to know about your services I want to know about your services I want to know about your services I want to know about your services I want to know about your services',
-      sender: 'me',
-    },
-    {
-      id: 6,
-      text: 'I want to know about your services. I want to know about your services I want to know about your services I want to know about your services I want to know about your services I want to know about your services',
-      sender: 'me',
-    },
-    {
-      id: 7,
-      text: 'Sure! Tell me what exactly you are looking for. Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for',
-      sender: 'other',
-    },
-    {
-      id: 8,
-      text: 'Sure! Tell me what exactly you are looking for. Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for',
-      sender: 'other',
-    },
-    {
-      id: 9,
-      text: 'I want to know about your services. I want to know about your services I want to know about your services I want to know about your services I want to know about your services I want to know about your services',
-      sender: 'me',
-    },
-    {
-      id: 10,
-      text: 'Sure! Tell me what exactly you are looking for. Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for',
-      sender: 'other',
-    },
-    { id: 11, text: 'I want to know about your services.', sender: 'me' },
-    {
-      id: 12,
-      type: 'audio',
-      audio: 'Sayfalse  Nulteex - AL NACER!.mp3',
-      sender: 'me',
-    },
-  ]);
-
   const [input, setInput] = useState('');
 
   const bottomRef = useScrollToBottom([messages]);
@@ -123,18 +67,79 @@ export default function Message() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!input.trim()) return;
-    setMessages([...messages, { id: Date.now(), text: input, sender: 'me' }]);
-    setInput('');
+    try {
+      let mutation;
+      let variables;
+      if (!conversationId) {
+        mutation = `
+        mutation SendFirst($receiverId: ID!, $text: String!) {
+          sendMessage(receiverId: $receiverId, text: $text, type: "text") {
+            id
+            text
+            sender { id name avatar }
+            conversation { id }
+            createdAt
+          }
+        }
+      `;
+        variables = { receiverId: chatUserId, text: input.trim() };
+      } else {
+        mutation = `
+        mutation SendStrict($conversationId: ID!, $text: String!) {
+          sendMessageStrict(conversationId: $conversationId, text: $text, type: "text") {
+            id
+            text
+            sender { id name avatar }
+            createdAt
+          }
+        }
+      `;
+        variables = { conversationId, text: input.trim() };
+      }
+      let data = await request(mutation, variables);
+      const messageData = data.sendMessage || data.sendMessageStrict;
+
+      setMessages(prev => [...prev, messageData]);
+      setInput('');
+    } catch (error) {
+      console.log(error);
+    }
   };
 
+  useEffect(() => {
+    let FetchMessages = async () => {
+      try {
+        if (!conversationId) return;
+        let query = `query GetMessages($conversationId: ID!) {getMessages(conversationId: $conversationId) {id text createdAt
+    sender {
+      id
+      name
+      avatar
+    }
+  }
+}`;
+
+        const data = await request(query, { conversationId });
+        if (data.getMessages) setMessages(data.getMessages);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    FetchMessages();
+  }, [conversationId, request]);
+
+
+  // msg input ta besi boro , grup chat setup , moblie ar jonno kora baki
+
   return (
-    <div className="h-[94vh] w-full backdrop-blur-md bg-transparent border rounded-xl shadow-md mx-auto max-w-5xl flex flex-col">
+    <div className="h-[94vh]  backdrop-blur-md bg-transparent border rounded-xl shadow-md mx-auto w-5xl flex flex-col">
       <div className="w-full px-5 py-4 border-b bg-transparent flex justify-between items-center rounded-t-lg">
         <div className="flex items-center gap-2">
           <img
-            className="w-[60px] h-[60px] object-cover bg-center rounded-full"
+            className="w-15 h-15 object-cover bg-center rounded-full"
             src="/Image.jpg"
             alt="group"
           />
@@ -157,7 +162,7 @@ export default function Message() {
           {openMenu && (
             <div
               ref={menuRef}
-              className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-[180px] py-2 border"
+              className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border"
             >
               <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
                 Block User
@@ -173,31 +178,32 @@ export default function Message() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3">
-        {messages.map(msg => (
-          <div
-            key={msg.id}
-            className={`flex ${
-              msg.sender === 'me' ? 'justify-end' : 'justify-start'
-            }`}
-          >
+      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3 ">
+        {messages.map((msg, idx) => {
+          const isMine = msg.sender.id === chatUserId;
+          return (
             <div
-              className={`max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${
-                msg.sender === 'me'
-                  ? 'bg-purple-600 text-white rounded-br-none'
-                  : 'bg-white text-gray-600 rounded-bl-none'
-              }`}
+              key={idx}
+              className={`flex ${isMine ? 'justify-start' : 'justify-end'}`}
             >
-              {msg.type === 'audio' ? (
-                <AudioPlayer src={msg.audio} />
-              ) : (
-                <span className="text-sm leading-5 font-normal font-open_sens">
-                  {msg.text}
-                </span>
-              )}
+              <div
+                className={`max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${
+                  isMine
+                    ? 'bg-white text-gray-600 rounded-bl-none'
+                    : 'bg-purple-600 text-white rounded-br-none'
+                }`}
+              >
+                {msg.type === 'audio' ? (
+                  <AudioPlayer src={msg.audio} />
+                ) : (
+                  <span className="text-sm leading-5 font-normal font-open_sens ">
+                    {msg.text}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={bottomRef} />
       </div>
 

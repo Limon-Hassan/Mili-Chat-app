@@ -1,95 +1,65 @@
 'use client';
 
 import { useDynamicHeight } from '@/customHook/useDynamicHeight';
+import { useEffect, useState } from 'react';
+import { useGraphQL } from '../Hook/useGraphQL';
 
 export default function Mobile_Notification() {
+  let { request } = useGraphQL();
+  let [notifications, setNotifications] = useState([]);
   let dynamic = useDynamicHeight({
     baseHeight: 555,
     basePx: 280,
     maxPx: 530,
   });
-  const notifications = [
-    {
-      id: 1,
-      user: 'Sadia',
-      text: 'liked your photo',
-      avatar: 'https://i.pravatar.cc/40?u=1',
-      time: '3m',
-      unread: true,
-    },
-    {
-      id: 2,
-      user: 'Rahim',
-      text: 'sent you a friend request',
-      avatar: 'https://i.pravatar.cc/40?u=2',
-      time: '1h',
-      unread: false,
-    },
-    {
-      id: 3,
-      user: 'Rahim',
-      text: 'sent you a friend request',
-      avatar: 'https://i.pravatar.cc/40?u=2',
-      time: '1h',
-      unread: false,
-    },
-    {
-      id: 4,
-      user: 'Rahim',
-      text: 'sent you a friend request',
-      avatar: 'https://i.pravatar.cc/40?u=2',
-      time: '1h',
-      unread: false,
-    },
-    {
-      id: 5,
-      user: 'Rahim',
-      text: 'sent you a friend request',
-      avatar: 'https://i.pravatar.cc/40?u=2',
-      time: '1h',
-      unread: false,
-    },
-    {
-      id: 6,
-      user: 'Rahim',
-      text: 'sent you a friend request',
-      avatar: 'https://i.pravatar.cc/40?u=2',
-      time: '1h',
-      unread: false,
-    },
-    {
-      id: 7,
-      user: 'Rahim',
-      text: 'sent you a friend request',
-      avatar: 'https://i.pravatar.cc/40?u=2',
-      time: '1h',
-      unread: false,
-    },
-    {
-      id: 8,
-      user: 'Rahim',
-      text: 'sent you a friend request',
-      avatar: 'https://i.pravatar.cc/40?u=2',
-      time: '1h',
-      unread: false,
-    },
-    {
-      id: 9,
-      user: 'Rahim',
-      text: 'sent you a friend request',
-      avatar: 'https://i.pravatar.cc/40?u=2',
-      time: '1h',
-      unread: false,
-    },
-    {
-      id: 10,
-      user: 'Rahim',
-      text: 'sent you a friend request',
-      avatar: 'https://i.pravatar.cc/40?u=2',
-      time: '1h',
-      unread: false,
-    },
-  ];
+
+  useEffect(() => {
+    let fetchNotifications = async () => {
+      try {
+        const query = `
+  query Notifications {
+    notifications {
+      id
+      type
+      message
+      isRead
+      createdAt
+      relatedUser {
+        id
+        name
+        avatar
+      }
+    }
+  }
+`;
+        let data = await request(query);
+
+        setNotifications(data.notifications);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
+
+ const timeAgo = createdAt => {
+   if (!createdAt) return '';
+
+   const time = typeof createdAt === 'string' ? Number(createdAt) : createdAt;
+
+   if (isNaN(time)) return '';
+
+   const seconds = Math.floor((Date.now() - time) / 1000);
+
+   if (seconds < 60) return 'Just now';
+   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+   if (seconds < 2592000) return `${Math.floor(seconds / 86400)}d ago`;
+
+   return `${Math.floor(seconds / 2592000)}mo ago`;
+ };
+
 
   return (
     <div className="mobile:w-full tablet:w-full h-auto bg-transparent border border-white p-3 rounded-lg mobile:absolute mobile:top-25 mobile:left-0 tablet:absolute tablet:top-27.5 tablet:left-0 ">
@@ -108,16 +78,19 @@ export default function Mobile_Notification() {
               n.unread ? 'bg-[#1877F2]/30' : 'bg-gray-400/30'
             }`}
           >
-            <img src={n.avatar} className="w-14 h-14 rounded-full" />
+            <img
+              src={n.avatar || 'defult.png'}
+              className="w-14 h-14 rounded-full"
+            />
 
             <div className="flex-1">
-              <p className="text-sm">
-                <span className="font-semibold">{n.user}</span> {n.text}
-              </p>
-              <span className="text-xs text-white">{n.time}</span>
+              <p className="text-sm">{n.message}</p>
+              <span className="text-xs text-white">
+                {timeAgo(n.createdAt)}
+              </span>
             </div>
 
-            {n.unread && (
+            {n.isRead && (
               <span className="relative flex size-4">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
                 <span className="relative inline-flex size-4 rounded-full bg-sky-500"></span>
