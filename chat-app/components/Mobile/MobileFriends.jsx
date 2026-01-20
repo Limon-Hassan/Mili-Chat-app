@@ -4,10 +4,12 @@ import React, { useEffect, useState } from 'react';
 import { LuMessageCircleMore } from 'react-icons/lu';
 import { useGraphQL } from '../Hook/useGraphQL';
 
+
 const MobileFriends = () => {
   let { request, loading, error } = useGraphQL();
   let [friends, setFriends] = useState([]);
   let [groups, setGroups] = useState([]);
+  const [conversation, setConversation] = useState([]);
 
   let dynamic = useDynamicHeight({
     baseHeight: 555,
@@ -15,28 +17,86 @@ const MobileFriends = () => {
     maxPx: 480,
   });
 
-  let handleMessage = () => {
-    window.location.href = '/message';
+  let handleMessage = item => {
+    const convId = item.conversationId;
+
+    const params = new URLSearchParams({
+      userId: item.id, // friend বা group id
+      name: item.name, // display name
+      avatar: item.avatar || item.photo || '', // optional
+      conversationId: convId || '', // conv id
+    });
+
+   
+    window.location.href = '/message?' + params.toString();
   };
+
+
+
+  useEffect(() => {
+    let fetchConversations = async () => {
+      try {
+        const query = `
+    query GetConversations {
+      getConversation {
+        id
+        isGroup
+        group        
+        lastMessage
+        lastMessageType
+        lastMessageAt
+        participants { 
+          id
+          name
+          avatar
+        }
+        otherUser { 
+          id
+          name
+          avatar
+        }
+      }
+    }
+  `;
+
+        let data = await request(query);
+        setConversation(data.getConversation);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchConversations();
+  }, []);
 
   useEffect(() => {
     let FetchMe = async () => {
       try {
         const query = `query {me {friends { id name avatar }}}`;
         const data = await request(query);
-        setFriends(data.me.friends);
+        let mergedFriends = data.me.friends.map(frd => {
+          let conv = conversation.find(
+            c => !c.isGroup && c.otherUser?.id === frd.id,
+          );
+
+          return {
+            ...frd,
+            conversationId: conv?.id || null,
+          };
+        });
+        setFriends(mergedFriends);
       } catch (error) {
         console.log(error);
       }
     };
 
     FetchMe();
-  }, []);
+  }, [conversation]);
 
   useEffect(() => {
-     let FetchMyGroup = async () => {
-       try {
-         const query = `
+    let FetchMyGroup = async () => {
+      try {
+        const query = `
    query MyGroups {
      myGroups {
        id
@@ -56,15 +116,26 @@ const MobileFriends = () => {
      }
    }
  `;
-         const data = await request(query);
-         setGroups(data.myGroups);
-       } catch (error) {
-         console.log(error);
-       }
-     };
- 
-     FetchMyGroup();
-   }, []);
+        const data = await request(query);
+        let mergedGroups = data.myGroups.map(grp => {
+          let conv = conversation.find(c => c.isGroup && c.group === grp.id);
+
+          return {
+            ...grp,
+            conversationId: conv?.id || null,
+          };
+        });
+        setGroups(mergedGroups);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    FetchMyGroup();
+  }, [conversation]);
+
+
+  
 
   return (
     <>
@@ -100,14 +171,14 @@ const MobileFriends = () => {
                   alt="group"
                 />
                 <h5
-                  onClick={handleMessage}
+                  onClick={() => handleMessage(frn)}
                   className="text-[15px] h-5.5 font-open_sens font-semibold text-white"
                 >
                   {frn.name}
                 </h5>
               </div>
               <button
-                onClick={handleMessage}
+                onClick={() => handleMessage(frn)}
                 type="button"
                 className="text-[20px] h-7.5 font-inter font-bold bg-purple-500 px-5 py-1.25 rounded-full text-white cursor-pointer hover:opacity-70"
               >
@@ -117,11 +188,14 @@ const MobileFriends = () => {
           ))}
 
           {groups.map((grp, idx) => (
-            <li key={idx} className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2">
+            <li
+              key={idx}
+              className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2"
+            >
               <div className="flex items-center gap-2.5">
                 <div className="relative w-20 h-20 flex items-center justify-center">
                   <img
-                  src={grp.photo || 'defult.png'}
+                    src={grp.photo || 'defult.png'}
                     className="w-15 h-15 rounded-full object-cover z-10"
                     alt="group"
                   />
@@ -156,6 +230,7 @@ const MobileFriends = () => {
                 </h5>
               </div>
               <button
+                onClick={() => handleMessage(grp)}
                 type="button"
                 className="text-[20px] h-7.5 font-inter font-bold bg-purple-500 px-5 py-1.25 rounded-full text-white cursor-pointer hover:opacity-70"
               >

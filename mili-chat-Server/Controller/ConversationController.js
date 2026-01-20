@@ -5,7 +5,7 @@ const { getIO, getSocketIds } = require('../socket_server');
 
 async function sendFirstMessage(
   { text, receiverId, type, mediaUrl, duration },
-  context
+  context,
 ) {
   if (!context.userId) throw new Error('Authentication required');
 
@@ -101,7 +101,7 @@ async function sendFirstMessage(
 
 async function sendMessageWithId(
   { conversationId, text, type, mediaUrl, duration },
-  context
+  context,
 ) {
   if (!context.userId) throw new Error('Authentication required');
 
@@ -120,7 +120,7 @@ async function sendMessageWithId(
   if (!conversation) throw new Error('Invalid conversationId');
 
   let isParticipant = conversation.participants.some(
-    pt => pt.toString() === context.userId
+    pt => pt.toString() === context.userId,
   );
 
   if (!isParticipant) {
@@ -131,7 +131,7 @@ async function sendMessageWithId(
 
   if (!conversation.group) {
     receiverId = conversation.participants.find(
-      id => id.toString() !== context.userId
+      id => id.toString() !== context.userId,
     );
 
     if (me.blockedUsers.includes(receiverId))
@@ -183,7 +183,7 @@ async function getMessages({ conversationId }, context) {
   if (!conversation) throw new Error('Conversation not found');
 
   const isParticipant = conversation.participants.some(
-    id => id.toString() === context.userId
+    id => id.toString() === context.userId,
   );
   if (!isParticipant) throw new Error('Access denied');
 
@@ -203,7 +203,7 @@ async function getConversation(context) {
     .find({
       participants: context.userId,
     })
-    .populate('participants', 'name avatar')
+    .populate('participants', 'id name avatar')
     .sort({ lastMessageAt: -1 })
     .lean();
 
@@ -220,7 +220,7 @@ async function getConversation(context) {
     }
 
     const otherUser = conv.participants.find(
-      p => p._id.toString() !== context.userId
+      p => p._id.toString() !== context.userId,
     );
 
     return {
@@ -231,17 +231,7 @@ async function getConversation(context) {
       lastMessageType: conv.lastMessageType,
       lastMessageAt: conv.lastMessageAt,
     };
-    // const otherUser = conv.participants.find(
-    //   p => p._id.toString() !== context.userId
-    // );
-
-    // return {
-    //   id: conv._id,
-    //   otherUser,
-    //   lastMessage: conv.lastMessage,
-    //   lastMessageType: conv.lastMessageType,
-    //   lastMessageAt: conv.lastMessageAt,
-    // };
+    
   });
 
   return formatted;
@@ -263,7 +253,7 @@ async function markMassageAsDelivery({ conversationId }, context) {
         $set: {
           deliveryStatus: 'delivered',
         },
-      }
+      },
     );
   } else {
     await messageModel.updateMany(
@@ -275,7 +265,7 @@ async function markMassageAsDelivery({ conversationId }, context) {
         $set: {
           deliveryStatus: 'delivered',
         },
-      }
+      },
     );
   }
 
@@ -301,7 +291,7 @@ async function markMessagesAsRead({ conversationId }, context) {
   if (!conversation) throw new Error('Conversation not found');
 
   const isParticipant = conversation.participants.some(
-    id => id.toString() === context.userId
+    id => id.toString() === context.userId,
   );
 
   if (!isParticipant) throw new Error('Access denied');
@@ -315,7 +305,7 @@ async function markMessagesAsRead({ conversationId }, context) {
       },
       {
         $set: { isRead: true, deliveryStatus: 'seen', readAt: new Date() },
-      }
+      },
     );
   } else {
     await messageModel.updateMany(
@@ -326,7 +316,7 @@ async function markMessagesAsRead({ conversationId }, context) {
       },
       {
         $set: { isRead: true, deliveryStatus: 'seen', readAt: new Date() },
-      }
+      },
     );
   }
 
@@ -369,7 +359,7 @@ async function deleteConversation({ conversationId }, context) {
   if (!conversation) throw new Error('Conversation not found');
 
   let allowedUsers = conversation.participants.some(
-    id => id.toString() === context.userId
+    id => id.toString() === context.userId,
   );
 
   if (!allowedUsers) throw new Error('Access denied');
@@ -432,13 +422,13 @@ async function reactToMessage({ messageId, emoji }, context) {
   if (!message) throw new Error('Message not found');
 
   const existingReaction = message.reactions.find(
-    r => r.user.toString() === context.userId
+    r => r.user.toString() === context.userId,
   );
 
   if (existingReaction) {
     if (existingReaction.emoji === emoji) {
       message.reactions = message.reactions.filter(
-        r => r.user.toString() !== context.userId
+        r => r.user.toString() !== context.userId,
       );
     } else {
       existingReaction.emoji = emoji;

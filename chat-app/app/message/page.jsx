@@ -14,8 +14,24 @@ import NormalChatUI from '../../components/NormalChatUI';
 import LiveWaveform from '../../components/LiveWaveform';
 import { IoIosCloseCircleOutline } from 'react-icons/io';
 import AudioPlayer from '../../components/AudioPlayer';
+import { useSearchParams } from 'next/navigation';
+import { useGraphQL } from '@/components/Hook/useGraphQL';
+import { useRouter } from 'next/navigation';
 
 export default function page() {
+  let router = useRouter();
+  let { request, loading, error } = useGraphQL();
+  const searchParams = useSearchParams();
+  const userId = searchParams.get('userId');
+  const name = searchParams.get('name');
+  const avatar = searchParams.get('avatar');
+  const conversationId = searchParams.get('conversationId');
+
+  let [conversation, setConversation] = useState([]);
+  const [activeConversation, setActiveConversation] = useState(null);
+  let [messages, setMessages] = useState([]);
+  let [me, setMe] = useState({});
+
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -56,58 +72,6 @@ export default function page() {
     setAnalyser(null);
   };
 
-  const [messages, setMessages] = useState([
-    { id: 1, text: 'Hello! How can I help you today?', sender: 'other' },
-    { id: 2, text: 'I want to know about your services.', sender: 'me' },
-    {
-      id: 3,
-      text: 'Sure! Tell me what exactly you are looking for.',
-      sender: 'other',
-    },
-    {
-      id: 4,
-      text: 'Sure! Tell me what exactly you are looking for.',
-      sender: 'other',
-    },
-    {
-      id: 5,
-      text: 'I want to know about your services. I want to know about your services I want to know about your services I want to know about your services I want to know about your services I want to know about your services',
-      sender: 'me',
-    },
-    {
-      id: 6,
-      text: 'I want to know about your services. I want to know about your services I want to know about your services I want to know about your services I want to know about your services I want to know about your services',
-      sender: 'me',
-    },
-    {
-      id: 7,
-      text: 'Sure! Tell me what exactly you are looking for. Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for',
-      sender: 'other',
-    },
-    {
-      id: 8,
-      text: 'Sure! Tell me what exactly you are looking for. Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for',
-      sender: 'other',
-    },
-    {
-      id: 9,
-      text: 'I want to know about your services. I want to know about your services I want to know about your services I want to know about your services I want to know about your services I want to know about your services',
-      sender: 'me',
-    },
-    {
-      id: 10,
-      text: 'Sure! Tell me what exactly you are looking for. Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for Sure! Tell me what exactly you are looking for',
-      sender: 'other',
-    },
-    { id: 11, text: 'I want to know about your services.', sender: 'me' },
-    {
-      id: 12,
-      type: 'audio',
-      audio: 'Sayfalse  Nulteex - AL NACER!.mp3',
-      sender: 'me',
-    },
-  ]);
-
   const [input, setInput] = useState('');
 
   const bottomRef = useScrollToBottom([messages]);
@@ -122,11 +86,144 @@ export default function page() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const sendMessage = () => {
+  useEffect(() => {
+    if (!conversationId || conversation.length === 0) return;
+
+    const validConversation = conversation.find(
+      conv => conv.id === conversationId,
+    );
+
+    if (!validConversation) {
+      console.warn('Invalid conversation access attempt');
+
+      alert('Access Denied');
+      router.replace('/', { scroll: false });
+
+      return;
+    }
+    setActiveConversation(validConversation || null);
+  }, [conversationId, conversation]);
+
+  useEffect(() => {
+    let fetchConversations = async () => {
+      try {
+        const query = `
+      query GetConversations {
+        getConversation {
+          id
+          isGroup
+          group        
+          lastMessage
+          lastMessageType
+          lastMessageAt
+          participants { 
+            id
+            name
+            avatar
+          }
+          otherUser { 
+            id
+            name
+            avatar
+          }
+        }
+      }
+    `;
+
+        let data = await request(query);
+        setConversation(data.getConversation);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    fetchConversations();
+  }, []);
+
+  const sendMessage = async () => {
     if (!input.trim()) return;
-    setMessages([...messages, { id: Date.now(), text: input, sender: 'me' }]);
-    setInput('');
+    try {
+      let mutation;
+      let variables;
+      if (!activeConversation) {
+        mutation = `mutation SendFirst($receiverId: ID!, $text: String!) {
+          sendMessage(receiverId: $receiverId, text: $text, type: "text") {
+            id
+            text
+            sender { id name avatar }
+            conversation { id }
+            createdAt
+          }
+        }`;
+
+        variables = { receiverId: userId, text: input.trim() };
+      } else {
+        mutation = `
+        mutation SendStrict($conversationId: ID!, $text: String!) {
+          sendMessageStrict(conversationId: $conversationId, text: $text, type: "text") {
+            id
+            text
+            sender { id name avatar }
+            createdAt
+          }
+        }
+      `;
+
+        variables = {
+          conversationId: activeConversation.id,
+          text: input.trim(),
+        };
+      }
+      let data = await request(mutation, variables);
+      const messageData = data.sendMessage || data.sendMessageStrict;
+      setMessages(prev => [...prev, messageData]);
+      setInput('');
+    } catch (error) {
+      console.log(error);
+    }
   };
+
+  useEffect(() => {
+    setMessages([]);
+  }, [conversationId]);
+
+  useEffect(() => {
+    let FetchMessages = async () => {
+      try {
+        if (!activeConversation.id) return;
+        let query = `query GetMessages($conversationId: ID!) {getMessages(conversationId: $conversationId) {id text createdAt
+    sender {
+      id
+      name
+      avatar
+    }
+  }
+}`;
+
+        const data = await request(query, {
+          conversationId: activeConversation.id,
+        });
+        if (data.getMessages) setMessages(data.getMessages);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    FetchMessages();
+  }, [activeConversation]);
+
+  useEffect(() => {
+    let fetchMe = async () => {
+      try {
+        const query = `query { me { id name avatar } }`;
+        const data = await request(query);
+        setMe(data.me);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    fetchMe();
+  }, []);
 
   return (
     <div
@@ -136,14 +233,12 @@ export default function page() {
       <div className="w-full px-5 py-4 border-b bg-transparent flex justify-between items-center rounded-t-lg">
         <div className="flex items-center gap-2">
           <img
-            className="w-[60px] h-[60px] object-cover bg-center rounded-full"
-            src="/Image.jpg"
+            className="w-15 h-15 object-cover bg-center rounded-full"
+            src={avatar || '/defult.png'}
             alt="group"
           />
           <div>
-            <h2 className="font-semibold text-[18px] font-open_sens">
-              Brother Limon
-            </h2>
+            <h2 className="font-semibold text-[18px] font-open_sens">{name}</h2>
             <p className="text-[13px] font-bold text-green-600">Online</p>
           </div>
         </div>
@@ -159,7 +254,7 @@ export default function page() {
           {openMenu && (
             <div
               ref={menuRef}
-              className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-[180px] py-2 border"
+              className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border"
             >
               <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
                 Block User
@@ -176,37 +271,38 @@ export default function page() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-3">
-        {messages.map(msg => (
-          <div
-            key={msg.id}
-            className={`flex ${
-              msg.sender === 'me' ? 'justify-end' : 'justify-start'
-            }`}
-          >
+        {messages.map(msg => {
+          const isMine = msg.sender.id === me?.id;
+          return (
             <div
-              className={`max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${
-                msg.sender === 'me'
-                  ? 'bg-purple-600 text-white rounded-br-none'
-                  : 'bg-white text-gray-900 rounded-bl-none'
-              }`}
+              key={msg.id}
+              className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
             >
-              {msg.type === 'audio' ? (
-                <AudioPlayer src={msg.audio} />
-              ) : (
-                <span className="text-sm leading-5 font-normal font-open_sens">
-                  {msg.text}
-                </span>
-              )}
+              <div
+                className={`max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${
+                  isMine
+                    ? 'bg-purple-600 text-white rounded-br-none'
+                    : 'bg-white text-gray-900 rounded-bl-none'
+                }`}
+              >
+                {msg.type === 'audio' ? (
+                  <AudioPlayer src={msg.audio} />
+                ) : (
+                  <span className="text-sm leading-5 font-normal font-open_sens">
+                    {msg.text}
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={bottomRef} />
       </div>
 
       {isRecording ? (
         <div className="w-[95%] mx-auto px-4 py-3 bg-blue-500 text-white flex items-center gap-4 rounded-xl">
           <button
-            className="bg-red-500 text-white w-[30px] h-[30px] rounded-full flex items-center justify-center cursor-pointer"
+            className="bg-red-500 text-white w-7.5 h-7.5 rounded-full flex items-center justify-center cursor-pointer"
             onClick={stopRecording}
           >
             <IoIosCloseCircleOutline size={24} />

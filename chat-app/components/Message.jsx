@@ -9,8 +9,12 @@ import { IoIosCloseCircleOutline } from 'react-icons/io';
 import AudioPlayer from './AudioPlayer';
 import { useGraphQL } from './Hook/useGraphQL';
 
-export default function Message({ chatUserId, conversationId }) {
-  console.log(conversationId);
+export default function Message({
+  chatUserId,
+  conversationId,
+  userInfo,
+  currentUser,
+}) {
   let { request, loading, error } = useGraphQL();
   let [messages, setMessages] = useState([]);
 
@@ -109,6 +113,10 @@ export default function Message({ chatUserId, conversationId }) {
   };
 
   useEffect(() => {
+    setMessages([]);
+  }, [conversationId]);
+
+  useEffect(() => {
     let FetchMessages = async () => {
       try {
         if (!conversationId) return;
@@ -117,9 +125,7 @@ export default function Message({ chatUserId, conversationId }) {
       id
       name
       avatar
-    }
-  }
-}`;
+    }}}`;
 
         const data = await request(query, { conversationId });
         if (data.getMessages) setMessages(data.getMessages);
@@ -131,7 +137,6 @@ export default function Message({ chatUserId, conversationId }) {
     FetchMessages();
   }, [conversationId, request]);
 
-
   // msg input ta besi boro , grup chat setup , moblie ar jonno kora baki
 
   return (
@@ -140,12 +145,12 @@ export default function Message({ chatUserId, conversationId }) {
         <div className="flex items-center gap-2">
           <img
             className="w-15 h-15 object-cover bg-center rounded-full"
-            src="/Image.jpg"
+            src={userInfo?.avatar || 'defult.png'}
             alt="group"
           />
           <div>
             <h2 className="font-semibold text-[18px] font-open_sens">
-              Brother Limon
+              {userInfo?.name || 'User'}
             </h2>
             <p className="text-[13px] font-bold text-green-600">Online</p>
           </div>
@@ -180,17 +185,17 @@ export default function Message({ chatUserId, conversationId }) {
 
       <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3 ">
         {messages.map((msg, idx) => {
-          const isMine = msg.sender.id === chatUserId;
+          const isMine = msg.sender.id === currentUser;
           return (
             <div
               key={idx}
-              className={`flex ${isMine ? 'justify-start' : 'justify-end'}`}
+              className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
             >
               <div
                 className={`max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${
                   isMine
-                    ? 'bg-white text-gray-600 rounded-bl-none'
-                    : 'bg-purple-600 text-white rounded-br-none'
+                    ? 'bg-purple-600 text-white rounded-br-none'
+                    : 'bg-white text-gray-600 rounded-bl-none'
                 }`}
               >
                 {msg.type === 'audio' ? (
@@ -210,7 +215,7 @@ export default function Message({ chatUserId, conversationId }) {
       {isRecording ? (
         <div className="w-[95%] mx-auto px-4 py-3 bg-blue-500 text-white flex items-center gap-4 rounded-xl">
           <button
-            className="bg-red-500 text-white w-[30px] h-[30px] rounded-full flex items-center justify-center cursor-pointer"
+            className="bg-red-500 text-white w-7.5 h-7.5 rounded-full flex items-center justify-center cursor-pointer"
             onClick={stopRecording}
           >
             <IoIosCloseCircleOutline size={24} />

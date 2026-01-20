@@ -9,7 +9,9 @@ const MsgFriends = () => {
   let [friends, setFriends] = useState([]);
   let [groups, setGroups] = useState([]);
   let [selectedChat, setSelectedChat] = useState(null);
+  let [selectedUserInfo, setSelectedUserInfo] = useState(null);
   const [conversation, setConversation] = useState([]);
+  const [me, setMe] = useState({});
 
   useEffect(() => {
     let fetchConversations = async () => {
@@ -96,9 +98,7 @@ const MsgFriends = () => {
         const data = await request(query);
 
         const mergedGroups = data.myGroups.map(grp => {
-          const conv = conversation.find(
-            c => c.isGroup && c.group === grp.name,
-          );
+          const conv = conversation.find(c => c.isGroup && c.group === grp.id);
           return {
             ...grp,
             conversationId: conv ? conv.id : null,
@@ -112,6 +112,19 @@ const MsgFriends = () => {
     };
     fetchGroups();
   }, [conversation]);
+
+  useEffect(() => {
+    let fetchMe = async () => {
+      try {
+        const query = `query { me { id name avatar } }`;
+        const data = await request(query);
+        setMe(data.me);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    fetchMe();
+  }, []);
 
   return (
     <>
@@ -149,7 +162,10 @@ const MsgFriends = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSelectedChat(frn.id)}
+                  onClick={() => {
+                    setSelectedUserInfo(frn);
+                    setSelectedChat(frn.id);
+                  }}
                   className="text-[20px] h-7.5 font-inter font-bold bg-purple-500 px-5 py-1.25 rounded-full text-white cursor-pointer hover:opacity-70"
                 >
                   <LuMessageCircleMore />
@@ -200,7 +216,14 @@ const MsgFriends = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setSelectedChat(grp.id)}
+                  onClick={() => {
+                    setSelectedChat(grp.id);
+                    setSelectedUserInfo({
+                      name: grp.name,
+                      avatar: grp.photo,
+                      isGroup: true,
+                    });
+                  }}
                   className="text-[20px] h-7.5 font-inter font-bold bg-purple-500 px-5 py-1.25 rounded-full text-white cursor-pointer hover:opacity-70"
                 >
                   <LuMessageCircleMore />
@@ -213,11 +236,12 @@ const MsgFriends = () => {
           {selectedChat && (
             <Message
               chatUserId={selectedChat}
+              userInfo={selectedUserInfo}
               conversationId={
                 friends.find(f => f.id === selectedChat)?.conversationId ||
                 groups.find(g => g.id === selectedChat)?.conversationId
               }
-              onClose={() => setSelectedChat(null)}
+              currentUser={me.id}
             />
           )}
         </div>
