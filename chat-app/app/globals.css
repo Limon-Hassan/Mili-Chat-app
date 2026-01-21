@@ -54,4 +54,9 @@ audio::-webkit-media-controls-play-button {
   animation: float 8s ease-in-out infinite;
 }
 
-
+.twemoji {
+  display: inline-block;
+  vertical-align: middle;
+  width: 20px;
+  height: 20px;
+}

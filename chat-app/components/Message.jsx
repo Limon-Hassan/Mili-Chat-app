@@ -8,6 +8,9 @@ import LiveWaveform from './LiveWaveform';
 import { IoIosCloseCircleOutline } from 'react-icons/io';
 import AudioPlayer from './AudioPlayer';
 import { useGraphQL } from './Hook/useGraphQL';
+import twemoji from 'twemoji';
+import { uploadToCloudinary } from '@/lib/cloudinaryClient';
+import SeeProfileFicture from './SeeProfileFicture';
 
 export default function Message({
   chatUserId,
@@ -25,10 +28,17 @@ export default function Message({
   const [recordTime, setRecordTime] = useState(0);
   const timerRef = useRef(null);
   const [analyser, setAnalyser] = useState(null);
+  const [attachments, setAttachments] = useState([]);
+  const [active, setActive] = useState(false);
+  const [activePicture, setActivePicture] = useState(null);
+  const [audioFile, setAudioFile] = useState(null);
+  const audioChunksRef = useRef([]);
 
   const startRecording = async () => {
     setIsRecording(true);
     setRecordTime(0);
+    audioChunksRef.current = [];
+    setAudioFile(null);
 
     timerRef.current = setInterval(() => {
       setRecordTime(prev => prev + 1);
@@ -39,13 +49,15 @@ export default function Message({
     const audioContext = new AudioContext();
     const source = audioContext.createMediaStreamSource(stream);
     const analyserNode = audioContext.createAnalyser();
-
     analyserNode.fftSize = 64;
     source.connect(analyserNode);
-
     setAnalyser(analyserNode);
 
     const recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = e => {
+      if (e.data.size > 0) audioChunksRef.current.push(e.data);
+    };
+
     recorder.start();
     setMediaRecorder(recorder);
   };
@@ -55,6 +67,41 @@ export default function Message({
     clearInterval(timerRef.current);
     mediaRecorder?.stop();
     setAnalyser(null);
+  };
+
+  let handleSendRecording = async () => {
+    if (!mediaRecorder) return;
+
+    setIsRecording(false);
+    clearInterval(timerRef.current);
+    setAnalyser(null);
+
+    mediaRecorder.onstop = async () => {
+      if (audioChunksRef.current.length === 0) return;
+
+      const audioBlob = new Blob(audioChunksRef.current, {
+        type: 'audio/webm',
+      });
+      const file = new File([audioBlob], 'voice-message.webm', {
+        type: 'audio/webm',
+      });
+
+      setAudioFile(file);
+    };
+
+    mediaRecorder.stop();
+  };
+
+  console.log(audioFile)
+
+  const formatTime = time => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(
+      2,
+      '0',
+    )}`;
   };
 
   const [input, setInput] = useState('');
@@ -72,41 +119,108 @@ export default function Message({
   }, []);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && attachments.length === 0 && !audioFile) return;
     try {
+      let uploadedAttachments = [];
+
+      for (let att of attachments) {
+        const url = await uploadToCloudinary(
+          att.file,
+          'chat_attachments',
+          att.type === 'image' ? 'image' : 'video',
+        );
+        if (url) {
+          uploadedAttachments.push({ type: att.type, url });
+        }
+      }
+      console.log('audioFile', audioFile);
+      if (audioFile) {
+        const audioUrl = await uploadToCloudinary(
+          audioFile,
+          'chat_attachments',
+          'audio',
+        );
+        console.log('audioUrl:', audioUrl);
+        if (audioUrl) {
+          uploadedAttachments.push({ type: 'audio', url: audioUrl });
+          setAudioFile(null);
+        }
+      }
       let mutation;
       let variables;
       if (!conversationId) {
         mutation = `
-        mutation SendFirst($receiverId: ID!, $text: String!) {
-          sendMessage(receiverId: $receiverId, text: $text, type: "text") {
+        mutation SendFirst(
+          $receiverId: ID!,
+          $text: String,
+          $mediaUrl: String,
+          $type: String
+        ) {
+          sendMessage(
+            receiverId: $receiverId,
+            text: $text,
+            mediaUrl: $mediaUrl,
+            type: $type
+          ) {
             id
             text
+            mediaUrl
+            type
             sender { id name avatar }
             conversation { id }
             createdAt
           }
         }
       `;
-        variables = { receiverId: chatUserId, text: input.trim() };
+        let firstAttachment = uploadedAttachments[0];
+        variables = {
+          receiverId: chatUserId,
+          text:
+            input.trim() ||
+            (firstAttachment ? `[${firstAttachment.type}]` : ''),
+          type: firstAttachment ? firstAttachment.type : 'text',
+          mediaUrl: firstAttachment ? firstAttachment.url : null,
+        };
       } else {
         mutation = `
-        mutation SendStrict($conversationId: ID!, $text: String!) {
-          sendMessageStrict(conversationId: $conversationId, text: $text, type: "text") {
+        mutation SendStrict(
+          $conversationId: ID!,
+          $text: String,
+          $mediaUrl: String,
+          $type: String
+        ) {
+          sendMessageStrict(
+            conversationId: $conversationId,
+            text: $text,
+            mediaUrl: $mediaUrl,
+            type: $type
+          ) {
             id
             text
+            mediaUrl
+            type
             sender { id name avatar }
             createdAt
           }
         }
       `;
-        variables = { conversationId, text: input.trim() };
+        let firstAttachment = uploadedAttachments[0];
+        variables = {
+          conversationId,
+          text:
+            input.trim() ||
+            (firstAttachment ? `[${firstAttachment.type}]` : ''),
+          type: firstAttachment ? firstAttachment.type : 'text',
+          mediaUrl: firstAttachment ? firstAttachment.url : null,
+        };
       }
       let data = await request(mutation, variables);
+      console.log(data);
       const messageData = data.sendMessage || data.sendMessageStrict;
-
       setMessages(prev => [...prev, messageData]);
       setInput('');
+      setAttachments([]);
+      setAudioFile(null);
     } catch (error) {
       console.log(error);
     }
@@ -120,13 +234,18 @@ export default function Message({
     let FetchMessages = async () => {
       try {
         if (!conversationId) return;
-        let query = `query GetMessages($conversationId: ID!) {getMessages(conversationId: $conversationId) {id text createdAt
-    sender {
-      id
-      name
-      avatar
-    }}}`;
-
+        let query = `query GetMessages($conversationId: ID!) {
+  getMessages(conversationId: $conversationId) {
+    id
+    text
+    mediaUrl
+    type
+    duration
+    createdAt
+    sender { id name avatar }
+    receiver { id name avatar }
+  }
+}`;
         const data = await request(query, { conversationId });
         if (data.getMessages) setMessages(data.getMessages);
       } catch (error) {
@@ -137,110 +256,149 @@ export default function Message({
     FetchMessages();
   }, [conversationId, request]);
 
-  // msg input ta besi boro , grup chat setup , moblie ar jonno kora baki
-
   return (
-    <div className="h-[94vh]  backdrop-blur-md bg-transparent border rounded-xl shadow-md mx-auto w-5xl flex flex-col">
-      <div className="w-full px-5 py-4 border-b bg-transparent flex justify-between items-center rounded-t-lg">
-        <div className="flex items-center gap-2">
-          <img
-            className="w-15 h-15 object-cover bg-center rounded-full"
-            src={userInfo?.avatar || 'defult.png'}
-            alt="group"
-          />
-          <div>
-            <h2 className="font-semibold text-[18px] font-open_sens">
-              {userInfo?.name || 'User'}
-            </h2>
-            <p className="text-[13px] font-bold text-green-600">Online</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-5 relative">
-          <Phone className="cursor-pointer" />
-          <Video className="cursor-pointer" />
-          <MoreVertical
-            className="cursor-pointer"
-            onClick={() => setOpenMenu(!openMenu)}
-          />
-
-          {openMenu && (
-            <div
-              ref={menuRef}
-              className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border"
-            >
-              <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
-                Block User
-              </p>
-              <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
-                Theme
-              </p>
-              <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
-                Clear Chat
-              </p>
+    <>
+      <div className="h-[94vh]  backdrop-blur-md bg-transparent border rounded-xl shadow-md mx-auto w-5xl flex flex-col">
+        <div className="w-full px-5 py-4 border-b bg-transparent flex justify-between items-center rounded-t-lg">
+          <div className="flex items-center gap-2">
+            <img
+              className="w-15 h-15 object-cover bg-center rounded-full"
+              src={userInfo?.avatar || 'defult.png'}
+              alt="group"
+            />
+            <div>
+              <h2 className="font-semibold text-[18px] font-open_sens">
+                {userInfo?.name || 'User'}
+              </h2>
+              <p className="text-[13px] font-bold text-green-600">Online</p>
             </div>
-          )}
-        </div>
-      </div>
+          </div>
 
-      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3 ">
-        {messages.map((msg, idx) => {
-          const isMine = msg.sender.id === currentUser;
-          return (
-            <div
-              key={idx}
-              className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
-            >
+          <div className="flex items-center gap-5 relative">
+            <Phone className="cursor-pointer" />
+            <Video className="cursor-pointer" />
+            <MoreVertical
+              className="cursor-pointer"
+              onClick={() => setOpenMenu(!openMenu)}
+            />
+
+            {openMenu && (
               <div
-                className={`max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${
-                  isMine
-                    ? 'bg-purple-600 text-white rounded-br-none'
-                    : 'bg-white text-gray-600 rounded-bl-none'
-                }`}
+                ref={menuRef}
+                className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border"
               >
-                {msg.type === 'audio' ? (
-                  <AudioPlayer src={msg.audio} />
-                ) : (
-                  <span className="text-sm leading-5 font-normal font-open_sens ">
-                    {msg.text}
-                  </span>
-                )}
+                <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
+                  Block User
+                </p>
+                <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
+                  Theme
+                </p>
+                <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
+                  Clear Chat
+                </p>
               </div>
-            </div>
-          );
-        })}
-        <div ref={bottomRef} />
-      </div>
-
-      {isRecording ? (
-        <div className="w-[95%] mx-auto px-4 py-3 bg-blue-500 text-white flex items-center gap-4 rounded-xl">
-          <button
-            className="bg-red-500 text-white w-7.5 h-7.5 rounded-full flex items-center justify-center cursor-pointer"
-            onClick={stopRecording}
-          >
-            <IoIosCloseCircleOutline size={24} />
-          </button>
-
-          <span className="font-semibold text-sm">
-            {recordTime < 10 ? `00:0${recordTime}` : `00:${recordTime}`}
-          </span>
-
-          <div className="flex-1">
-            <LiveWaveform analyser={analyser} />
+            )}
           </div>
-
-          <button className="bg-white text-blue-500 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer">
-            <Send size={24} />
-          </button>
         </div>
-      ) : (
-        <NormalChatUI
-          input={input}
-          setInput={setInput}
-          sendMessage={sendMessage}
-          startRecording={startRecording}
+
+        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3 ">
+          {messages.map((msg, idx) => {
+            const isMine = msg.sender.id === currentUser;
+
+            const bgClass =
+              msg.type === 'text' || msg.type === 'link'
+                ? isMine
+                  ? 'bg-purple-600 text-white rounded-br-none'
+                  : 'bg-white text-gray-600 rounded-bl-none'
+                : '';
+            return (
+              <div
+                key={idx}
+                className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${
+                    bgClass
+                  }`}
+                >
+                  {msg.type === 'image' && msg.mediaUrl ? (
+                    <img
+                      src={msg.mediaUrl}
+                      alt="attachment"
+                      onClick={() => {
+                        setActivePicture(msg.mediaUrl);
+                        setActive(true);
+                      }}
+                      className="max-w-100 rounded-lg"
+                    />
+                  ) : msg.type === 'video' && msg.mediaUrl ? (
+                    <video
+                      src={msg.mediaUrl}
+                      controls
+                      className="max-w-100 rounded-lg"
+                    />
+                  ) : msg.type === 'audio' && msg.mediaUrl ? (
+                    <AudioPlayer src={msg.mediaUrl} />
+                  ) : (
+                    <span
+                      className="text-sm leading-5 font-normal font-open_sens"
+                      dangerouslySetInnerHTML={{
+                        __html: twemoji.parse(msg.text, {
+                          folder: 'svg',
+                          ext: '.svg',
+                          className: 'w-5 h-5 inline',
+                        }),
+                      }}
+                    ></span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
+        </div>
+
+        {isRecording ? (
+          <div className="w-[95%] mx-auto px-4 py-3 bg-blue-500 text-white flex items-center gap-4 rounded-xl">
+            <button
+              className="bg-red-500 text-white w-7.5 h-7.5 rounded-full flex items-center justify-center cursor-pointer"
+              onClick={stopRecording}
+            >
+              <IoIosCloseCircleOutline size={24} />
+            </button>
+
+            <span className="font-semibold text-sm">
+              {formatTime(recordTime)}
+            </span>
+
+            <div className="flex-1">
+              <LiveWaveform analyser={analyser} />
+            </div>
+
+            <button
+              onClick={handleSendRecording}
+              className="bg-white text-blue-500 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer"
+            >
+              <Send size={24} />
+            </button>
+          </div>
+        ) : (
+          <NormalChatUI
+            input={input}
+            setInput={setInput}
+            sendMessage={sendMessage}
+            startRecording={startRecording}
+            attachments={attachments}
+            setAttachments={setAttachments}
+          />
+        )}
+      </div>
+      {active && (
+        <SeeProfileFicture
+          src={activePicture}
+          onClose={() => setActive(false)}
         />
       )}
-    </div>
+    </>
   );
 }

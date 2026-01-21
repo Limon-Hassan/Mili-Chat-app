@@ -4,32 +4,33 @@ import EmojiPicker from 'emoji-picker-react';
 import { Mic, Paperclip, Send, SmileIcon, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-const NormalChatUI = ({ input, setInput, sendMessage, startRecording }) => {
+const NormalChatUI = ({
+  input,
+  setInput,
+  sendMessage,
+  startRecording,
+  attachments,
+  setAttachments,
+}) => {
   const textareaRef = useRef(null);
   const fileRef = useRef(null);
   const [hasWrapped, setHasWrapped] = useState(false);
   const [Emoji, setEmoji] = useState(false);
-  const [attachments, setAttachments] = useState([]);
   let isTyping = input.trim().length > 0;
 
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
 
-    if (!isTyping) {
-      setHasWrapped(false);
-      el.style.height = '45px';
-      return;
-    }
-
-    if (input === '') {
+    if (!isTyping || input === '') {
       setHasWrapped(false);
       el.style.height = '45px';
       return;
     }
 
     el.style.height = '45px';
-    el.style.height = el.scrollHeight + 2 + 'px';
+
+    el.style.height = Math.min(el.scrollHeight + 2, 120) + 'px';
 
     if (!hasWrapped && (el.scrollHeight > 45 || input.length >= 90)) {
       setHasWrapped(true);
@@ -65,19 +66,15 @@ const NormalChatUI = ({ input, setInput, sendMessage, startRecording }) => {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
 
-    const newText = input.substring(0, start) + emoji + input.substring(end);
+    const newText = input.slice(0, start) + emoji + input.slice(end);
 
     setInput(newText);
 
-    // cursor move
     setTimeout(() => {
       textarea.focus();
       textarea.setSelectionRange(start + emoji.length, start + emoji.length);
     }, 0);
   };
-
-
-
 
   return (
     <div className="w-full px-4 py-3 border-t bg-transparent flex items-center gap-3">
@@ -145,10 +142,11 @@ const NormalChatUI = ({ input, setInput, sendMessage, startRecording }) => {
         <textarea
           ref={textareaRef}
           placeholder="Type Aa..."
-          className={`flex-1 w-full h-11.25 resize-none bg-transparent outline-none border border-gray-300 px-4 font-open_sens text-white transition-all ${
+          className={`flex-1 w-full h-11.25 resize-none bg-transparent outline-none border border-gray-300 px-4 font-open_sens text-white transition-all whitespace-pre-wrap overflow-break-word overrflow-y-scroll ${
             hasWrapped ? 'rounded-lg py-3' : 'rounded-full py-2'
           } ${isTyping ? 'w-full' : 'w-[55%]'} `}
           value={input}
+          style={{ maxHeight: '120px', height: '45px' }}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
         />
@@ -167,7 +165,8 @@ const NormalChatUI = ({ input, setInput, sendMessage, startRecording }) => {
               theme="dark"
               emojiStyle="facebook"
               skinTonesDisabled={true}
-              className="mobile:w-[!280px] mobile:h-[!380px] emoji-picker"
+              previewConfig={{ showPreview: false }}
+              className="mobile:w-70! mobile:h-95! computer:w-80! computer:h-105! emoji-picker"
               onEmojiClick={emojiData => {
                 insertEmojiAtCursor(emojiData.emoji);
               }}
@@ -178,9 +177,9 @@ const NormalChatUI = ({ input, setInput, sendMessage, startRecording }) => {
 
       <button
         onClick={sendMessage}
-        disabled={!isTyping}
+        disabled={!(isTyping || attachments.length > 0)}
         className={`bg-purple-600 ${
-          !isTyping && 'opacity-50'
+          !(isTyping || attachments.length > 0) ? 'opacity-50' : ''
         } text-white px-4 py-2 rounded-full hover:bg-purple-700`}
       >
         <Send />
@@ -281,3 +280,27 @@ export default NormalChatUI;
         onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
       /> */
 }
+
+// useEffect(() => {
+//   const el = textareaRef.current;
+//   if (!el) return;
+
+//   if (!isTyping) {
+//     setHasWrapped(false);
+//     el.style.height = '45px';
+//     return;
+//   }
+
+//   if (input === '') {
+//     setHasWrapped(false);
+//     el.style.height = '45px';
+//     return;
+//   }
+
+//   el.style.height = '45px';
+//   el.style.height = el.scrollHeight + 2 + 'px';
+
+//   if (!hasWrapped && (el.scrollHeight > 45 || input.length >= 90)) {
+//     setHasWrapped(true);
+//   }
+// }, [input, hasWrapped, isTyping]);

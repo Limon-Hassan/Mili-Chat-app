@@ -17,6 +17,9 @@ import AudioPlayer from '../../components/AudioPlayer';
 import { useSearchParams } from 'next/navigation';
 import { useGraphQL } from '@/components/Hook/useGraphQL';
 import { useRouter } from 'next/navigation';
+import twemoji from 'twemoji';
+import { uploadToCloudinary } from '@/lib/cloudinaryClient';
+import SeeProfileFicture from '@/components/SeeProfileFicture';
 
 export default function page() {
   let router = useRouter();
@@ -37,7 +40,13 @@ export default function page() {
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [recordTime, setRecordTime] = useState(0);
+  const [attachments, setAttachments] = useState([]);
+  const [active, setActive] = useState(false);
+  const [activePicture, setActivePicture] = useState(null);
   const timerRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
+
 
   const [analyser, setAnalyser] = useState(null);
 
@@ -71,6 +80,17 @@ export default function page() {
     mediaRecorder?.stop();
     setAnalyser(null);
   };
+
+  const formatTime = time => {
+    const minutes = Math.floor(time / 60);
+    const seconds = time % 60;
+
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(
+      2,
+      '0',
+    )}`;
+  };
+
 
   const [input, setInput] = useState('');
 
@@ -141,43 +161,95 @@ export default function page() {
   }, []);
 
   const sendMessage = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && attachments.length === 0) return;
     try {
+      let uploadedAttachments = [];
+
+      for (let att of attachments) {
+        const url = await uploadToCloudinary(
+          att.file,
+          'chat_attachments',
+          att.type === 'image' ? 'image' : 'video',
+        );
+        if (url) {
+          uploadedAttachments.push({ type: att.type, url });
+        }
+      }
       let mutation;
       let variables;
       if (!activeConversation) {
-        mutation = `mutation SendFirst($receiverId: ID!, $text: String!) {
-          sendMessage(receiverId: $receiverId, text: $text, type: "text") {
+        mutation = `
+        mutation SendFirst(
+          $receiverId: ID!,
+          $text: String,
+          $mediaUrl: String,
+          $type: String
+        ) {
+          sendMessage(
+            receiverId: $receiverId,
+            text: $text,
+            mediaUrl: $mediaUrl,
+            type: $type
+          ) {
             id
             text
+            mediaUrl
+            type
             sender { id name avatar }
             conversation { id }
             createdAt
           }
-        }`;
+        }
+      `;
 
-        variables = { receiverId: userId, text: input.trim() };
+        let firstAttachment = uploadedAttachments[0];
+        variables = {
+          receiverId: userId,
+          text:
+            input.trim() ||
+            (firstAttachment ? `[${firstAttachment.type}]` : ''),
+          type: firstAttachment ? firstAttachment.type : 'text',
+          mediaUrl: firstAttachment ? firstAttachment.url : null,
+        };
       } else {
         mutation = `
-        mutation SendStrict($conversationId: ID!, $text: String!) {
-          sendMessageStrict(conversationId: $conversationId, text: $text, type: "text") {
+        mutation SendStrict(
+          $conversationId: ID!,
+          $text: String,
+          $mediaUrl: String,
+          $type: String
+        ) {
+          sendMessageStrict(
+            conversationId: $conversationId,
+            text: $text,
+            mediaUrl: $mediaUrl,
+            type: $type
+          ) {
             id
             text
+            mediaUrl
+            type
             sender { id name avatar }
             createdAt
           }
         }
       `;
 
+        let firstAttachment = uploadedAttachments[0];
         variables = {
-          conversationId: activeConversation.id,
-          text: input.trim(),
+          conversationId,
+          text:
+            input.trim() ||
+            (firstAttachment ? `[${firstAttachment.type}]` : ''),
+          type: firstAttachment ? firstAttachment.type : 'text',
+          mediaUrl: firstAttachment ? firstAttachment.url : null,
         };
       }
       let data = await request(mutation, variables);
       const messageData = data.sendMessage || data.sendMessageStrict;
       setMessages(prev => [...prev, messageData]);
       setInput('');
+      setAttachments([]);
     } catch (error) {
       console.log(error);
     }
@@ -191,12 +263,16 @@ export default function page() {
     let FetchMessages = async () => {
       try {
         if (!activeConversation.id) return;
-        let query = `query GetMessages($conversationId: ID!) {getMessages(conversationId: $conversationId) {id text createdAt
-    sender {
-      id
-      name
-      avatar
-    }
+        let query = `query GetMessages($conversationId: ID!) {
+  getMessages(conversationId: $conversationId) {
+    id
+    text
+    mediaUrl
+    type
+    duration
+    createdAt
+    sender { id name avatar }
+    receiver { id name avatar }
   }
 }`;
 
@@ -226,108 +302,146 @@ export default function page() {
   }, []);
 
   return (
-    <div
-      className="fixed inset-0 w-full flex flex-col backdrop-blur-md bg-transparent border shadow-md mx-auto max-w-5xl"
-      style={{ height: 'var(--app-height)' }}
-    >
-      <div className="w-full px-5 py-4 border-b bg-transparent flex justify-between items-center rounded-t-lg">
-        <div className="flex items-center gap-2">
-          <img
-            className="w-15 h-15 object-cover bg-center rounded-full"
-            src={avatar || '/defult.png'}
-            alt="group"
-          />
-          <div>
-            <h2 className="font-semibold text-[18px] font-open_sens">{name}</h2>
-            <p className="text-[13px] font-bold text-green-600">Online</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-5 relative">
-          <Phone className="cursor-pointer" />
-          <Video className="cursor-pointer" />
-          <MoreVertical
-            className="cursor-pointer"
-            onClick={() => setOpenMenu(!openMenu)}
-          />
-
-          {openMenu && (
-            <div
-              ref={menuRef}
-              className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border"
-            >
-              <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
-                Block User
-              </p>
-              <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
-                Theme
-              </p>
-              <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
-                Clear Chat
-              </p>
+    <>
+      <div
+        className="fixed inset-0 w-full flex flex-col backdrop-blur-md bg-transparent border shadow-md mx-auto max-w-5xl"
+        style={{ height: 'var(--app-height)' }}
+      >
+        <div className="w-full px-5 py-4 border-b bg-transparent flex justify-between items-center rounded-t-lg">
+          <div className="flex items-center gap-2">
+            <img
+              className="w-15 h-15 object-cover bg-center rounded-full"
+              src={avatar || '/defult.png'}
+              alt="group"
+            />
+            <div>
+              <h2 className="font-semibold text-[18px] font-open_sens">
+                {name}
+              </h2>
+              <p className="text-[13px] font-bold text-green-600">Online</p>
             </div>
-          )}
-        </div>
-      </div>
+          </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-3">
-        {messages.map(msg => {
-          const isMine = msg.sender.id === me?.id;
-          return (
-            <div
-              key={msg.id}
-              className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
-            >
+          <div className="flex items-center gap-5 relative">
+            <Phone className="cursor-pointer" />
+            <Video className="cursor-pointer" />
+            <MoreVertical
+              className="cursor-pointer"
+              onClick={() => setOpenMenu(!openMenu)}
+            />
+
+            {openMenu && (
               <div
-                className={`max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${
-                  isMine
-                    ? 'bg-purple-600 text-white rounded-br-none'
-                    : 'bg-white text-gray-900 rounded-bl-none'
-                }`}
+                ref={menuRef}
+                className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border"
               >
-                {msg.type === 'audio' ? (
-                  <AudioPlayer src={msg.audio} />
-                ) : (
-                  <span className="text-sm leading-5 font-normal font-open_sens">
-                    {msg.text}
-                  </span>
-                )}
+                <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
+                  Block User
+                </p>
+                <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
+                  Theme
+                </p>
+                <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
+                  Clear Chat
+                </p>
               </div>
-            </div>
-          );
-        })}
-        <div ref={bottomRef} />
-      </div>
-
-      {isRecording ? (
-        <div className="w-[95%] mx-auto px-4 py-3 bg-blue-500 text-white flex items-center gap-4 rounded-xl">
-          <button
-            className="bg-red-500 text-white w-7.5 h-7.5 rounded-full flex items-center justify-center cursor-pointer"
-            onClick={stopRecording}
-          >
-            <IoIosCloseCircleOutline size={24} />
-          </button>
-
-          <span className="font-semibold text-sm">
-            {recordTime < 10 ? `00:0${recordTime}` : `00:${recordTime}`}
-          </span>
-
-          <div className="flex-1">
-            <LiveWaveform analyser={analyser} />
+            )}
           </div>
-
-          <button className="bg-white text-blue-500 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer">
-            <Send size={24} />
-          </button>
         </div>
-      ) : (
-        <NormalChatUI
-          input={input}
-          setInput={setInput}
-          sendMessage={sendMessage}
-          startRecording={startRecording}
+
+        <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-3">
+          {messages.map(msg => {
+            const isMine = msg.sender.id === me?.id;
+
+            const bgClass =
+              msg.type === 'text' || msg.type === 'link'
+                ? isMine
+                  ? 'bg-purple-600 text-white rounded-br-none'
+                  : 'bg-white text-gray-600 rounded-bl-none'
+                : '';
+            return (
+              <div
+                key={msg.id}
+                className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${bgClass}`}
+                >
+                  {msg.type === 'image' && msg.mediaUrl ? (
+                    <img
+                      src={msg.mediaUrl}
+                      alt="attachment"
+                      onClick={() => {
+                        setActivePicture(msg.mediaUrl);
+                        setActive(true);
+                      }}
+                      className="max-w-50 rounded-lg"
+                    />
+                  ) : msg.type === 'video' && msg.mediaUrl ? (
+                    <video
+                      src={msg.mediaUrl}
+                      controls
+                      className="max-w-50 rounded-lg"
+                    />
+                  ) : msg.type === 'audio' && msg.mediaUrl ? (
+                    <AudioPlayer src={msg.mediaUrl} />
+                  ) : (
+                    <span
+                      className="text-sm leading-5 font-normal font-open_sens"
+                      dangerouslySetInnerHTML={{
+                        __html: twemoji.parse(msg.text, {
+                          folder: 'svg',
+                          ext: '.svg',
+                          className: 'w-5 h-5 inline',
+                        }),
+                      }}
+                    ></span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <div ref={bottomRef} />
+        </div>
+
+        {isRecording ? (
+          <div className="w-[95%] mx-auto px-4 py-3 bg-blue-500 text-white flex items-center gap-4 rounded-xl">
+            <button
+              className="bg-red-500 text-white w-7.5 h-7.5 rounded-full flex items-center justify-center cursor-pointer"
+              onClick={stopRecording}
+            >
+              <IoIosCloseCircleOutline size={24} />
+            </button>
+
+            <span className="font-semibold text-sm">
+              {formatTime(recordTime)}
+            </span>
+
+            <div className="flex-1">
+              <LiveWaveform analyser={analyser} />
+            </div>
+
+            <button className="bg-white text-blue-500 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer">
+              <Send size={24} />
+            </button>
+          </div>
+        ) : (
+          <NormalChatUI
+            input={input}
+            setInput={setInput}
+            sendMessage={sendMessage}
+            startRecording={startRecording}
+            attachments={attachments}
+            setAttachments={setAttachments}
+          />
+        )}
+      </div>
+      {active && (
+        <SeeProfileFicture
+          src={activePicture}
+          onClose={() => setActive(false)}
         />
       )}
-    </div>
+    </>
   );
 }
