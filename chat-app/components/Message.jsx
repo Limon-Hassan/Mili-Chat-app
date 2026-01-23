@@ -31,14 +31,12 @@ export default function Message({
   const [attachments, setAttachments] = useState([]);
   const [active, setActive] = useState(false);
   const [activePicture, setActivePicture] = useState(null);
-  const [audioFile, setAudioFile] = useState(null);
   const audioChunksRef = useRef([]);
 
   const startRecording = async () => {
     setIsRecording(true);
     setRecordTime(0);
     audioChunksRef.current = [];
-    setAudioFile(null);
 
     timerRef.current = setInterval(() => {
       setRecordTime(prev => prev + 1);
@@ -86,13 +84,12 @@ export default function Message({
         type: 'audio/webm',
       });
 
-      setAudioFile(file);
+     await sendMessage({ audio: file });
     };
 
     mediaRecorder.stop();
   };
 
-  console.log(audioFile)
 
   const formatTime = time => {
     const minutes = Math.floor(time / 60);
@@ -118,11 +115,10 @@ export default function Message({
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const sendMessage = async () => {
-    if (!input.trim() && attachments.length === 0 && !audioFile) return;
+  const sendMessage = async ({ audio } = {}) => {
+    if (!input.trim() && attachments.length === 0 && !audio) return;
     try {
       let uploadedAttachments = [];
-
       for (let att of attachments) {
         const url = await uploadToCloudinary(
           att.file,
@@ -133,17 +129,14 @@ export default function Message({
           uploadedAttachments.push({ type: att.type, url });
         }
       }
-      console.log('audioFile', audioFile);
-      if (audioFile) {
+      if (audio) {
         const audioUrl = await uploadToCloudinary(
-          audioFile,
+          audio,
           'chat_attachments',
-          'audio',
+          'video',
         );
-        console.log('audioUrl:', audioUrl);
         if (audioUrl) {
           uploadedAttachments.push({ type: 'audio', url: audioUrl });
-          setAudioFile(null);
         }
       }
       let mutation;
@@ -220,7 +213,6 @@ export default function Message({
       setMessages(prev => [...prev, messageData]);
       setInput('');
       setAttachments([]);
-      setAudioFile(null);
     } catch (error) {
       console.log(error);
     }

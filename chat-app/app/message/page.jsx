@@ -31,7 +31,7 @@ export default function page() {
   const conversationId = searchParams.get('conversationId');
 
   let [conversation, setConversation] = useState([]);
-  const [activeConversation, setActiveConversation] = useState(null);
+  const [activeConversation, setActiveConversation] = useState({});
   let [messages, setMessages] = useState([]);
   let [me, setMe] = useState({});
 
@@ -46,13 +46,12 @@ export default function page() {
   const timerRef = useRef(null);
   const audioChunksRef = useRef([]);
 
-
-
   const [analyser, setAnalyser] = useState(null);
 
   const startRecording = async () => {
     setIsRecording(true);
     setRecordTime(0);
+    audioChunksRef.current = [];
 
     timerRef.current = setInterval(() => {
       setRecordTime(prev => prev + 1);
@@ -63,13 +62,15 @@ export default function page() {
     const audioContext = new AudioContext();
     const source = audioContext.createMediaStreamSource(stream);
     const analyserNode = audioContext.createAnalyser();
-
     analyserNode.fftSize = 64;
     source.connect(analyserNode);
-
     setAnalyser(analyserNode);
 
     const recorder = new MediaRecorder(stream);
+    recorder.ondataavailable = e => {
+      if (e.data.size > 0) audioChunksRef.current.push(e.data);
+    };
+
     recorder.start();
     setMediaRecorder(recorder);
   };
@@ -91,6 +92,27 @@ export default function page() {
     )}`;
   };
 
+  let handleSendRecording = async () => {
+    if (!mediaRecorder) return;
+    setIsRecording(false);
+    clearInterval(timerRef.current);
+    setAnalyser(null);
+
+    mediaRecorder.onstop = async () => {
+      if (audioChunksRef.current.length === 0) return;
+
+      const audioBlob = new Blob(audioChunksRef.current, {
+        type: 'audio/webm',
+      });
+      const file = new File([audioBlob], 'voice-message.webm', {
+        type: 'audio/webm',
+      });
+
+      await sendMessage({ audio: file });
+    };
+
+    mediaRecorder.stop();
+  };
 
   const [input, setInput] = useState('');
 
@@ -105,24 +127,6 @@ export default function page() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
-
-  useEffect(() => {
-    if (!conversationId || conversation.length === 0) return;
-
-    const validConversation = conversation.find(
-      conv => conv.id === conversationId,
-    );
-
-    if (!validConversation) {
-      console.warn('Invalid conversation access attempt');
-
-      alert('Access Denied');
-      router.replace('/', { scroll: false });
-
-      return;
-    }
-    setActiveConversation(validConversation || null);
-  }, [conversationId, conversation]);
 
   useEffect(() => {
     let fetchConversations = async () => {
@@ -160,11 +164,28 @@ export default function page() {
     fetchConversations();
   }, []);
 
-  const sendMessage = async () => {
-    if (!input.trim() && attachments.length === 0) return;
+  useEffect(() => {
+    if (!conversationId || conversation.length === 0) return;
+
+    const validConversation = conversation.find(
+      conv => conv.id === conversationId,
+    );
+
+    if (!validConversation) {
+      console.warn('Invalid conversation access attempt');
+
+      alert('Access Denied');
+      router.replace('/', { scroll: false });
+
+      return;
+    }
+    setActiveConversation(validConversation || null);
+  }, [conversationId, conversation]);
+
+  const sendMessage = async ({ audio } = {}) => {
+    if (!input.trim() && attachments.length === 0 && !audio) return;
     try {
       let uploadedAttachments = [];
-
       for (let att of attachments) {
         const url = await uploadToCloudinary(
           att.file,
@@ -173,6 +194,16 @@ export default function page() {
         );
         if (url) {
           uploadedAttachments.push({ type: att.type, url });
+        }
+      }
+      if (audio) {
+        const audioUrl = await uploadToCloudinary(
+          audio,
+          'chat_attachments',
+          'video',
+        );
+        if (audioUrl) {
+          uploadedAttachments.push({ type: 'audio', url: audioUrl });
         }
       }
       let mutation;
@@ -246,6 +277,7 @@ export default function page() {
         };
       }
       let data = await request(mutation, variables);
+      console.log(data);
       const messageData = data.sendMessage || data.sendMessageStrict;
       setMessages(prev => [...prev, messageData]);
       setInput('');
@@ -421,7 +453,10 @@ export default function page() {
               <LiveWaveform analyser={analyser} />
             </div>
 
-            <button className="bg-white text-blue-500 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer">
+            <button
+              onClick={handleSendRecording}
+              className="bg-white text-blue-500 w-10 h-10 rounded-full flex items-center justify-center cursor-pointer"
+            >
               <Send size={24} />
             </button>
           </div>
