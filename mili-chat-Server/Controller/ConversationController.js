@@ -231,7 +231,6 @@ async function getConversation(context) {
       lastMessageType: conv.lastMessageType,
       lastMessageAt: conv.lastMessageAt,
     };
-    
   });
 
   return formatted;
@@ -445,7 +444,7 @@ async function reactToMessage({ messageId, emoji }, context) {
   if (message.receiver) {
     await message.populate('receiver', 'id name avatar');
   }
-
+  await message.populate('reactions.user', 'id name avatar');
   let conversation = await conversionSchema.findById(message.conversation);
   let io = getIO();
   conversation.participants.forEach(uid => {

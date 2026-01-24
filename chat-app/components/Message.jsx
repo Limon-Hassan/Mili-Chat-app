@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Phone, Video, MoreVertical, Send } from 'lucide-react';
+import { Phone, Video, MoreVertical, Send, Trash, Smile } from 'lucide-react';
 import useScrollToBottom from '@/customHook/useScrollToBottom';
 import NormalChatUI from './NormalChatUI';
 import LiveWaveform from './LiveWaveform';
@@ -11,6 +11,7 @@ import { useGraphQL } from './Hook/useGraphQL';
 import twemoji from 'twemoji';
 import { uploadToCloudinary } from '@/lib/cloudinaryClient';
 import SeeProfileFicture from './SeeProfileFicture';
+import EmojiPicker from 'emoji-picker-react';
 
 export default function Message({
   chatUserId,
@@ -20,8 +21,10 @@ export default function Message({
 }) {
   let { request, loading, error } = useGraphQL();
   let [messages, setMessages] = useState([]);
+  const [hoveredMessageId, setHoveredMessageId] = useState(null);
 
   const [openMenu, setOpenMenu] = useState(false);
+  const [reactionFor, setReactionFor] = useState(null);
   const menuRef = useRef(null);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
@@ -84,12 +87,11 @@ export default function Message({
         type: 'audio/webm',
       });
 
-     await sendMessage({ audio: file });
+      await sendMessage({ audio: file });
     };
 
     mediaRecorder.stop();
   };
-
 
   const formatTime = time => {
     const minutes = Math.floor(time / 60);
@@ -161,6 +163,10 @@ export default function Message({
             type
             sender { id name avatar }
             conversation { id }
+             reactions {
+    emoji
+    user { id name avatar }
+  }
             createdAt
           }
         }
@@ -193,6 +199,10 @@ export default function Message({
             mediaUrl
             type
             sender { id name avatar }
+             reactions {
+    emoji
+    user { id name avatar }
+  }
             createdAt
           }
         }
@@ -236,6 +246,10 @@ export default function Message({
     createdAt
     sender { id name avatar }
     receiver { id name avatar }
+     reactions {
+    emoji
+    user { id name avatar }
+  }
   }
 }`;
         const data = await request(query, { conversationId });
@@ -247,6 +261,56 @@ export default function Message({
 
     FetchMessages();
   }, [conversationId, request]);
+
+  let handleDelete = async id => {
+    try {
+      let Delete_Query = `
+  mutation DeleteMessage($messageId: ID!) {
+    deleteMessage(messageId: $messageId)
+  }
+`;
+      let data = await request(Delete_Query, { messageId: id });
+      if (data.deleteMessage === true) {
+        setMessages(prev => prev.filter(m => m.id !== id));
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  let handleReact = async (messageId, emoji) => {
+    try {
+      let mutation = `
+      mutation ReactToMessage($messageId: ID!, $emoji: String!) {
+        reactToMessage(messageId: $messageId, emoji: $emoji) {
+          id
+          reactions {
+            emoji
+            user {
+              id
+              name
+              avatar
+            }
+          }
+        }
+      }
+    `;
+
+      let data = await request(mutation, { messageId, emoji });
+
+      setMessages(prev => {
+        const newMessages = prev.map(msg =>
+          msg.id === messageId
+            ? { ...msg, reactions: data.reactToMessage.reactions }
+            : msg,
+        );
+
+        return newMessages;
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <>
@@ -306,10 +370,12 @@ export default function Message({
             return (
               <div
                 key={idx}
-                className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
+                onMouseEnter={() => setHoveredMessageId(msg.id)}
+                onMouseLeave={() => setHoveredMessageId(null)}
+                className={` flex ${isMine ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${
+                  className={`relative max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${
                     bgClass
                   }`}
                 >
@@ -342,6 +408,60 @@ export default function Message({
                         }),
                       }}
                     ></span>
+                  )}
+
+                  {hoveredMessageId === msg.id && (
+                    <div
+                      className={`absolute top-1/2 -translate-y-1/2 flex gap-2 ${isMine ? '-left-20' : '-right-20'}`}
+                    >
+                      <button
+                        onClick={() => handleDelete(msg.id)}
+                        className="w-7 h-7 text-white rounded-full flex items-center justify-center cursor-pointer"
+                      >
+                        <Trash />
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setReactionFor(prev =>
+                            prev === msg.id ? null : msg.id,
+                          );
+                        }}
+                        className="w-7 h-7  text-white rounded-full flex items-center justify-center cursor-pointer"
+                      >
+                        <Smile />
+                      </button>
+                      {reactionFor === msg.id && (
+                        <div
+                          className={`absolute -top-12 ${
+                            isMine ? 'right-2' : 'left-2'
+                          } z-50`}
+                        >
+                          <EmojiPicker
+                            reactionsDefaultOpen={true}
+                            emojiStyle="facebook"
+                            previewConfig={{ showPreview: false }}
+                            theme="dark"
+                            skinTonesDisabled
+                            onEmojiClick={emojiData => {
+                              handleReact(msg.id, emojiData.emoji);
+                              setReactionFor(null);
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {msg.reactions?.length > 0 && (
+                    <div
+                      className={`absolute -bottom-4.5 ${
+                        isMine ? 'right-25' : 'left-25'
+                      } bg-white border shadow px-2 py-0.5 rounded-full text-xs flex gap-1`}
+                    >
+                      {msg.reactions.map((r, i) => {
+                        return <span key={i}>{r.emoji}</span>;
+                      })}
+                    </div>
                   )}
                 </div>
               </div>
