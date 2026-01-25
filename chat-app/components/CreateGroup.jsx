@@ -90,6 +90,7 @@ const CreateGroup = ({ setGroup }) => {
         id
         name
         photo
+
         Admin { id name email avatar }
         members { id name email avatar }
       }

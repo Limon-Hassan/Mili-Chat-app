@@ -13,6 +13,7 @@ const ConversationType = new GraphQLObjectType({
     id: { type: GraphQLID },
     participants: { type: new GraphQLList(UserType) },
     isGroup: { type: GraphQLBoolean },
+    type: { type: GraphQLString },
     group: { type: GraphQLString },
     otherUser: { type: UserType },
     lastMessage: { type: GraphQLString },

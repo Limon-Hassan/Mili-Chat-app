@@ -5,55 +5,64 @@ const { createNotify } = require('./NotificationContoller');
 const { getIO, getSocketIds } = require('../socket_server');
 
 async function createGroup({ name, members = [], photo }, context) {
-  if (!context.userId) {
-    throw new Error('Authentication required to create a group.');
-  }
-
-  if (!/^[A-Za-z\s]+$/.test(name)) {
-    throw new Error('Group name can only contain letters');
-  }
-
-  let me = await user.findById(context.userId);
-  if (!me) {
-    throw new Error('User not found.');
-  }
-
-  let validMembers = members.filter(memberId => me.friends.includes(memberId));
-
-  const uniqueMembers = Array.from(new Set([...validMembers, context.userId]));
-
-  let newGroup = new groupSchema({
-    name,
-    members: uniqueMembers,
-    photo,
-    Admin: context.userId,
-  });
-  await newGroup.save();
-  let GroupConversation = await conversionSchema.create({
-    participants: uniqueMembers,
-    group: newGroup._id,
-    lastMessage: '',
-    lastMessageAt: new Date(),
-  });
-  await GroupConversation.populate('participants', 'id name email avatar');
-  await newGroup.populate([
-    { path: 'Admin', select: 'id name email avatar' },
-    { path: 'members', select: 'id name email avatar' },
-  ]);
-
-  const io = getIO();
-
-  uniqueMembers.forEach(memberId => {
-    if (memberId !== context.userId) {
-      getSocketIds(memberId).forEach(sid => {
-        io.to(sid).emit('addedToGroup', {
-          group: newGroup,
-        });
-      });
+  try {
+    if (!context.userId) {
+      throw new Error('Authentication required to create a group.');
     }
-  });
 
-  return newGroup;
+    if (!/^[A-Za-z\s]+$/.test(name)) {
+      throw new Error('Group name can only contain letters');
+    }
+
+    let me = await user.findById(context.userId);
+    if (!me) {
+      throw new Error('User not found.');
+    }
+
+    let validMembers = members.filter(memberId =>
+      me.friends.includes(memberId),
+    );
+
+    const uniqueMembers = Array.from(
+      new Set([...validMembers, context.userId]),
+    );
+
+    let newGroup = new groupSchema({
+      name,
+      members: uniqueMembers,
+      photo,
+      Admin: context.userId,
+    });
+    await newGroup.save();
+    let GroupConversation = await conversionSchema.create({
+      type: 'group',
+      participants: uniqueMembers,
+      group: newGroup._id,
+      lastMessage: '',
+      lastMessageAt: new Date(),
+    });
+    await GroupConversation.populate('participants', 'id name email avatar');
+    await newGroup.populate([
+      { path: 'Admin', select: 'id name email avatar' },
+      { path: 'members', select: 'id name email avatar' },
+    ]);
+
+    const io = getIO();
+
+    uniqueMembers.forEach(memberId => {
+      if (memberId !== context.userId) {
+        getSocketIds(memberId).forEach(sid => {
+          io.to(sid).emit('addedToGroup', {
+            group: newGroup,
+          });
+        });
+      }
+    });
+
+    return newGroup;
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 async function addMembers({ groupId, members = [] }, context) {

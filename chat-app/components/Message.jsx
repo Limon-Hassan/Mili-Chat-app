@@ -1,7 +1,15 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Phone, Video, MoreVertical, Send, Trash, Smile } from 'lucide-react';
+import {
+  Phone,
+  Video,
+  MoreVertical,
+  Send,
+  Trash,
+  Smile,
+  Check,
+} from 'lucide-react';
 import useScrollToBottom from '@/customHook/useScrollToBottom';
 import NormalChatUI from './NormalChatUI';
 import LiveWaveform from './LiveWaveform';
@@ -22,7 +30,7 @@ export default function Message({
   let { request, loading, error } = useGraphQL();
   let [messages, setMessages] = useState([]);
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
-
+  console.log(conversationId);
   const [openMenu, setOpenMenu] = useState(false);
   const [reactionFor, setReactionFor] = useState(null);
   const menuRef = useRef(null);
@@ -164,10 +172,12 @@ export default function Message({
             sender { id name avatar }
             conversation { id }
              reactions {
-    emoji
-    user { id name avatar }
-  }
+             emoji
+             user { id name avatar }
+             }
             createdAt
+              createdAt
+              deliveryStatus
           }
         }
       `;
@@ -200,10 +210,12 @@ export default function Message({
             type
             sender { id name avatar }
              reactions {
-    emoji
-    user { id name avatar }
-  }
+             emoji
+              user { id name avatar }
+              }
             createdAt
+              createdAt
+              deliveryStatus
           }
         }
       `;
@@ -218,7 +230,6 @@ export default function Message({
         };
       }
       let data = await request(mutation, variables);
-      console.log(data);
       const messageData = data.sendMessage || data.sendMessageStrict;
       setMessages(prev => [...prev, messageData]);
       setInput('');
@@ -227,6 +238,8 @@ export default function Message({
       console.log(error);
     }
   };
+
+  console.log(messages);
 
   useEffect(() => {
     setMessages([]);
@@ -244,6 +257,7 @@ export default function Message({
     type
     duration
     createdAt
+    deliveryStatus
     sender { id name avatar }
     receiver { id name avatar }
      reactions {
@@ -261,6 +275,46 @@ export default function Message({
 
     FetchMessages();
   }, [conversationId, request]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+    let MarkAsDelivered = async () => {
+      try {
+        const MARK_AS_DELIVERED = `
+  mutation MarkAsDelivered($conversationId: ID!) {
+    markAsDelivered(conversationId: $conversationId)
+  }
+`;
+
+        let data = await request(MARK_AS_DELIVERED, { conversationId });
+        console.log(data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    MarkAsDelivered();
+  }, [conversationId]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+    let MarkAsRead = async () => {
+      try {
+        const MARK_AS_READ = `
+  mutation MarkAsRead($conversationId: ID!) {
+    markAsRead(conversationId: $conversationId)
+  }
+`;
+
+        let data = await request(MARK_AS_READ, { conversationId });
+        console.log(data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    MarkAsRead();
+  }, [conversationId]);
 
   let handleDelete = async id => {
     try {
@@ -312,6 +366,45 @@ export default function Message({
     }
   };
 
+  let handleBlock = async userId => {
+    try {
+      const query = `
+    mutation BlockUser($blockerId: ID!) {
+      blockUser(blockerId: $blockerId) {
+         id
+         name
+        
+           blockedByMe {
+      id
+      name
+      avatar
+    }
+      }
+    }
+  `;
+      const data = await request(query, { blockerId: userId });
+      setMessages([]);
+      console.log(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  let handleClearConv = async convId => {
+    try {
+      let query = `
+  mutation DeleteConversation($conversationId: ID!) {
+    deleteConversation(conversationId: $conversationId)
+  }
+`;
+      let data = await request(query, { conversationId: convId });
+      setMessages([]);
+      console.log(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <>
       <div className="h-[94vh]  backdrop-blur-md bg-transparent border rounded-xl shadow-md mx-auto w-5xl flex flex-col">
@@ -341,15 +434,21 @@ export default function Message({
             {openMenu && (
               <div
                 ref={menuRef}
-                className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border"
+                className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border z-9999"
               >
-                <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
-                  Block User
+                <p
+                  onClick={() => handleBlock(chatUserId)}
+                  className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer"
+                >
+                  Block
                 </p>
                 <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
                   Theme
                 </p>
-                <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
+                <p
+                  onClick={() => handleClearConv(conversationId)}
+                  className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer"
+                >
                   Clear Chat
                 </p>
               </div>
@@ -357,25 +456,25 @@ export default function Message({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-3 ">
-          {messages.map((msg, idx) => {
+        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4.5 ">
+          {messages.map(msg => {
             const isMine = msg.sender.id === currentUser;
 
             const bgClass =
               msg.type === 'text' || msg.type === 'link'
                 ? isMine
-                  ? 'bg-purple-600 text-white rounded-br-none'
-                  : 'bg-white text-gray-600 rounded-bl-none'
+                  ? 'bg-purple-600 text-white rounded-br-none px-4 py-2.5'
+                  : 'bg-white text-gray-600 rounded-bl-none px-4 py-2.5'
                 : '';
             return (
               <div
-                key={idx}
+                key={msg.id}
                 onMouseEnter={() => setHoveredMessageId(msg.id)}
                 onMouseLeave={() => setHoveredMessageId(null)}
                 className={` flex ${isMine ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`relative max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${
+                  className={`relative max-w-[60%] rounded-xl flex items-center gap-2 ${
                     bgClass
                   }`}
                 >
@@ -455,12 +554,48 @@ export default function Message({
                   {msg.reactions?.length > 0 && (
                     <div
                       className={`absolute -bottom-4.5 ${
-                        isMine ? 'right-25' : 'left-25'
+                        isMine ? 'right-0' : 'left-0'
                       } bg-white border shadow px-2 py-0.5 rounded-full text-xs flex gap-1`}
                     >
                       {msg.reactions.map((r, i) => {
-                        return <span key={i}>{r.emoji}</span>;
+                        return (
+                          <span
+                            key={i}
+                            dangerouslySetInnerHTML={{
+                              __html: twemoji.parse(r.emoji, {
+                                folder: 'svg',
+                                ext: '.svg',
+                                className: 'w-3.5 h-3.5 inline',
+                              }),
+                            }}
+                          ></span>
+                        );
                       })}
+                    </div>
+                  )}
+                  {isMine && msg.deliveryStatus && (
+                    <div className="absolute -bottom-2.5 right-0 ">
+                      {msg.deliveryStatus === 'sent' && (
+                        <span className="text-white text-sm font-medium flex items-center gap-1 -mr-2.5 -mb-2.5">
+                          Sent
+                          <span className="w-4 h-4 border border-gray-500 rounded-full flex items-center justify-center">
+                            <Check size={12} />
+                          </span>
+                        </span>
+                      )}
+                      {msg.deliveryStatus === 'delivered' && (
+                        <span className="text-white text-sm font-medium flex items-center gap-1 -mr-2.5 -mb-2.5">
+                          Delivered
+                          <span className="w-4 h-4 rounded-full flex items-center justify-center bg-purple-500">
+                            <Check className="text-white" size={12} />
+                          </span>
+                        </span>
+                      )}
+                      {msg.deliveryStatus === 'seen' && (
+                        <span className="text-white text-sm font-medium flex items-center -mb-2">
+                          Seen
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>

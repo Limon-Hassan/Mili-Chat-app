@@ -1,14 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import {
-  Phone,
-  Video,
-  MoreVertical,
-  Cross,
-  Send,
-  StopCircle,
-} from 'lucide-react';
+import { Phone, Video, MoreVertical, Send, Trash, Smile } from 'lucide-react';
 import useScrollToBottom from '@/customHook/useScrollToBottom';
 import NormalChatUI from '../../components/NormalChatUI';
 import LiveWaveform from '../../components/LiveWaveform';
@@ -20,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import twemoji from 'twemoji';
 import { uploadToCloudinary } from '@/lib/cloudinaryClient';
 import SeeProfileFicture from '@/components/SeeProfileFicture';
+import EmojiPicker from 'emoji-picker-react';
 
 export default function page() {
   let router = useRouter();
@@ -43,10 +37,17 @@ export default function page() {
   const [attachments, setAttachments] = useState([]);
   const [active, setActive] = useState(false);
   const [activePicture, setActivePicture] = useState(null);
+  const [reaction, setReaction] = useState(null);
+  const [reactionFor, setReactionFor] = useState(null);
+  let longPressRef = useRef(null);
   const timerRef = useRef(null);
   const audioChunksRef = useRef([]);
 
   const [analyser, setAnalyser] = useState(null);
+
+  const [input, setInput] = useState('');
+
+  const bottomRef = useScrollToBottom([messages]);
 
   const startRecording = async () => {
     setIsRecording(true);
@@ -114,9 +115,67 @@ export default function page() {
     mediaRecorder.stop();
   };
 
-  const [input, setInput] = useState('');
+  let handleTouch = msgID => {
+    longPressRef.current = setTimeout(() => {
+      setReaction(msgID);
+    }, 500);
+  };
 
-  const bottomRef = useScrollToBottom([messages]);
+  let handleTouchEND = () => {
+    clearTimeout(longPressRef.current);
+  };
+  let handleTouchMOVE = () => {
+    clearTimeout(longPressRef.current);
+  };
+
+  let handleReact = async (messageId, emoji) => {
+    try {
+      let mutation = `
+      mutation ReactToMessage($messageId: ID!, $emoji: String!) {
+        reactToMessage(messageId: $messageId, emoji: $emoji) {
+          id
+          reactions {
+            emoji
+            user {
+              id
+              name
+              avatar
+            }
+          }
+        }
+      }
+    `;
+
+      let data = await request(mutation, { messageId, emoji });
+
+      setMessages(prev => {
+        const newMessages = prev.map(msg =>
+          msg.id === messageId
+            ? { ...msg, reactions: data.reactToMessage.reactions }
+            : msg,
+        );
+        return newMessages;
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  let handleDelete = async messageId => {
+    try {
+      let Delete_Query = `
+  mutation DeleteMessage($messageId: ID!) {
+    deleteMessage(messageId: $messageId)
+  }
+`;
+      let data = await request(Delete_Query, { messageId: messageId });
+      if (data.deleteMessage === true) {
+        setMessages(prev => prev.filter(m => m.id !== messageId));
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   useEffect(() => {
     const handleClick = e => {
@@ -227,6 +286,10 @@ export default function page() {
             mediaUrl
             type
             sender { id name avatar }
+            reactions {
+    emoji
+    user { id name avatar }
+  }
             conversation { id }
             createdAt
           }
@@ -261,6 +324,10 @@ export default function page() {
             mediaUrl
             type
             sender { id name avatar }
+            reactions {
+    emoji
+    user { id name avatar }
+  }
             createdAt
           }
         }
@@ -303,6 +370,10 @@ export default function page() {
     type
     duration
     createdAt
+    reactions {
+    emoji
+    user { id name avatar }
+  }
     sender { id name avatar }
     receiver { id name avatar }
   }
@@ -365,10 +436,10 @@ export default function page() {
             {openMenu && (
               <div
                 ref={menuRef}
-                className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border"
+                className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border z-9999"
               >
                 <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
-                  Block User
+                  Block
                 </p>
                 <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
                   Theme
@@ -384,7 +455,6 @@ export default function page() {
         <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-3">
           {messages.map(msg => {
             const isMine = msg.sender.id === me?.id;
-
             const bgClass =
               msg.type === 'text' || msg.type === 'link'
                 ? isMine
@@ -394,10 +464,13 @@ export default function page() {
             return (
               <div
                 key={msg.id}
+                onTouchStart={() => handleTouch(msg.id)}
+                onTouchEnd={handleTouchEND}
+                onTouchMove={handleTouchMOVE}
                 className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${bgClass}`}
+                  className={`relative max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${bgClass}`}
                 >
                   {msg.type === 'image' && msg.mediaUrl ? (
                     <img
@@ -428,6 +501,74 @@ export default function page() {
                         }),
                       }}
                     ></span>
+                  )}
+
+                  {reaction === msg.id && (
+                    <div
+                      className={`absolute top-1/2 -translate-y-1/2 flex gap-2 z-50
+      ${isMine ? '-left-23' : '-right-23'}
+    `}
+                    >
+                      <button
+                        onClick={() => handleDelete(msg.id)}
+                        className="w-9 h-9 text-white "
+                      >
+                        <Trash />
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setReactionFor(prev =>
+                            prev === msg.id ? null : msg.id,
+                          );
+                        }}
+                        className="w-9 h-9 text-white"
+                      >
+                        <Smile />
+                      </button>
+                      {reactionFor === msg.id && (
+                        <div
+                          className={`absolute -top-12 ${
+                            isMine ? '-right-50' : '-left-12.5'
+                          } z-50`}
+                        >
+                          <EmojiPicker
+                            reactionsDefaultOpen={true}
+                            emojiStyle="facebook"
+                            previewConfig={{ showPreview: false }}
+                            theme="dark"
+                            skinTonesDisabled
+                            onEmojiClick={e => {
+                              handleReact(msg.id, e.emoji);
+                              setReactionFor(null);
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {msg.reactions?.length > 0 && (
+                    <div
+                      className={`absolute -bottom-4.5 ${
+                        isMine ? 'right-0' : 'left-0'
+                      } bg-white border shadow px-2 py-0.5 rounded-full text-xs flex gap-1`}
+                    >
+                      {msg.reactions.map((r, i) => {
+                        return (
+                          <span
+                            key={i}
+                            dangerouslySetInnerHTML={{
+                              __html: twemoji.parse(r.emoji, {
+                                folder: 'svg',
+                                ext: '.svg',
+                                className: 'w-3.5 h-3.5 inline',
+                              }),
+                            }}
+                          ></span>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               </div>

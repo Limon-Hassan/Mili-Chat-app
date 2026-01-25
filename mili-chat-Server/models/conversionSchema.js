@@ -13,6 +13,11 @@ let conversionSchema = new mongoose.Schema({
     type: Boolean,
     default: false,
   },
+  type: {
+    type: String,
+    enum: ['private', 'group'],
+    default: 'private',
+  },
   group: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Group',

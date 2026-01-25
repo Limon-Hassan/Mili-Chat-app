@@ -1,3 +1,4 @@
+let mongoose = require('mongoose');
 const conversionSchema = require('../models/conversionSchema');
 const messageModel = require('../models/messageModel');
 const user = require('../models/user');
@@ -16,7 +17,13 @@ async function sendFirstMessage(
     throw new Error('You are not friends with this user');
 
   const existingConversation = await conversionSchema.findOne({
-    participants: { $all: [context.userId, receiverId] },
+    type: 'private',
+    participants: {
+      $all: [
+        new mongoose.Types.ObjectId(context.userId),
+        new mongoose.Types.ObjectId(receiverId),
+      ],
+    },
   });
 
   if (existingConversation) {
@@ -31,6 +38,7 @@ async function sendFirstMessage(
   });
 
   const message = await messageModel.create({
+    type: 'private',
     conversation: newConversation._id,
     sender: context.userId,
     receiver: receiverId,
@@ -142,6 +150,7 @@ async function sendMessageWithId(
   }
 
   const message = await messageModel.create({
+    type: 'private',
     conversation: conversationId,
     sender: context.userId,
     receiver: conversation.group ? null : receiverId,

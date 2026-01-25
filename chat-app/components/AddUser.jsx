@@ -178,7 +178,6 @@ const AddUser = () => {
   `;
 
       let data = await request(query, { blockerId: uid });
-      console.log(data);
       setOpenFriendAction(null);
       setFriendsMap(prev => ({ ...prev, [uid]: false }));
       userFetch();

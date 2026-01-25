@@ -40,6 +40,7 @@ const MsgFriends = () => {
 `;
 
         let data = await request(query);
+      
         setConversation(data.getConversation);
       } catch (error) {
         console.log(error);
@@ -64,6 +65,7 @@ const MsgFriends = () => {
             conversationId: conv ? conv.id : null,
           };
         });
+       
         setFriends(mergedFriends);
       } catch (err) {
         console.log(err);
