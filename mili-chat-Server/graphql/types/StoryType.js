@@ -43,6 +43,7 @@ let StoryType = new GraphQLObjectType({
     id: { type: GraphQLID },
     user: { type: StoryUserType },
     stories: { type: new GraphQLList(storyItemType) },
+    mediaUrl: { type: GraphQLString },
     privacy: { type: GraphQLString },
     createdAt: { type: GraphQLString },
     updatedAt: { type: GraphQLString },

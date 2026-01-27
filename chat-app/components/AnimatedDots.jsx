@@ -136,7 +136,7 @@ export default function AnimatedDots({
   return (
     <div className="mobile:hidden computer:block ads-container" aria-hidden>
       {dots.map(d => (
-        <span
+        <div
           key={d.key}
           style={{
             position: 'absolute',

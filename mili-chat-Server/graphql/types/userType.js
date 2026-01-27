@@ -5,6 +5,8 @@ const {
   GraphQLList,
 } = require('graphql');
 const FriendType = require('./FriendType');
+const storyModel = require('../../models/storyModel');
+const { StoryType } = require('./StoryType');
 
 const UserType = new GraphQLObjectType({
   name: 'User',
@@ -25,6 +27,13 @@ const UserType = new GraphQLObjectType({
     blockedByMe: {
       type: new GraphQLList(FriendType),
       resolve: parent => parent.blockedUsers || [],
+    },
+
+    stories: {
+      type: new GraphQLList(StoryType),
+      resolve: async parent => {
+        return await storyModel.find({ user: parent._id });
+      },
     },
   }),
 });

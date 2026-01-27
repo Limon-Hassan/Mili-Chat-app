@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import VoiceChatCard from './VoiceChatCard';
 import AllFriend from './AllFriend';
 import { Plus } from 'lucide-react';
@@ -11,8 +11,10 @@ import Edite from './Edite';
 import ShowStatus from './ShowStatus';
 import SeeProfileFicture from './SeeProfileFicture';
 import AddStory from './AddStory';
+import { useGraphQL } from './Hook/useGraphQL';
 
 const Setting = () => {
+  let { request, loading, error } = useGraphQL();
   const [active, setActive] = useState({
     status: false,
     story: false,
@@ -22,9 +24,46 @@ const Setting = () => {
     ImageToggole: false,
   });
 
+  let [user, setUser] = useState({});
+
   let toggoleActive = key => {
     setActive(prev => ({ ...prev, [key]: !prev[key] }));
   };
+
+  useEffect(() => {
+    let fetchMe = async () => {
+      let mutation = `
+      query Me {
+        me {
+          id
+          name
+          avatar
+          email
+          bio
+          voiceIntro
+
+          blockedByMe {
+            id
+            name
+            avatar
+          }
+
+          stories {
+            id
+            mediaUrl
+            createdAt
+          }
+        }
+      }
+    `;
+
+      let data = await request(mutation);
+      console.log(data);
+      setUser(data.me);
+    };
+
+    fetchMe();
+  }, []);
 
   return (
     <>
@@ -47,15 +86,17 @@ const Setting = () => {
             </button>
             <div
               onClick={() => toggoleActive('ImageToggole')}
-              className="w-[300px] h-[300px] border-[6px] rounded-full border-purple-600 overflow-hidden"
+              className="w-75 h-75 border-[6px] rounded-full border-purple-600 overflow-hidden"
             >
               <img
                 className="w-full h-full rounded-full object-cover active:scale-110 ease-in-out transition-all duration-500"
-                src="/Image.jpg"
+                src={user.avatar || 'defult.png'}
                 alt="Image"
               />
             </div>
-            <div className={`${active.ImageToggole ? 'block' : 'hidden'} absolute left-[150px] `}>
+            <div
+              className={`${active.ImageToggole ? 'block' : 'hidden'} absolute left-37.5 `}
+            >
               <div className="relative bg-white text-black p-2 rounded-lg w-44 before:absolute before:-top-2 before:left-6 before:w-0 before:h-0 before:border-l-8 before:border-r-8 before:border-b-8 before:border-l-transparent before:border-r-transparent before:border-b-white">
                 <ul>
                   <li
@@ -73,25 +114,30 @@ const Setting = () => {
                 </ul>
               </div>
             </div>
-            <span onClick={() => toggoleActive('StoryUpload')} className="absolute bottom-0 left-0 w-[50px] h-[50px] bg-purple-600 flex items-center justify-center rounded-full cursor-pointer border border-gray-500">
+            <span
+              onClick={() => toggoleActive('StoryUpload')}
+              className="absolute bottom-0 left-0 w-12.5 h-12.5 bg-purple-600 flex items-center justify-center rounded-full cursor-pointer border border-gray-500"
+            >
               <Plus />
             </span>
           </div>
           <div className="flex items-center justify-between border-b border-gray-400 pb-5">
             <div>
               <h3 className="uppercase flex items-center gap-3.5 text-2xl font-bold font-inter text-white">
-                mahammud hassan limon
-                <span className="flex items-center gap-1 text-sm bg-gray-700 w-[120px] justify-center h-10 border border-gray-500 rounded-full">
-                  Creator
-                  <img
-                    className=" h-6 object-contain bg-center "
-                    src="/verified-account.png"
-                    alt="verify"
-                  />
-                </span>
+                {user.name || 'user'}
+                {user.email === 'mahammudhassanlimon@gmail.com' && (
+                  <span className="flex items-center gap-1 text-sm bg-gray-700 w-30 justify-center h-10 border border-gray-500 rounded-full">
+                    Creator
+                    <img
+                      className=" h-6 object-contain bg-center "
+                      src="/verified-account.png"
+                      alt="verify"
+                    />
+                  </span>
+                )}
               </h3>
               <h3 className="text-sm font-normal font-inter text-white mt-3.5">
-                I'm Full stack Developer || Web Designer || MERN stack Developer
+               {user.bio || 'Edit your bio From Edit Profile'}
               </h3>
               <button className="flex items-center gap-1 text-md font-inter font-semibold text-white bg-purple-500 px-4 py-2 rounded-full mt-4 hover:bg-purple-600 cursor-pointer">
                 <span>
@@ -108,15 +154,15 @@ const Setting = () => {
             </div>
           </div>
           <AllFriend />
-          <Stories />
+          <Stories Stories={user.stories} />
           {active.edite && <Edite setActive={setActive} />}
-          {active.StoryUpload && <AddStory onClose={()=> setActive(false)} />}
+          {active.StoryUpload && <AddStory onClose={() => setActive(false)} />}
           {active.story && (
             <ShowStatus src="/kawasaki.mp4" onClose={() => setActive(false)} />
           )}
           {active.picture && (
             <SeeProfileFicture
-              src="/Image.jpg"
+              src={user.avatar || 'defult.png'}
               onClose={() => setActive(false)}
             />
           )}

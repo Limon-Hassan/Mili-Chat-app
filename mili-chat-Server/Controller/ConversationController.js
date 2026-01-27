@@ -61,52 +61,6 @@ async function sendFirstMessage(
   return message;
 }
 
-// async function SendMessage(
-//   { conversationId, text, receiverId, mediaUrl, type, duration },
-//   context
-// ) {
-//   if (!context.userId) throw new Error('Authentication required');
-
-//   let allowedtypes = ['text', 'image', 'video', 'audio', 'link'];
-//   if (!allowedtypes.includes(type)) {
-//     throw new Error('Invalid message type');
-//   }
-
-//   let conversation = await conversionSchema.findById(conversationId);
-//   if (!conversation) {
-//     throw new Error('Conversation not found');
-//   }
-
-//   let isParticipant = conversation.participants.some(
-//     pt => pt.toString() === context.userId
-//   );
-
-//   if (!isParticipant) {
-//     throw new Error('You are not a participant in this conversation');
-//   }
-
-//   let message = new messageModel.create({
-//     conversation: conversationId,
-//     sender: context.userId,
-//     receiver: receiverId,
-//     type: type,
-//     text: type === 'text' || type === 'link' ? text : undefined,
-//     mediaUrl: mediaUrl || undefined,
-//     duration: duration || undefined,
-//     deliveryStatus: 'sent',
-//   });
-
-//   conversation.lastMessage =
-//     type === 'text' || type === 'link' ? text : `[${type}]`;
-//   conversation.lastMessageType = type;
-//   conversation.lastMessageAt = new Date();
-
-//   await conversation.save();
-//   await message.populate('sender', 'id name email');
-//   await message.populate('receiver', 'id name email');
-//   return message;
-// }
-
 async function sendMessageWithId(
   { conversationId, text, type, mediaUrl, duration },
   context,

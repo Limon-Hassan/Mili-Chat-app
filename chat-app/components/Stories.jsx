@@ -1,6 +1,7 @@
 import React from 'react';
 
-const Stories = () => {
+const Stories = ({stories}) => {
+
   return (
     <section>
       <div>

@@ -30,7 +30,6 @@ export default function Message({
   let { request, loading, error } = useGraphQL();
   let [messages, setMessages] = useState([]);
   const [hoveredMessageId, setHoveredMessageId] = useState(null);
-  console.log(conversationId);
   const [openMenu, setOpenMenu] = useState(false);
   const [reactionFor, setReactionFor] = useState(null);
   const menuRef = useRef(null);
@@ -239,8 +238,6 @@ export default function Message({
     }
   };
 
-  console.log(messages);
-
   useEffect(() => {
     setMessages([]);
   }, [conversationId]);
@@ -307,7 +304,6 @@ export default function Message({
 `;
 
         let data = await request(MARK_AS_READ, { conversationId });
-        console.log(data);
       } catch (error) {
         console.log(error);
       }
@@ -457,6 +453,20 @@ export default function Message({
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4.5 ">
+          <div className="mx-auto mt-5.5 mb-15">
+            <img
+              className="w-35 h-35 object-cover bg-center rounded-full mx-auto"
+              src={userInfo?.avatar || 'defult.png'}
+              alt="group"
+            />
+            <h2 className="text-center mx-auto text-2xl font-medium mt-4 font-open_sens">
+              {userInfo?.name || 'User'}
+            </h2>
+
+            <p className="text-center text-sm font-medium mt-2 font-open_sens">
+              You are both chimmy Friends
+            </p>
+          </div>
           {messages.map(msg => {
             const isMine = msg.sender.id === currentUser;
 
@@ -503,7 +513,7 @@ export default function Message({
                         __html: twemoji.parse(msg.text, {
                           folder: 'svg',
                           ext: '.svg',
-                          className: 'w-5 h-5 inline',
+                          className: 'w-5 h-5 inline font-open_sens',
                         }),
                       }}
                     ></span>
@@ -553,9 +563,9 @@ export default function Message({
                   )}
                   {msg.reactions?.length > 0 && (
                     <div
-                      className={`absolute -bottom-4.5 ${
-                        isMine ? 'right-0' : 'left-0'
-                      } bg-white border shadow px-2 py-0.5 rounded-full text-xs flex gap-1`}
+                      className={`absolute -bottom-4 ${
+                        isMine ? 'left-0' : 'right-0'
+                      } bg-white shadow w-6 h-5 flex items-center justify-center rounded-full text-xs gap-1`}
                     >
                       {msg.reactions.map((r, i) => {
                         return (

@@ -1,7 +1,15 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Phone, Video, MoreVertical, Send, Trash, Smile } from 'lucide-react';
+import {
+  Phone,
+  Video,
+  MoreVertical,
+  Send,
+  Trash,
+  Smile,
+  Check,
+} from 'lucide-react';
 import useScrollToBottom from '@/customHook/useScrollToBottom';
 import NormalChatUI from '../../components/NormalChatUI';
 import LiveWaveform from '../../components/LiveWaveform';
@@ -177,6 +185,45 @@ export default function page() {
     }
   };
 
+  let handleBlock = async userId => {
+    try {
+      const query = `
+    mutation BlockUser($blockerId: ID!) {
+      blockUser(blockerId: $blockerId) {
+         id
+         name
+        
+           blockedByMe {
+      id
+      name
+      avatar
+    }
+      }
+    }
+  `;
+      const data = await request(query, { blockerId: userId });
+      setMessages([]);
+      console.log(data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  let handleClearConv = async convId => {
+    try {
+      let query = `
+  mutation DeleteConversation($conversationId: ID!) {
+    deleteConversation(conversationId: $conversationId)
+  }
+`;
+      let data = await request(query, { conversationId: convId });
+      setMessages([]);
+      router.replace('/', { scroll: false });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
     const handleClick = e => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -242,6 +289,7 @@ export default function page() {
   }, [conversationId, conversation]);
 
   const sendMessage = async ({ audio } = {}) => {
+    let convId = activeConversation.id;
     if (!input.trim() && attachments.length === 0 && !audio) return;
     try {
       let uploadedAttachments = [];
@@ -267,7 +315,7 @@ export default function page() {
       }
       let mutation;
       let variables;
-      if (!activeConversation) {
+      if (!convId) {
         mutation = `
         mutation SendFirst(
           $receiverId: ID!,
@@ -287,11 +335,12 @@ export default function page() {
             type
             sender { id name avatar }
             reactions {
-    emoji
-    user { id name avatar }
-  }
+            emoji
+            user { id name avatar }
+            }
             conversation { id }
             createdAt
+            deliveryStatus
           }
         }
       `;
@@ -325,9 +374,10 @@ export default function page() {
             type
             sender { id name avatar }
             reactions {
-    emoji
-    user { id name avatar }
-  }
+            emoji
+            user { id name avatar }
+            }
+            deliveryStatus
             createdAt
           }
         }
@@ -335,7 +385,7 @@ export default function page() {
 
         let firstAttachment = uploadedAttachments[0];
         variables = {
-          conversationId,
+          conversationId: convId,
           text:
             input.trim() ||
             (firstAttachment ? `[${firstAttachment.type}]` : ''),
@@ -344,7 +394,6 @@ export default function page() {
         };
       }
       let data = await request(mutation, variables);
-      console.log(data);
       const messageData = data.sendMessage || data.sendMessageStrict;
       setMessages(prev => [...prev, messageData]);
       setInput('');
@@ -370,6 +419,7 @@ export default function page() {
     type
     duration
     createdAt
+    deliveryStatus
     reactions {
     emoji
     user { id name avatar }
@@ -389,6 +439,47 @@ export default function page() {
     };
 
     FetchMessages();
+  }, [activeConversation]);
+
+  useEffect(() => {
+    let convId = activeConversation.id;
+    if (!convId) return;
+    let MarkAsDelivered = async () => {
+      try {
+        const MARK_AS_DELIVERED = `
+  mutation MarkAsDelivered($conversationId: ID!) {
+    markAsDelivered(conversationId: $conversationId)
+  }
+`;
+
+        let data = await request(MARK_AS_DELIVERED, { convId });
+        console.log(data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    MarkAsDelivered();
+  }, [activeConversation]);
+
+  useEffect(() => {
+    let convId = activeConversation.id;
+    if (!convId) return;
+    let MarkAsRead = async () => {
+      try {
+        const MARK_AS_READ = `
+  mutation MarkAsRead($conversationId: ID!) {
+    markAsRead(conversationId: $conversationId)
+  }
+`;
+
+        let data = await request(MARK_AS_READ, { convId });
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    MarkAsRead();
   }, [activeConversation]);
 
   useEffect(() => {
@@ -418,7 +509,7 @@ export default function page() {
               alt="group"
             />
             <div>
-              <h2 className="font-semibold text-[18px] font-open_sens">
+              <h2 className="font-semibold text-[15px] font-open_sens">
                 {name}
               </h2>
               <p className="text-[13px] font-bold text-green-600">Online</p>
@@ -438,13 +529,19 @@ export default function page() {
                 ref={menuRef}
                 className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border z-9999"
               >
-                <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
+                <p
+                  onClick={() => handleBlock(userId)}
+                  className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer"
+                >
                   Block
                 </p>
                 <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
                   Theme
                 </p>
-                <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
+                <p
+                  onClick={() => handleClearConv(activeConversation.id)}
+                  className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer"
+                >
                   Clear Chat
                 </p>
               </div>
@@ -452,14 +549,28 @@ export default function page() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-3">
+        <div className="flex-1 overflow-y-auto  px-5 py-4 flex flex-col gap-4.5">
+          <div className="mx-auto mt-5.5 mb-15">
+            <img
+              className="w-35 h-35 object-cover bg-center rounded-full mx-auto"
+              src={avatar || 'defult.png'}
+              alt="group"
+            />
+            <h2 className="text-center mx-auto text-2xl font-medium mt-4 font-open_sens">
+              {name || 'User'}
+            </h2>
+
+            <p className="text-center text-sm font-medium mt-2 font-open_sens">
+              You are both chimmy Friends
+            </p>
+          </div>
           {messages.map(msg => {
             const isMine = msg.sender.id === me?.id;
             const bgClass =
               msg.type === 'text' || msg.type === 'link'
                 ? isMine
-                  ? 'bg-purple-600 text-white rounded-br-none'
-                  : 'bg-white text-gray-600 rounded-bl-none'
+                  ? 'bg-purple-600 text-white rounded-br-none px-4 py-2.5 '
+                  : 'bg-white text-gray-600 rounded-bl-none px-4 py-2.5'
                 : '';
             return (
               <div
@@ -470,7 +581,7 @@ export default function page() {
                 className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`relative max-w-[60%] px-4 py-2.5 rounded-xl flex items-center gap-2 ${bgClass}`}
+                  className={`relative max-w-[60%] rounded-xl flex items-center gap-2 ${bgClass}`}
                 >
                   {msg.type === 'image' && msg.mediaUrl ? (
                     <img
@@ -497,7 +608,7 @@ export default function page() {
                         __html: twemoji.parse(msg.text, {
                           folder: 'svg',
                           ext: '.svg',
-                          className: 'w-5 h-5 inline',
+                          className: 'w-5 h-5 inline font-open_sens',
                         }),
                       }}
                     ></span>
@@ -505,9 +616,7 @@ export default function page() {
 
                   {reaction === msg.id && (
                     <div
-                      className={`absolute top-1/2 -translate-y-1/2 flex gap-2 z-50
-      ${isMine ? '-left-23' : '-right-23'}
-    `}
+                      className={`absolute top-1/2 -translate-y-1/2 flex gap-2 z-50 ${isMine ? '-left-23' : '-right-23'} `}
                     >
                       <button
                         onClick={() => handleDelete(msg.id)}
@@ -550,9 +659,9 @@ export default function page() {
 
                   {msg.reactions?.length > 0 && (
                     <div
-                      className={`absolute -bottom-4.5 ${
-                        isMine ? 'right-0' : 'left-0'
-                      } bg-white border shadow px-2 py-0.5 rounded-full text-xs flex gap-1`}
+                      className={`absolute -bottom-3 ${
+                        isMine ? 'left-0' : 'right-0'
+                      } bg-white shadow w-6 h-5 items-center justify-center rounded-full text-xs flex`}
                     >
                       {msg.reactions.map((r, i) => {
                         return (
@@ -568,6 +677,32 @@ export default function page() {
                           ></span>
                         );
                       })}
+                    </div>
+                  )}
+
+                  {isMine && msg.deliveryStatus && (
+                    <div className="absolute -bottom-2.5 right-0 ">
+                      {msg.deliveryStatus === 'sent' && (
+                        <span className="text-white text-sm font-medium flex items-center gap-1 -mr-2.5 -mb-2.5">
+                          Sent
+                          <span className="w-4 h-4 border border-gray-500 rounded-full flex items-center justify-center">
+                            <Check size={12} />
+                          </span>
+                        </span>
+                      )}
+                      {msg.deliveryStatus === 'delivered' && (
+                        <span className="text-white text-sm font-medium flex items-center gap-1 -mr-2.5 -mb-2.5">
+                          Delivered
+                          <span className="w-4 h-4 rounded-full flex items-center justify-center bg-purple-500">
+                            <Check className="text-white" size={12} />
+                          </span>
+                        </span>
+                      )}
+                      {msg.deliveryStatus === 'seen' && (
+                        <span className="text-white text-sm font-medium flex items-center -mb-2">
+                          Seen
+                        </span>
+                      )}
                     </div>
                   )}
                 </div>
