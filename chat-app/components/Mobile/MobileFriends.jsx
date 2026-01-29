@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import { LuMessageCircleMore } from 'react-icons/lu';
 import { useGraphQL } from '../Hook/useGraphQL';
 
-
 const MobileFriends = () => {
   let { request, loading, error } = useGraphQL();
   let [friends, setFriends] = useState([]);
@@ -21,17 +20,14 @@ const MobileFriends = () => {
     const convId = item.conversationId;
 
     const params = new URLSearchParams({
-      userId: item.id, // friend বা group id
-      name: item.name, // display name
-      avatar: item.avatar || item.photo || '', // optional
-      conversationId: convId || '', // conv id
+      userId: item.id,
+      name: item.name,
+      avatar: item.avatar || item.photo || '',
+      conversationId: convId || '',
     });
 
-   
     window.location.href = '/message?' + params.toString();
   };
-
-
 
   useEffect(() => {
     let fetchConversations = async () => {
@@ -134,9 +130,6 @@ const MobileFriends = () => {
     FetchMyGroup();
   }, [conversation]);
 
-
-  
-
   return (
     <>
       <section className="mobile:w-full tablet:w-full mobile:h-auto tablet:h-auto bg-transparent border border-white p-3 rounded-lg mobile:absolute mobile:top-25 mobile:left-0 tablet:absolute tablet:top-27.5 tablet:left-0">
@@ -159,6 +152,11 @@ const MobileFriends = () => {
           className="flex flex-col gap-1 mt-5 overflow-auto w-full"
           style={{ maxHeight: `${dynamic}px` }}
         >
+          {friends.length === 0 && (
+            <p className="text-white text-[15px] font-open_sens font-semibold text-center flex items-center justify-center w-full h-screen">
+              No friends found
+            </p>
+          )}
           {friends.map((frn, idx) => (
             <li
               key={idx}

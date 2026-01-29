@@ -60,6 +60,7 @@
 
 // export default HomePage;
 
+
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -69,7 +70,6 @@ import Friends from './Friends';
 import Friend_Request from './Friend_Request';
 import BlockUser from './BlockUser';
 import AddUser from './AddUser';
-import Message from './Message';
 import Notifaction from './Notifaction';
 import Setting from './Setting';
 import MobileSideIcons from './MobileSideIcons';
@@ -103,6 +103,7 @@ const HomePage = () => {
                 id
                 name
                 email
+                avatar
               }
             }
           `;

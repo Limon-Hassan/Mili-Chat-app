@@ -51,13 +51,13 @@ async function login({ email, password }, context) {
       process.env.JWT_SECRET,
       {
         expiresIn: '15m',
-      }
+      },
     );
 
     const refreshToken = jwt.sign(
       { userId: existingUser._id.toString() },
       process.env.REFRESH_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '1d' },
     );
 
     setAuthCookies(context.res, token, refreshToken);
@@ -96,7 +96,6 @@ async function googleLogin({ accessToken }, context) {
     const data = await res.json();
 
     const { email, name, picture, sub } = data;
-
     let loggedInUser = await user.findOne({ email });
     if (!loggedInUser) {
       loggedInUser = await user.create({
@@ -111,13 +110,13 @@ async function googleLogin({ accessToken }, context) {
     const accessTokenJWT = jwt.sign(
       { userId: loggedInUser._id },
       process.env.JWT_SECRET,
-      { expiresIn: '15m' }
+      { expiresIn: '15m' },
     );
 
     const refreshToken = jwt.sign(
       { userId: loggedInUser._id },
       process.env.REFRESH_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '1d' },
     );
 
     setAuthCookies(context.res, accessTokenJWT, refreshToken);
@@ -129,6 +128,7 @@ async function googleLogin({ accessToken }, context) {
         id: loggedInUser._id.toString(),
         name: loggedInUser.name,
         email: loggedInUser.email,
+        avatar: loggedInUser.avatar,
       },
     };
   } catch (error) {
@@ -143,7 +143,7 @@ async function facebookLogin({ accessToken }, context) {
   }
   try {
     const fbResponse = await axios.get(
-      `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${accessToken}`
+      `https://graph.facebook.com/me?fields=id,name,email,picture&access_token=${accessToken}`,
     );
 
     const { id: facebookId, name, email, picture } = fbResponse.data;
@@ -164,13 +164,13 @@ async function facebookLogin({ accessToken }, context) {
       process.env.JWT_SECRET,
       {
         expiresIn: '15m',
-      }
+      },
     );
 
     const refreshToken = jwt.sign(
       { userId: loggedInUser._id },
       process.env.REFRESH_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '1d' },
     );
 
     setAuthCookies(context.res, token, refreshToken);
@@ -189,7 +189,7 @@ async function facebookLogin({ accessToken }, context) {
     console.log(error.message);
     console.error(
       'Facebook login error:',
-      error.response?.data || error.message
+      error.response?.data || error.message,
     );
     throw new Error('Facebook login failed');
   }
@@ -208,7 +208,7 @@ async function refreshToken(context) {
   let newAccessToken = jwt.sign(
     { userId: existingUser._id },
     process.env.JWT_SECRET,
-    { expiresIn: '15m' }
+    { expiresIn: '15m' },
   );
   context.res.cookie('accessToken', newAccessToken, {
     httpOnly: true,

@@ -5,6 +5,7 @@ let userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+
   email: {
     type: String,
     required: function () {
@@ -21,6 +22,7 @@ let userSchema = new mongoose.Schema({
       return this.provider === 'local';
     },
   },
+
   createdAt: {
     type: Date,
     default: Date.now,
@@ -52,6 +54,13 @@ let userSchema = new mongoose.Schema({
     enum: ['public', 'friends', 'onlyMe'],
     default: 'friends',
   },
+  
+  OwnVoicePrivacy: {
+    type: String,
+    enum: ['public', 'friends', 'onlyMe'],
+    default: 'friends',
+  },
+
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   storyPrivacy: {

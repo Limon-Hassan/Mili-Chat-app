@@ -1,12 +1,20 @@
 'use client';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { GrClose } from 'react-icons/gr';
 
-const ShowStatus = ({ src, onClose }) => {
+const ShowStatus = ({ story = [], onClose }) => {
+  
   const storyRef = useRef(null);
   const videoRef = useRef(null);
+  let [currentIndex, setCurrentIndex] = useState(0);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(5000);
+
+const currentStory = story[currentIndex]?.stories?.[0];
+ 
+
+  //src file ta kaj aseh
 
   useEffect(() => {
     const handleClickOutside = e => {
@@ -40,12 +48,28 @@ const ShowStatus = ({ src, onClose }) => {
       setProgress(p);
 
       if (p === 100) {
-        onClose();
+        handleNext();
       }
     }, 50);
 
     return () => clearInterval(timer);
-  }, [duration, onClose]);
+  }, [currentIndex, duration]);
+
+  const handleNext = () => {
+    if (currentIndex < story.length - 1) {
+      setCurrentIndex(i => i + 1);
+    } else {
+      onClose();
+    }
+  };
+
+  const handlePrev = () => {
+    if (currentIndex > 0) {
+      setCurrentIndex(i => i - 1);
+    }
+  };
+
+  if (!currentStory) return null;
 
   return (
     <section className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
@@ -55,15 +79,15 @@ const ShowStatus = ({ src, onClose }) => {
       >
         <div className="absolute top-0 left-0 w-full">
           <div className="flex items-center gap-2 mb-5">
-            <div className="w-[50px] h-[50px] rounded-full">
+            <div className="w-12.5 h-12.5 rounded-full">
               <img
                 className="w-full h-full rounded-full object-cover"
-                src="/Image.jpg"
+                src={story[0]?.user?.avatar}
                 alt="user"
               />
             </div>
             <h3 className="text-sm font-inter text-white">
-              Mahammud Hassan Limon
+              {story[0]?.user?.name}
             </h3>
           </div>
           <div className="h-1 w-full bg-white/30 rounded-full overflow-hidden">
@@ -76,11 +100,29 @@ const ShowStatus = ({ src, onClose }) => {
 
         <video
           ref={videoRef}
-          src={src}
+          src={currentStory?.video}
           autoPlay
           onLoadedMetadata={handleLoadedMetadata}
           className="w-full h-full object-cover bg-center"
         ></video>
+
+        {currentIndex > 0 && (
+          <button
+            onClick={handlePrev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 text-white"
+          >
+            <ChevronLeft size={32} />
+          </button>
+        )}
+
+        {currentIndex < story.length - 1 && (
+          <button
+            onClick={handleNext}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-white"
+          >
+            <ChevronRight size={32} />
+          </button>
+        )}
 
         <button
           onClick={onClose}

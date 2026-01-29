@@ -40,7 +40,7 @@ const MsgFriends = () => {
 `;
 
         let data = await request(query);
-      
+
         setConversation(data.getConversation);
       } catch (error) {
         console.log(error);
@@ -65,7 +65,7 @@ const MsgFriends = () => {
             conversationId: conv ? conv.id : null,
           };
         });
-       
+
         setFriends(mergedFriends);
       } catch (err) {
         console.log(err);
@@ -147,6 +147,11 @@ const MsgFriends = () => {
           </div>
           <div className="bg-white h-px w-full my-3"></div>
           <ul className="flex flex-col gap-1 mt-5 overflow-auto w-full h-180">
+            {friends.length === 0 && (
+              <h5 className="text-white text-[15px] font-open_sens font-semibold text-center flex items-center justify-center w-full h-screen">
+                No friends found
+              </h5>
+            )}
             {friends.map((frn, idx) => (
               <li
                 key={idx}

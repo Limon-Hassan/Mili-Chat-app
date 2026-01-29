@@ -5,7 +5,6 @@ const {
   GraphQLList,
   GraphQLBoolean,
 } = require('graphql');
-const { UserType } = require('./userType');
 const { StoryUserType } = require('./StoryUserType');
 
 let ReactionType = new GraphQLObjectType({
@@ -34,6 +33,7 @@ let storyItemType = new GraphQLObjectType({
     reactions: { type: new GraphQLList(ReactionType) },
     seenBy: { type: new GraphQLList(SeenType) },
     expiredNotified: { type: GraphQLBoolean },
+    status: { type: GraphQLString },
   }),
 });
 
@@ -43,7 +43,6 @@ let StoryType = new GraphQLObjectType({
     id: { type: GraphQLID },
     user: { type: StoryUserType },
     stories: { type: new GraphQLList(storyItemType) },
-    mediaUrl: { type: GraphQLString },
     privacy: { type: GraphQLString },
     createdAt: { type: GraphQLString },
     updatedAt: { type: GraphQLString },

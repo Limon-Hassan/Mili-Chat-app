@@ -10,10 +10,10 @@ let storyResolver = {
   createStory: {
     type: StoryType,
     args: {
-      videoUrl: { type: GraphQLString },
+      video: { type: GraphQLString },
     },
     resolve: (parent, args, context) => {
-      return createStory(args, context);
+      return createStory({ videoUrl: args.video }, context);
     },
   },
   markStorySeen: {

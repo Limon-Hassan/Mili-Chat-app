@@ -43,7 +43,7 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
   const [isSaving, setIsSaving] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const DEFAULT_DURATION = 8;
+  const DEFAULT_DURATION = 3;
 
   const handleVideoUpload = e => {
     const f = e.target.files?.[0];
@@ -74,7 +74,6 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
     imageUrl.current = URL.createObjectURL(f);
     setImageFile(f);
 
-    // 👉 FACEBOOK STYLE CENTER
     requestAnimationFrame(() => {
       const rect = editorRef.current.getBoundingClientRect();
       setImgTransform({
@@ -284,6 +283,84 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
     });
   };
 
+  // const handleSave = async () => {
+  //   if (isSaving) return;
+  //   setIsSaving(true);
+  //   setProgress(0);
+
+  //   const editorRect = editorRef.current.getBoundingClientRect();
+  //   const width = Math.max(480, Math.round(editorRect.width));
+  //   const height = Math.max(640, Math.round(editorRect.height));
+
+  //   const canvas = document.createElement('canvas');
+  //   canvas.width = width;
+  //   canvas.height = height;
+  //   const ctx = canvas.getContext('2d');
+
+  //   let duration = DEFAULT_DURATION;
+  //   if (videoFile && videoElRef.current?.duration) {
+  //     const d = Number(videoElRef.current.duration);
+  //     if (!isNaN(d) && d > 0) duration = d;
+  //   }
+
+  //   const stream = canvas.captureStream(30);
+  //   const options = { mimeType: 'video/webm; codecs=vp8' };
+  //   const recorder = new MediaRecorder(stream, options);
+
+  //   const chunks = [];
+  //   recorder.ondataavailable = e => {
+  //     if (e.data && e.data.size > 0) chunks.push(e.data);
+  //   };
+
+  //   recorder.start();
+
+  //   let startTime = performance.now();
+  //   let rafId;
+
+  //   const drawLoop = now => {
+  //     const elapsed = (now - startTime) / 1000;
+  //     drawFrameToCanvas(ctx, width, height, elapsed);
+  //     setProgress(Math.min(100, (elapsed / duration) * 100));
+
+  //     if (elapsed < duration) {
+  //       rafId = requestAnimationFrame(drawLoop);
+  //     } else {
+  //       try {
+  //         recorder.stop();
+  //       } catch (err) {}
+  //       cancelAnimationFrame(rafId);
+  //     }
+  //   };
+
+  //   if (videoElRef.current) {
+  //     try {
+  //       videoElRef.current.currentTime = 0;
+  //     } catch (e) {}
+  //     videoElRef.current.muted = false;
+  //     videoElRef.current.play().catch(() => {});
+  //   }
+
+  //   startTime = performance.now();
+  //   rafId = requestAnimationFrame(drawLoop);
+
+  //   recorder.onstop = () => {
+  //     const blob = new Blob(chunks, { type: 'video/webm' });
+  //     setIsSaving(false);
+  //     setProgress(100);
+
+  //     onSave(blob, `story-${Date.now()}.webm`);
+  //   };
+
+  //   setTimeout(() => {
+  //     if (recorder.state === 'recording') {
+  //       try {
+  //         recorder.stop();
+  //       } catch (e) {}
+  //     }
+  //   }, duration  * 1000);
+  // };
+
+
   const handleSave = async () => {
     if (isSaving) return;
     setIsSaving(true);
@@ -304,9 +381,30 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
       if (!isNaN(d) && d > 0) duration = d;
     }
 
-    const stream = canvas.captureStream(30);
-    const options = { mimeType: 'video/webm; codecs=vp8' };
-    const recorder = new MediaRecorder(stream, options);
+    const canvasStream = canvas.captureStream(30);
+
+  
+    let audioTracks = [];
+
+    if (videoElRef.current) {
+      const audioContext = new AudioContext();
+      const source = audioContext.createMediaElementSource(videoElRef.current);
+      const destination = audioContext.createMediaStreamDestination();
+
+      source.connect(destination);
+      source.connect(audioContext.destination);
+
+      audioTracks = destination.stream.getAudioTracks();
+    }
+
+    const combinedStream = new MediaStream([
+      ...canvasStream.getVideoTracks(),
+      ...audioTracks,
+    ]);
+
+    const recorder = new MediaRecorder(combinedStream, {
+      mimeType: 'video/webm; codecs=vp8,opus',
+    });
 
     const chunks = [];
     recorder.ondataavailable = e => {
@@ -337,7 +435,7 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
       try {
         videoElRef.current.currentTime = 0;
       } catch (e) {}
-      videoElRef.current.muted = true;
+      videoElRef.current.muted = false;
       videoElRef.current.play().catch(() => {});
     }
 
@@ -350,6 +448,7 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
       setProgress(100);
 
       onSave(blob, `story-${Date.now()}.webm`);
+      
     };
 
     setTimeout(() => {
@@ -358,7 +457,7 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
           recorder.stop();
         } catch (e) {}
       }
-    }, (duration + 1) * 1000);
+    }, duration * 1000);
   };
 
   return (
@@ -399,10 +498,10 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
           </button>
           <button
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || !videoFile && !imageFile}
             className="bg-green-600 text-white px-3 py-1 rounded flex items-center gap-2"
           >
-            <Save size={14} />{' '}
+            <Save size={14} />
             {isSaving ? `Saving ${Math.round(progress)}%` : 'Save'}
           </button>
           <button

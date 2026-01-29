@@ -12,6 +12,7 @@ import ShowStatus from './ShowStatus';
 import SeeProfileFicture from './SeeProfileFicture';
 import AddStory from './AddStory';
 import { useGraphQL } from './Hook/useGraphQL';
+import { uploadToCloudinary } from '@/lib/cloudinaryClient';
 
 const Setting = () => {
   let { request, loading, error } = useGraphQL();
@@ -25,6 +26,9 @@ const Setting = () => {
   });
 
   let [user, setUser] = useState({});
+  let [stories, setStories] = useState([]);
+  let [ActiveStories, setActiveStories] = useState([]);
+  console.log(stories)
 
   let toggoleActive = key => {
     setActive(prev => ({ ...prev, [key]: !prev[key] }));
@@ -48,22 +52,126 @@ const Setting = () => {
             avatar
           }
 
-          stories {
-            id
-            mediaUrl
-            createdAt
-          }
+            stories {
+      id
+      stories {
+        id
+        video
+        expiresAt
+      }
+    }
         }
       }
     `;
 
       let data = await request(mutation);
-      console.log(data);
       setUser(data.me);
     };
 
     fetchMe();
   }, []);
+
+  let fetchStory = async () => {
+    try {
+      let mutation = `
+        query {
+          getAllStories {
+            id
+            user {
+              id
+              name
+              avatar
+            }
+            stories {
+              id
+              video
+              expiresAt
+              status
+              reactions {
+                user { id name avatar }
+                type
+                reactedAt
+              }
+              seenBy {
+                user { id name avatar }
+                seenAt
+              }
+            }
+          }
+        }
+      `;
+
+      let data = await request(mutation);
+      setStories(data.getAllStories);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  let fetchActiveStory = async () => {
+    try {
+      let mutation = `
+          query {
+            getNewStories {
+              id
+              user {
+                id
+                name
+                avatar
+              }
+              stories {
+                id
+                video
+                expiresAt
+                status
+                reactions {
+                  user { id name avatar }
+                  type
+                  reactedAt
+                }
+                seenBy {
+                  user { id name avatar }
+                  seenAt
+                }
+              }
+            }
+          }
+        `;
+
+      let data = await request(mutation);
+      setActiveStories(data.getNewStories);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchStory();
+    fetchActiveStory();
+  }, []);
+
+  let handleStoryUpload = async file => {
+    try {
+      let fileUrl = await uploadToCloudinary(file, 'story', 'video');
+
+      let mutation = `
+      mutation CreateStory($video: String!) {
+        createStory(video: $video) {
+          id
+           stories {
+        video
+        expiresAt
+      }
+        }
+      }
+    `;
+
+      let data = await request(mutation, { video: fileUrl });
+    
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
     <>
@@ -86,7 +194,7 @@ const Setting = () => {
             </button>
             <div
               onClick={() => toggoleActive('ImageToggole')}
-              className="w-75 h-75 border-[6px] rounded-full border-purple-600 overflow-hidden"
+              className={`w-75 h-75 border-[6px] rounded-full ${stories.length > 0 ? 'border-purple-600 ' : 'border-white'} overflow-hidden`}
             >
               <img
                 className="w-full h-full rounded-full object-cover active:scale-110 ease-in-out transition-all duration-500"
@@ -137,7 +245,7 @@ const Setting = () => {
                 )}
               </h3>
               <h3 className="text-sm font-normal font-inter text-white mt-3.5">
-               {user.bio || 'Edit your bio From Edit Profile'}
+                {user.bio || 'Edit your bio From Edit Profile'}
               </h3>
               <button className="flex items-center gap-1 text-md font-inter font-semibold text-white bg-purple-500 px-4 py-2 rounded-full mt-4 hover:bg-purple-600 cursor-pointer">
                 <span>
@@ -154,11 +262,16 @@ const Setting = () => {
             </div>
           </div>
           <AllFriend />
-          <Stories Stories={user.stories} />
+          <Stories Stories={Stories} />
           {active.edite && <Edite setActive={setActive} />}
-          {active.StoryUpload && <AddStory onClose={() => setActive(false)} />}
+          {active.StoryUpload && (
+            <AddStory
+              onSave={handleStoryUpload}
+              onClose={() => setActive(false)}
+            />
+          )}
           {active.story && (
-            <ShowStatus src="/kawasaki.mp4" onClose={() => setActive(false)} />
+            <ShowStatus story={ActiveStories} onClose={() => setActive(false)} />
           )}
           {active.picture && (
             <SeeProfileFicture

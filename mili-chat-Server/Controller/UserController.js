@@ -7,7 +7,7 @@ async function uploadProfilePic({ profilePic }, context) {
   const updatedUser = await user.findByIdAndUpdate(
     context.userId,
     { avatar: profilePic },
-    { new: true }
+    { new: true },
   );
 
   const io = getIO();
@@ -24,7 +24,7 @@ async function updateProfile({ name, bio }, context) {
   const updatedUser = await user.findByIdAndUpdate(
     context.userId,
     { name, bio },
-    { new: true }
+    { new: true },
   );
   let io = getIO();
 
@@ -42,14 +42,14 @@ async function AddOwnVoice({ voice, duration }, context) {
   const updatedUser = await user.findByIdAndUpdate(
     context.userId,
     { voiceIntro: { url: voice, duration } },
-    { new: true }
+    { new: true },
   );
   let io = getIO();
   getSocketIds(context.userId).forEach(sid => {
     io.to(sid).emit('profileUpdated', {
       voiceIntro: updatedUser.voiceIntro,
     });
-  })
+  });
   return updatedUser;
 }
 
@@ -63,7 +63,7 @@ async function StoryPrivacy({ statusVisibility }, context) {
     {
       storyPrivacy: statusVisibility,
     },
-    { new: true }
+    { new: true },
   );
 
   return updatedUser;
@@ -79,7 +79,22 @@ async function FriendPrivacy({ friendListVisibility }, context) {
     {
       friendListPrivacy: friendListVisibility,
     },
-    { new: true }
+    { new: true },
+  );
+  return updatedUser;
+}
+
+async function OwnVoicePrivacy({ OwnVoicePrivacy }, context) {
+  if (!context.userId) {
+    throw new Error('Authentication required');
+  }
+
+  let updatedUser = await user.findByIdAndUpdate(
+    context.userId,
+    {
+      OwnVoicePrivacy: OwnVoicePrivacy,
+    },
+    { new: true },
   );
   return updatedUser;
 }
@@ -90,4 +105,5 @@ module.exports = {
   AddOwnVoice,
   StoryPrivacy,
   FriendPrivacy,
+  OwnVoicePrivacy,
 };

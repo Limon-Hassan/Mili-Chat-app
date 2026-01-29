@@ -1,63 +1,77 @@
-const { GraphQLString } = require('graphql');
-const { UserType, AuthType } = require('../types/userType');
-const {
-  registation,
-  login,
-  googleLogin,
-  refreshToken,
-  facebookLogin,
-  logout,
-} = require('../../Controller/AuthController');
-const LogoutType = require('../types/LogoutType');
+const { GraphQLString, GraphQLBoolean, GraphQLFloat } = require('graphql');
 
-module.exports = {
-  register: {
+const { UserType } = require('../types/userType');
+const {
+  uploadProfilePic,
+  updateProfile,
+  AddOwnVoice,
+  StoryPrivacy,
+  FriendPrivacy,
+  OwnVoicePrivacy,
+} = require('../../Controller/UserController');
+
+const userResolver = {
+  uploadProfilePic: {
+    type: UserType,
+    args: {
+      profilePic: { type: GraphQLString },
+    },
+    resolve(parent, args, context) {
+      return uploadProfilePic(args, context);
+    },
+  },
+
+  updateProfile: {
     type: UserType,
     args: {
       name: { type: GraphQLString },
-      email: { type: GraphQLString },
-      password: { type: GraphQLString },
+      bio: { type: GraphQLString },
     },
-    resolve(parent, args) {
-      return registation(args);
+    resolve(parent, args, context) {
+      return updateProfile(args, context);
     },
   },
 
-  loginUser: {
-    type: AuthType,
+  addOwnVoice: {
+    type: UserType,
     args: {
-      email: { type: GraphQLString },
-      password: { type: GraphQLString },
+      voice: { type: GraphQLString },
+      duration: { type: GraphQLFloat },
     },
     resolve(parent, args, context) {
-      return login(args, context);
+      return AddOwnVoice(args, context);
     },
   },
 
-  googleLogin: {
-    type: AuthType,
+  storyPrivacy: {
+    type: GraphQLBoolean,
     args: {
-      accessToken: { type: GraphQLString },
+      statusVisibility: { type: GraphQLBoolean },
     },
     resolve(parent, args, context) {
-      return googleLogin(args, context);
+      return StoryPrivacy(args, context);
     },
   },
-  facebookLogin: {
-    type: AuthType,
+
+  friendPrivacy: {
+    type: GraphQLBoolean,
     args: {
-      accessToken: { type: GraphQLString },
+      friendListVisibility: { type: GraphQLBoolean },
     },
     resolve(parent, args, context) {
-      return facebookLogin(args, context);
+      return FriendPrivacy(args, context);
     },
   },
 
-
-  logout: {
-    type: LogoutType,
+  OwnVoicePrivacy: {
+    type: GraphQLBoolean,
+    args: {
+      OwnVoicePrivacy: { type: GraphQLBoolean },
+    },
     resolve(parent, args, context) {
-      return logout(context);
+      return OwnVoicePrivacy(args, context);
     },
   },
 };
+
+module.exports = userResolver;

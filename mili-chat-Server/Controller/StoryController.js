@@ -16,7 +16,7 @@ async function createStory({ videoUrl }, context) {
       stories: [{ video: videoUrl, expiresAt }],
     });
   } else {
-    storyDoc.stories.push({ video: videoUrl, expiresAt });
+    storyDoc.stories.push({ video: videoUrl, expiresAt, status: 'active' });
     await storyDoc.save();
   }
 
@@ -45,41 +45,79 @@ async function createStory({ videoUrl }, context) {
   return storyDoc;
 }
 
-async function getStories(context) {
+async function getNewStories(context) {
   if (!context.userId) throw new Error('Authentication required');
 
   const me = await user.findById(context.userId).populate('friends', '_id');
+  const now = new Date();
 
-  if (!me) throw new Error('User not found');
-
-  const allStories = await storyModel
-    .find({})
-    .populate('user', 'name storyPrivacy id avatar reactions stories.seenBy')
+  const stories = await storyModel
+    .find({ 'stories.status': 'active' })
+    .populate('user', 'name avatar storyPrivacy')
     .lean();
 
+  return stories
+    .map(story => {
+      const visibleStories = story.stories.filter(s => {
+        if (s.status !== 'active') return false;
+        if (s.expiresAt < now) return false;
+
+        if (story.user._id.toString() === context.userId) return true;
+        if (story.user.storyPrivacy === 'public') return true;
+        if (story.user.storyPrivacy === 'friends') {
+          return me.friends.some(
+            f => f._id.toString() === story.user._id.toString(),
+          );
+        }
+        return false;
+      });
+
+      return { ...story, stories: visibleStories };
+    })
+    .filter(s => s.stories.length > 0);
+}
+
+async function getAllStories(context) {
+  if (!context.userId) throw new Error('Authentication required');
+
+  const me = await user.findById(context.userId).populate('friends', '_id');
+  if (!me) throw new Error('User not found');
+
   const now = new Date();
+
+  const allStories = await storyModel
+    .find({ 'stories.status': 'expired' })
+    .populate('user', 'name avatar storyPrivacy')
+    .lean();
 
   const visibleStories = allStories.map(story => {
     const privacy = story.user.storyPrivacy;
 
-    const stories = story.stories.filter(s => {
-      if (s.expiresAt < now) return false;
+    const filteredStories = story.stories.filter(s => {
+      if (s.status !== 'expired') return false;
 
       if (story.user._id.toString() === context.userId) return true;
+
       if (privacy === 'public') return true;
+
       if (privacy === 'friends') {
         return me.friends.some(
-          f => f._id.toString() === story.user._id.toString()
+          f => f._id.toString() === story.user._id.toString(),
         );
       }
+
       return false;
     });
 
-    return { ...story, stories };
+    return {
+      ...story,
+      stories: filteredStories,
+    };
   });
 
   return visibleStories.filter(s => s.stories.length > 0);
 }
+
 
 async function markAsSeen({ storyId, storyItemId }, context) {
   if (!context.userId) throw new Error('Authentication required');
@@ -95,7 +133,7 @@ async function markAsSeen({ storyId, storyItemId }, context) {
   if (!storyItem) throw new Error('Story item not found');
 
   const alreadySeen = storyItem.seenBy.some(
-    s => s.user._id.toString() === context.userId
+    s => s.user._id.toString() === context.userId,
   );
 
   if (!alreadySeen) {
@@ -142,7 +180,7 @@ async function storyReaction({ storyId, storyItemId, reaction }, context) {
     throw new Error('You cannot react to your own story');
   }
   const existingReaction = storyItem.reactions.find(
-    r => r.user.toString() === context.userId
+    r => r.user.toString() === context.userId,
   );
   if (existingReaction) {
     existingReaction.type = reaction;
@@ -170,61 +208,127 @@ async function storyReaction({ storyId, storyItemId, reaction }, context) {
   return true;
 }
 
+// async function expireStory() {
+//   let now = new Date();
+//   let story = await storyModel.find({ 'stories.expiresAt': { $lt: now } });
+
+//   for (let storyDoc of story) {
+//     for (let storyItem of storyDoc.stories) {
+//       if (storyItem.expiresAt <= now && !storyItem.expiredNotified) {
+//         let totalSeen = storyItem.seenBy.length;
+//         const reactionsCount = storyItem.reactions.reduce((acc, r) => {
+//           acc[r.type] = (acc[r.type] || 0) + 1;
+//           return acc;
+//         }, {});
+
+//         let topReaction = null;
+//         let maxCount = 0;
+//         for (let type in reactionsCount) {
+//           if (reactionsCount[type] > maxCount) {
+//             maxCount = reactionsCount[type];
+//             topReaction = type;
+//           }
+//         }
+
+//         let message = `Your story expired. Seen by ${totalSeen} people.`;
+//         if (topReaction) {
+//           message += ` Top reaction: ${topReaction} (${maxCount})`;
+//         }
+
+//         await createNotify({
+//           userId: storyDoc.user,
+//           type: 'story_expired',
+//           message,
+//           relatedUserId: null,
+//         });
+//         storyItem.expiredNotified = true;
+
+//         let io = getIO();
+//         getSocketIds(storyDoc.user.toString()).forEach(sid => {
+//           io.to(sid).emit('storyExpired', {
+//             storyId: storyDoc._id.toString(),
+//             storyItemId: storyItem._id.toString(),
+//             totalSeen,
+//             topReaction,
+//             maxCount,
+//           });
+//         });
+//       }
+//     }
+
+//     await storyDoc.save();
+//   }
+// }
+
 async function expireStory() {
-  let now = new Date();
-  let story = await storyModel.find({ 'stories.expiresAt': { $lt: now } });
+  const now = new Date();
 
-  for (let storyDoc of story) {
+  const stories = await storyModel.find({ 'stories.expiresAt': { $lt: now } });
+
+  for (let storyDoc of stories) {
+    let updated = false;
+
     for (let storyItem of storyDoc.stories) {
-      if (storyItem.expiresAt <= now && !storyItem.expiredNotified) {
-        let totalSeen = storyItem.seenBy.length;
-        const reactionsCount = storyItem.reactions.reduce((acc, r) => {
-          acc[r.type] = (acc[r.type] || 0) + 1;
-          return acc;
-        }, {});
+      if (storyItem.status === 'active' && storyItem.expiresAt <= now) {
+        storyItem.status = 'expired';
+        updated = true;
 
-        let topReaction = null;
-        let maxCount = 0;
-        for (let type in reactionsCount) {
-          if (reactionsCount[type] > maxCount) {
-            maxCount = reactionsCount[type];
-            topReaction = type;
+        if (!storyItem.expiredNotified) {
+          const totalSeen = storyItem.seenBy.length;
+
+          const reactionsCount = storyItem.reactions.reduce((acc, r) => {
+            acc[r.type] = (acc[r.type] || 0) + 1;
+            return acc;
+          }, {});
+
+          let topReaction = null;
+          let maxCount = 0;
+          for (let type in reactionsCount) {
+            if (reactionsCount[type] > maxCount) {
+              maxCount = reactionsCount[type];
+              topReaction = type;
+            }
           }
-        }
 
-        let message = `Your story expired. Seen by ${totalSeen} people.`;
-        if (topReaction) {
-          message += ` Top reaction: ${topReaction} (${maxCount})`;
-        }
+          let message = `Your story expired. Seen by ${totalSeen} people.`;
+          if (topReaction) {
+            message += ` Top reaction: ${topReaction} (${maxCount})`;
+          }
 
-        await createNotify({
-          userId: storyDoc.user,
-          type: 'story_expired',
-          message,
-          relatedUserId: null,
-        });
-        storyItem.expiredNotified = true;
-
-        let io = getIO();
-        getSocketIds(storyDoc.user.toString()).forEach(sid => {
-          io.to(sid).emit('storyExpired', {
-            storyId: storyDoc._id.toString(),
-            storyItemId: storyItem._id.toString(),
-            totalSeen,
-            topReaction,
-            maxCount,
+          await createNotify({
+            userId: storyDoc.user,
+            type: 'story_expired',
+            message,
+            relatedUserId: null,
           });
-        });
+
+          storyItem.expiredNotified = true;
+
+          const io = getIO();
+          getSocketIds(storyDoc.user.toString()).forEach(sid => {
+            io.to(sid).emit('storyExpired', {
+              storyId: storyDoc._id.toString(),
+              storyItemId: storyItem._id.toString(),
+              totalSeen,
+              topReaction,
+              maxCount,
+            });
+          });
+        }
       }
     }
 
-    await storyDoc.save();
+    if (updated) {
+      await storyDoc.save();
+    }
   }
 }
 
+
 module.exports = {
   createStory,
-  getStories,
+  getNewStories,
+  getAllStories,
   markAsSeen,
   storyReaction,
   expireStory,

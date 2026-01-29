@@ -51,10 +51,15 @@ const storySchema = new mongoose.Schema(
           },
         ],
         expiredNotified: { type: Boolean, default: false },
+        status: {
+          type: String,
+          enum: ['active', 'expired'],
+          default: 'active',
+        },
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 module.exports = mongoose.model('Story', storySchema);

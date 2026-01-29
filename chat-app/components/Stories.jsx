@@ -1,6 +1,6 @@
 import React from 'react';
 
-const Stories = ({stories}) => {
+const Stories = ({Stories=[], onClose=()=>{}}) => {
 
   return (
     <section>
@@ -14,7 +14,7 @@ const Stories = ({stories}) => {
         <div className="grid mobile:grid-cols-3 tablet:grid-cols-4 laptop:grid-cols-5 computer:grid-cols-6 items-center gap-2.5 border border-gray-400 mobile:p-2 tablet:p-3 laptop:p-5 computer:p-5 rounded-lg">
           <div className="flex flex-col items-center justify-center mobile:p-1  tablet:p-2.5 laptop:p-2.5 computer:p-2.5 border border-gray-300 rounded-lg mx-auto">
             <img
-              className="w-[100px] h-[100px] object-cover rounded-md"
+              className="w-25 h-25 object-cover rounded-md"
               src="/Image.jpg"
               alt="User"
             />

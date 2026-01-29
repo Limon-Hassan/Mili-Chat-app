@@ -20,6 +20,7 @@ const AddUser = () => {
             id
             name
             email
+            avatar
           }
         }`;
       let data = await request(query);
@@ -248,7 +249,7 @@ const AddUser = () => {
                   onClick={() => {
                     if (friendsMap[u.id]) {
                       setOpenFriendAction(prev =>
-                        prev === u.id ? null : u.id
+                        prev === u.id ? null : u.id,
                       );
                       return;
                     }
@@ -262,8 +263,8 @@ const AddUser = () => {
                     friendsMap[u.id]
                       ? 'bg-blue-600'
                       : pendingRequests[u.id] || receivedRequests[u.id]
-                      ? 'bg-red-300'
-                      : 'bg-green-600'
+                        ? 'bg-red-300'
+                        : 'bg-green-600'
                   } px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 `}
                 >
                   {friendsMap[u.id] ? (

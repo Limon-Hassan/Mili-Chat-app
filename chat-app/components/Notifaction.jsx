@@ -28,7 +28,6 @@ export default function Notification() {
 `;
 
         const data = await request(query);
-        console.log(data);
         setNotifications(data.notifications);
       } catch (err) {
         console.error(err);
@@ -46,7 +45,7 @@ export default function Notification() {
 }`;
 
         let data = await request(mutation);
-        console.log("data", data);
+        console.log('data', data);
       } catch (error) {
         console.log(error);
       }
@@ -55,7 +54,6 @@ export default function Notification() {
     fetchMarkNotificationsAsSeen();
   }, []);
 
-  console.log(notifications);
   const timeAgo = createdAt => {
     if (!createdAt) return '';
 
@@ -80,6 +78,11 @@ export default function Notification() {
       </div>
 
       <div className="flex flex-col gap-1 mt-5 overflow-auto w-full computer:h-200">
+        {notifications.length === 0 && (
+          <p className="text-white text-[15px] font-open_sens font-semibold text-center flex items-center justify-center w-full h-screen">
+            No notifications
+          </p>
+        )}
         {notifications.map(n => (
           <div
             key={n.id}
@@ -88,7 +91,7 @@ export default function Notification() {
             }`}
           >
             <img
-              src={n.avatar || 'defult.png'}
+              src={n.relatedUser.avatar || 'defult.png'}
               className="w-14 h-14 rounded-full"
             />
 

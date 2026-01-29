@@ -7,6 +7,7 @@ const FriendRequestType = new GraphQLObjectType({
     id: { type: GraphQLID },
     from: { type: UserType },
     to: { type: UserType },
+    avatar: { type: GraphQLString },
     status: { type: GraphQLString },
   }),
 });
