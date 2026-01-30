@@ -21,11 +21,12 @@ async function uploadProfilePic({ profilePic }, context) {
 
 async function updateProfile({ name, bio }, context) {
   if (!context.userId) throw new Error('Authentication required');
-  const updatedUser = await user.findByIdAndUpdate(
-    context.userId,
-    { name, bio },
-    { new: true },
-  );
+  const updateData = {};
+  if (name !== undefined && name !== '') updateData.name = name;
+  if (bio !== undefined && bio !== '') updateData.bio = bio;
+  const updatedUser = await user.findByIdAndUpdate(context.userId, updateData, {
+    new: true,
+  });
   let io = getIO();
 
   getSocketIds(context.userId).forEach(sid => {

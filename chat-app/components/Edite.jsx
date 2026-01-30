@@ -3,14 +3,22 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Cropper from 'react-easy-crop';
 import VoiceRecorder from './VoiceRecorder';
 import { GrClose } from 'react-icons/gr';
+import { uploadToCloudinary } from '@/lib/cloudinaryClient';
+import { useGraphQL } from './Hook/useGraphQL';
 
 const Edite = ({ setActive, onClose = () => {} }) => {
+  let { request, loading, error } = useGraphQL();
   const [image, setImage] = useState(null);
   let offRef = useRef(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [finalImage, setFinalImage] = useState(null);
+  const [Audio, setAudio] = useState(null);
+  let [formData, setFormData] = useState({
+    name: '',
+    bio: '',
+  });
 
   useEffect(() => {
     const handleClickOutside = e => {
@@ -54,6 +62,73 @@ const Edite = ({ setActive, onClose = () => {} }) => {
 
     const base64 = canvas.toDataURL('image/jpeg');
     setFinalImage(base64);
+  };
+
+  let handleSubmit = async () => {
+    try {
+      if (finalImage) {
+        let picURL = await uploadToCloudinary(
+          finalImage,
+          'profile_pics',
+          'image',
+        );
+        let mutation = `
+mutation UploadProfilePic($profilePic: String!) {
+  uploadProfilePic(profilePic: $profilePic) {
+    id
+    name
+    email
+    avatar
+    bio
+  }
+}
+`;
+
+        let data = await request(mutation, { profilePic: picURL });
+        if (data.uploadProfilePic) {
+          setFinalImage(null);
+        }
+      }
+
+      if (formData.name || formData.bio) {
+        let mutation = `mutation UpdateProfile($name: String, $bio: String) { updateProfile(name: $name, bio: $bio) {
+    id
+    name
+    bio
+    avatar
+    }
+    }
+    `;
+
+        let data = await request(mutation, formData);
+
+        if (data.updateProfile) {
+          setFormData({
+            name: '',
+            bio: '',
+          });
+        }
+      }
+
+      if (Audio) {
+        let AudioURL = await uploadToCloudinary(Audio, 'profile_pics', 'video');
+        console.log(AudioURL);
+        let mutation = `mutation AddOwnVoice($voice: String!, $duration: Float!) {
+        addOwnVoice(voice: $voice, duration: $duration) {
+    id
+    voiceIntro
+    }}
+`;
+
+        let data = await request(mutation, {
+          voice: AudioURL,
+          duration: 12.5,
+        });
+        console.log(data);
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
@@ -156,16 +231,20 @@ const Edite = ({ setActive, onClose = () => {} }) => {
           )}
           <div className="mt-3.5">
             <input
+              onChange={e => setFormData({ ...formData, name: e.target.value })}
               className="w-full h-12.5 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-200 bg-white"
               type="text"
+              value={formData.name}
               placeholder="Your name..."
             />
           </div>
 
           <div className="mt-3.5">
             <input
+              onChange={e => setFormData({ ...formData, bio: e.target.value })}
               className="w-full h-12.5 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-200 bg-white"
               type="text"
+              value={formData.bio}
               placeholder="Your bio..."
             />
           </div>
@@ -173,7 +252,7 @@ const Edite = ({ setActive, onClose = () => {} }) => {
             <span className="text-[16px] font-inter font-semibold text-gray-500">
               Make your Own voice
             </span>
-            <VoiceRecorder />
+            <VoiceRecorder onSave={setAudio} />
           </div>
           <div className="mt-3.5">
             <span className="text-[16px] font-inter font-semibold text-gray-500">
@@ -190,7 +269,7 @@ const Edite = ({ setActive, onClose = () => {} }) => {
               <option>Only Me</option>
             </select>
           </div>
-          <div className="mt-3.5 mb-12.5">
+          <div className="mt-3.5">
             <span className="text-[16px] font-inter font-semibold text-gray-500">
               Who can see your Friend List ?
             </span>
@@ -200,7 +279,20 @@ const Edite = ({ setActive, onClose = () => {} }) => {
               <option>Only Me</option>
             </select>
           </div>
-          <button className="text-[16px] font-semibold font-inter text-white bg-purple-500 w-full cursor-pointer py-2 rounded-md mt-6 flex items-center justify-center mx-auto">
+          <div className="mt-3.5 mb-12.5">
+            <span className="text-[16px] font-inter font-semibold text-gray-500">
+              Who can listen your Own voice ?
+            </span>
+            <select className="w-full h-12.5 mt-2 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 bg-white">
+              <option>Everyone</option>
+              <option>My Friends</option>
+              <option>Only Me</option>
+            </select>
+          </div>
+          <button
+            onClick={handleSubmit}
+            className="text-[16px] font-semibold font-inter text-white bg-purple-500 w-full cursor-pointer py-2 rounded-md mt-6 flex items-center justify-center mx-auto"
+          >
             Save
           </button>
         </div>

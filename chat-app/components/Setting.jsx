@@ -28,7 +28,6 @@ const Setting = () => {
   let [user, setUser] = useState({});
   let [stories, setStories] = useState([]);
   let [ActiveStories, setActiveStories] = useState([]);
-  console.log(stories)
 
   let toggoleActive = key => {
     setActive(prev => ({ ...prev, [key]: !prev[key] }));
@@ -44,8 +43,6 @@ const Setting = () => {
           avatar
           email
           bio
-          voiceIntro
-
           blockedByMe {
             id
             name
@@ -194,13 +191,14 @@ const Setting = () => {
             </button>
             <div
               onClick={() => toggoleActive('ImageToggole')}
-              className={`w-75 h-75 border-[6px] rounded-full ${stories.length > 0 ? 'border-purple-600 ' : 'border-white'} overflow-hidden`}
+              className={`w-75 h-75 border-[6px] rounded-full ${ActiveStories.length > 0 ? 'border-purple-600 ' : 'border-white'} overflow-hidden`}
             >
               <img
                 className="w-full h-full rounded-full object-cover active:scale-110 ease-in-out transition-all duration-500"
-                src={user.avatar || 'defult.png'}
+                src={user.avatar || '/defult.png'}
                 alt="Image"
               />
+             
             </div>
             <div
               className={`${active.ImageToggole ? 'block' : 'hidden'} absolute left-37.5 `}

@@ -17,6 +17,7 @@ const CreateGroup = ({ setGroup }) => {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [finalImage, setFinalImage] = useState(null);
+  
 
   useEffect(() => {
     let handleCLickOutside = e => {
@@ -84,13 +85,11 @@ const CreateGroup = ({ setGroup }) => {
     try {
       if (!groupName || !finalImage) return;
 
-      let query = `
-    mutation CreateGroup($name: String!, $members: [ID!], $photo: String) {
+      let query = ` mutation CreateGroup($name: String!, $members: [ID!], $photo: String) {
       createGroup(name: $name, members: $members, photo: $photo) {
         id
         name
         photo
-
         Admin { id name email avatar }
         members { id name email avatar }
       }

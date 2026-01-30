@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
-export default function VoiceRecorder() {
+export default function VoiceRecorder({ onSave = () => {} }) {
   const [isRecording, setIsRecording] = useState(false);
   const [bars, setBars] = useState(new Array(20).fill(20));
   const [tempAudio, setTempAudio] = useState(null);
@@ -34,25 +34,35 @@ export default function VoiceRecorder() {
       setIsRecording(true);
 
       audioContextRef.current = new AudioContext();
+      await audioContextRef.current.resume();
       const source = audioContextRef.current.createMediaStreamSource(stream);
 
       analyserRef.current = audioContextRef.current.createAnalyser();
-      analyserRef.current.fftSize = 64;
+      analyserRef.current.fftSize = 1024;
 
       source.connect(analyserRef.current);
 
-      const dataArray = new Uint8Array(analyserRef.current.frequencyBinCount);
-
       const animateBars = () => {
-        analyserRef.current.getByteFrequencyData(dataArray);
+        if (!analyserRef.current) return;
 
-        const chunk = dataArray.slice(0, 20);
-        const heights = chunk.map(v =>
-          Math.max(4, Math.min(40, Math.floor(v / 6)))
-        );
+        const bufferLength = analyserRef.current.fftSize;
+        const dataArray = new Uint8Array(bufferLength);
+
+        analyserRef.current.getByteTimeDomainData(dataArray);
+
+        const sliceSize = Math.floor(bufferLength / 20);
+        const heights = [];
+
+        for (let i = 0; i < 20; i++) {
+          const slice = dataArray.slice(i * sliceSize, (i + 1) * sliceSize);
+
+          const avg =
+            slice.reduce((sum, v) => sum + Math.abs(v - 128), 0) / slice.length;
+
+          heights.push(Math.min(48, Math.max(6, avg)));
+        }
 
         setBars(heights);
-
         rafRef.current = requestAnimationFrame(animateBars);
       };
 
@@ -69,15 +79,18 @@ export default function VoiceRecorder() {
     if (audioContextRef.current) audioContextRef.current.close();
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
 
+    analyserRef.current = null;
+
     streamRef.current?.getTracks().forEach(t => t.stop());
 
-   setBars(new Array(20).fill(20));
+    setBars(new Array(20).fill(6));
   };
 
   const saveRecording = () => {
     if (tempAudio) {
       setRecordings(prev => [...prev, tempAudio]);
       setTempAudio(null);
+      onSave(tempAudio.blob);
     }
   };
 
@@ -96,10 +109,10 @@ export default function VoiceRecorder() {
           {bars.map((h, i) => (
             <div
               key={i}
-              className="w-2 text-black rounded"
+              className="w-2 bg-purple-600 rounded"
               style={{
                 height: `${h}px`,
-                transition: 'height 0.1s linear',
+                transition: 'height 0.08s ease-out',
               }}
             />
           ))}
