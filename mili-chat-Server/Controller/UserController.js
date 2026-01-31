@@ -38,11 +38,11 @@ async function updateProfile({ name, bio }, context) {
   return updatedUser;
 }
 
-async function AddOwnVoice({ voice, duration }, context) {
+async function AddOwnVoice({ voice }, context) {
   if (!context.userId) throw new Error('Authentication required');
   const updatedUser = await user.findByIdAndUpdate(
     context.userId,
-    { voiceIntro: { url: voice, duration } },
+    { voiceIntro: { url: voice } },
     { new: true },
   );
   let io = getIO();
@@ -54,49 +54,26 @@ async function AddOwnVoice({ voice, duration }, context) {
   return updatedUser;
 }
 
-async function StoryPrivacy({ statusVisibility }, context) {
-  if (!context.userId) {
-    throw new Error('Authentication required');
-  }
+async function updatePrivacy(
+  { storyPrivacy, friendPrivacy, ownVoicePrivacy, profilePicLock },
+  context,
+) {
+  if (!context.userId) throw new Error('Authentication required');
 
-  let updatedUser = await user.findByIdAndUpdate(
-    context.userId,
-    {
-      storyPrivacy: statusVisibility,
-    },
-    { new: true },
-  );
+  let updateObj = {};
+  if (storyPrivacy !== undefined && storyPrivacy !== '')
+    updateObj.storyPrivacy = storyPrivacy;
+  if (friendPrivacy !== undefined && friendPrivacy !== '')
+    updateObj.friendListPrivacy = friendPrivacy;
+  if (ownVoicePrivacy !== undefined && ownVoicePrivacy !== '')
+    updateObj.OwnVoicePrivacy = ownVoicePrivacy;
+  if (profilePicLock !== undefined && profilePicLock !== '')
+    updateObj.ProfilePicLock = profilePicLock;
 
-  return updatedUser;
-}
+  const updatedUser = await user.findByIdAndUpdate(context.userId, updateObj, {
+    new: true,
+  });
 
-async function FriendPrivacy({ friendListVisibility }, context) {
-  if (!context.userId) {
-    throw new Error('Authentication required');
-  }
-
-  let updatedUser = await user.findByIdAndUpdate(
-    context.userId,
-    {
-      friendListPrivacy: friendListVisibility,
-    },
-    { new: true },
-  );
-  return updatedUser;
-}
-
-async function OwnVoicePrivacy({ OwnVoicePrivacy }, context) {
-  if (!context.userId) {
-    throw new Error('Authentication required');
-  }
-
-  let updatedUser = await user.findByIdAndUpdate(
-    context.userId,
-    {
-      OwnVoicePrivacy: OwnVoicePrivacy,
-    },
-    { new: true },
-  );
   return updatedUser;
 }
 
@@ -104,7 +81,5 @@ module.exports = {
   uploadProfilePic,
   updateProfile,
   AddOwnVoice,
-  StoryPrivacy,
-  FriendPrivacy,
-  OwnVoicePrivacy,
+  updatePrivacy,
 };

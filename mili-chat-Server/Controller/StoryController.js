@@ -13,7 +13,7 @@ async function createStory({ videoUrl }, context) {
   if (!storyDoc) {
     storyDoc = await storyModel.create({
       user: context.userId,
-      stories: [{ video: videoUrl, expiresAt }],
+      stories: [{ video: videoUrl, expiresAt, status: 'active' }],
     });
   } else {
     storyDoc.stories.push({ video: videoUrl, expiresAt, status: 'active' });
@@ -83,7 +83,6 @@ async function getAllStories(context) {
   const me = await user.findById(context.userId).populate('friends', '_id');
   if (!me) throw new Error('User not found');
 
-  const now = new Date();
 
   const allStories = await storyModel
     .find({ 'stories.status': 'expired' })
@@ -117,7 +116,6 @@ async function getAllStories(context) {
 
   return visibleStories.filter(s => s.stories.length > 0);
 }
-
 
 async function markAsSeen({ storyId, storyItemId }, context) {
   if (!context.userId) throw new Error('Authentication required');
@@ -271,9 +269,10 @@ async function expireStory() {
     for (let storyItem of storyDoc.stories) {
       if (storyItem.status === 'active' && storyItem.expiresAt <= now) {
         storyItem.status = 'expired';
+
         updated = true;
 
-        if (!storyItem.expiredNotified) {
+        if (storyItem.expiredNotified === false) {
           const totalSeen = storyItem.seenBy.length;
 
           const reactionsCount = storyItem.reactions.reduce((acc, r) => {
@@ -323,7 +322,6 @@ async function expireStory() {
     }
   }
 }
-
 
 module.exports = {
   createStory,

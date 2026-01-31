@@ -3,10 +3,12 @@ const {
   GraphQLString,
   GraphQLID,
   GraphQLList,
+  GraphQLBoolean,
 } = require('graphql');
 const FriendType = require('./FriendType');
 const storyModel = require('../../models/storyModel');
 const { StoryType } = require('./StoryType');
+const { voiceIntro } = require('./VoiceIntroType');
 
 const UserType = new GraphQLObjectType({
   name: 'User',
@@ -19,8 +21,15 @@ const UserType = new GraphQLObjectType({
     email: { type: GraphQLString },
     avatar: { type: GraphQLString },
     bio: { type: GraphQLString },
-    voiceIntro: { type: GraphQLString },
-
+    storyPrivacy: { type: GraphQLString },
+    friendListPrivacy: { type: GraphQLString },
+    OwnVoicePrivacy: { type: GraphQLString },
+    ProfilePicLock: {
+      type: GraphQLBoolean,
+    },
+    voiceIntro: {
+      type: voiceIntro,
+    },
     friends: {
       type: new GraphQLList(FriendType),
     },

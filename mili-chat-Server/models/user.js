@@ -39,7 +39,6 @@ let userSchema = new mongoose.Schema({
 
   voiceIntro: {
     url: String,
-    duration: Number,
   },
 
   googleId: String,
@@ -54,7 +53,7 @@ let userSchema = new mongoose.Schema({
     enum: ['public', 'friends', 'onlyMe'],
     default: 'friends',
   },
-  
+
   OwnVoicePrivacy: {
     type: String,
     enum: ['public', 'friends', 'onlyMe'],
@@ -65,8 +64,12 @@ let userSchema = new mongoose.Schema({
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   storyPrivacy: {
     type: String,
-    enum: ['public', 'friends', 'onlyme'],
+    enum: ['public', 'friends', 'onlyMe'],
     default: 'public',
+  },
+  ProfilePicLock: {
+    type: Boolean,
+    default: false,
   },
 });
 

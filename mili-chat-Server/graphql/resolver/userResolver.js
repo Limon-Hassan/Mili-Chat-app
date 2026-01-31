@@ -1,13 +1,11 @@
-const { GraphQLString, GraphQLBoolean, GraphQLFloat } = require('graphql');
+const { GraphQLString, GraphQLBoolean } = require('graphql');
 
 const { UserType } = require('../types/userType');
 const {
   uploadProfilePic,
   updateProfile,
   AddOwnVoice,
-  StoryPrivacy,
-  FriendPrivacy,
-  OwnVoicePrivacy,
+  updatePrivacy,
 } = require('../../Controller/UserController');
 
 const userResolver = {
@@ -36,42 +34,25 @@ const userResolver = {
     type: UserType,
     args: {
       voice: { type: GraphQLString },
-      duration: { type: GraphQLFloat },
     },
     resolve(parent, args, context) {
       return AddOwnVoice(args, context);
     },
   },
-
-  storyPrivacy: {
-    type: GraphQLBoolean,
+   
+  updatedPrivacy: {
+    type: UserType,
     args: {
-      statusVisibility: { type: GraphQLBoolean },
+      storyPrivacy: { type: GraphQLString },
+      friendPrivacy: { type: GraphQLString },
+      ownVoicePrivacy: { type: GraphQLString },
+      profilePicLock: { type: GraphQLBoolean },
     },
     resolve(parent, args, context) {
-      return StoryPrivacy(args, context);
+      return updatePrivacy(args, context);
     },
-  },
+  }
 
-  friendPrivacy: {
-    type: GraphQLBoolean,
-    args: {
-      friendListVisibility: { type: GraphQLBoolean },
-    },
-    resolve(parent, args, context) {
-      return FriendPrivacy(args, context);
-    },
-  },
-
-  OwnVoicePrivacy: {
-    type: GraphQLBoolean,
-    args: {
-      OwnVoicePrivacy: { type: GraphQLBoolean },
-    },
-    resolve(parent, args, context) {
-      return OwnVoicePrivacy(args, context);
-    },
-  },
 };
 
 module.exports = userResolver;

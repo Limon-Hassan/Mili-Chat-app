@@ -49,6 +49,7 @@ const storySchema = new mongoose.Schema(
               default: Date.now,
             },
           },
+          
         ],
         expiredNotified: { type: Boolean, default: false },
         status: {

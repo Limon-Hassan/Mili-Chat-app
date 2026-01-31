@@ -1,6 +1,6 @@
 'use client';
 
-import React, { use, useState } from 'react';
+import React, { useState } from 'react';
 import VoiceChatCard from '../VoiceChatCard';
 import AllFriend from '../AllFriend';
 import { Plus } from 'lucide-react';

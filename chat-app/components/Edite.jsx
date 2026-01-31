@@ -5,6 +5,8 @@ import VoiceRecorder from './VoiceRecorder';
 import { GrClose } from 'react-icons/gr';
 import { uploadToCloudinary } from '@/lib/cloudinaryClient';
 import { useGraphQL } from './Hook/useGraphQL';
+import Loader from './Loader';
+import { TiTick } from 'react-icons/ti';
 
 const Edite = ({ setActive, onClose = () => {} }) => {
   let { request, loading, error } = useGraphQL();
@@ -14,6 +16,12 @@ const Edite = ({ setActive, onClose = () => {} }) => {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [finalImage, setFinalImage] = useState(null);
+  const [privacy, setPrivacy] = useState({
+    storyPrivacy: '',
+    friendPrivacy: '',
+    ownVoicePrivacy: '',
+    profilePicLock: false,
+  });
   const [Audio, setAudio] = useState(null);
   let [formData, setFormData] = useState({
     name: '',
@@ -85,6 +93,7 @@ mutation UploadProfilePic($profilePic: String!) {
 `;
 
         let data = await request(mutation, { profilePic: picURL });
+        console.log(data);
         if (data.uploadProfilePic) {
           setFinalImage(null);
         }
@@ -104,30 +113,67 @@ mutation UploadProfilePic($profilePic: String!) {
 
         if (data.updateProfile) {
           setFormData({
-            name: '',
-            bio: '',
+            name: data.updateProfile.name,
+            bio: data.updateProfile.bio,
           });
         }
       }
 
       if (Audio) {
         let AudioURL = await uploadToCloudinary(Audio, 'profile_pics', 'video');
-        console.log(AudioURL);
-        let mutation = `mutation AddOwnVoice($voice: String!, $duration: Float!) {
-        addOwnVoice(voice: $voice, duration: $duration) {
+        let mutation = `mutation AddOwnVoice($voice: String!) {
+        addOwnVoice(voice: $voice ) {
     id
-    voiceIntro
+    voiceIntro{
+    url
+    }
     }}
 `;
 
         let data = await request(mutation, {
           voice: AudioURL,
-          duration: 12.5,
         });
-        console.log(data);
+
+        if (data.addOwnVoice) {
+          setAudio(null);
+        }
+      }
+      if (privacy) {
+        let mutation = `mutation UpdatePrivacy(
+  $storyPrivacy: String
+  $friendPrivacy: String
+  $ownVoicePrivacy: String
+  $profilePicLock: Boolean
+) {
+  updatedPrivacy(
+    storyPrivacy: $storyPrivacy
+    friendPrivacy: $friendPrivacy
+    ownVoicePrivacy: $ownVoicePrivacy
+    profilePicLock: $profilePicLock
+  ) {
+    id
+    storyPrivacy
+    friendListPrivacy
+    OwnVoicePrivacy
+    ProfilePicLock
+  }
+}`;
+
+        let data = await request(mutation, privacy);
+        if (data.updatedPrivacy) {
+          setPrivacy({
+            storyPrivacy: data.updatedPrivacy.storyPrivacy,
+            friendPrivacy: data.updatedPrivacy.friendListPrivacy,
+            ownVoicePrivacy: data.updatedPrivacy.OwnVoicePrivacy,
+            profilePicLock: data.updatedPrivacy.ProfilePicLock,
+          });
+        }
       }
     } catch (error) {
       console.log(error);
+    } finally {
+      setActive(false);
+      onClose();
     }
   };
 
@@ -263,37 +309,83 @@ mutation UploadProfilePic($profilePic: String!) {
             <span className="text-[16px] font-inter font-semibold text-gray-500">
               Who can see your Status ?
             </span>
-            <select className="w-full h-12.5 mt-2 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 bg-white">
-              <option>Everyone</option>
-              <option>My Friends</option>
-              <option>Only Me</option>
+            <select
+              value={privacy.storyPrivacy}
+              onChange={e =>
+                setPrivacy({ ...privacy, storyPrivacy: e.target.value })
+              }
+              className="w-full h-12.5 mt-2 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 bg-white"
+            >
+              <option value="public">Everyone</option>
+              <option value="friends">My Friends</option>
+              <option value="onlyMe">Only Me</option>
             </select>
           </div>
           <div className="mt-3.5">
             <span className="text-[16px] font-inter font-semibold text-gray-500">
               Who can see your Friend List ?
             </span>
-            <select className="w-full h-12.5 mt-2 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 bg-white">
-              <option>Everyone</option>
-              <option>My Friends</option>
-              <option>Only Me</option>
+            <select
+              value={privacy.friendPrivacy}
+              onChange={e =>
+                setPrivacy({ ...privacy, friendPrivacy: e.target.value })
+              }
+              className="w-full h-12.5 mt-2 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 bg-white"
+            >
+              <option value="public">Everyone</option>
+              <option value="friends">My Friends</option>
+              <option value="onlyMe">Only Me</option>
             </select>
           </div>
           <div className="mt-3.5 mb-12.5">
             <span className="text-[16px] font-inter font-semibold text-gray-500">
               Who can listen your Own voice ?
             </span>
-            <select className="w-full h-12.5 mt-2 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 bg-white">
-              <option>Everyone</option>
-              <option>My Friends</option>
-              <option>Only Me</option>
+            <select
+              value={privacy.ownVoicePrivacy}
+              onChange={e =>
+                setPrivacy({ ...privacy, ownVoicePrivacy: e.target.value })
+              }
+              className="w-full h-12.5 mt-2 rounded-lg px-3 border border-gray-300  placeholder:text-gray-500 text-gray-700 font-semibold font-inter outline-none shadow-[0_15px_16px_rgba(0,0,0,0.12)] focus:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-300 bg-white"
+            >
+              <option value="public">Everyone</option>
+              <option value="friends">My Friends</option>
+              <option value="onlyMe">Only Me</option>
             </select>
+          </div>
+          <div className="flex items-center justify-between">
+            <h5
+              onClick={() => document.getElementById('input').click()}
+              className="text-[16px] font-inter font-semibold text-gray-500"
+            >
+              Do you want to lock your profile Picture, so click here
+            </h5>
+            <label className="group cursor-pointer">
+              <input
+                checked={privacy.profilePicLock}
+                onChange={e =>
+                  setPrivacy({ ...privacy, profilePicLock: e.target.checked })
+                }
+                id="input"
+                type="checkbox"
+                className="hidden"
+              />
+
+              <div
+                className="w-6 h-6 rounded-full border-2 border-gray-400
+                            group-has-checked:bg-purple-500
+                            group-has-checked:border-purple-500
+                            flex items-center justify-center"
+              >
+                <TiTick className=" text-2xl text-white scale-0 rotate-45 group-has-checked:scale-100 group-has-checked:rotate-0 transition-all duration-200" />
+              </div>
+            </label>
           </div>
           <button
             onClick={handleSubmit}
-            className="text-[16px] font-semibold font-inter text-white bg-purple-500 w-full cursor-pointer py-2 rounded-md mt-6 flex items-center justify-center mx-auto"
+            className="text-[16px] font-semibold font-inter text-white bg-purple-500 w-full cursor-pointer py-2 rounded-md mt-6 flex items-center justify-center mx-auto gap-3"
           >
-            Save
+            Save {loading && <Loader />}
           </button>
         </div>
       </section>

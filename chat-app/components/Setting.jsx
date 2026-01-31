@@ -43,6 +43,10 @@ const Setting = () => {
           avatar
           email
           bio
+          voiceIntro{
+            
+            url
+          }
           blockedByMe {
             id
             name
@@ -62,6 +66,7 @@ const Setting = () => {
     `;
 
       let data = await request(mutation);
+
       setUser(data.me);
     };
 
@@ -164,7 +169,6 @@ const Setting = () => {
     `;
 
       let data = await request(mutation, { video: fileUrl });
-    
     } catch (error) {
       console.log(error);
     }
@@ -198,19 +202,20 @@ const Setting = () => {
                 src={user.avatar || '/defult.png'}
                 alt="Image"
               />
-             
             </div>
             <div
               className={`${active.ImageToggole ? 'block' : 'hidden'} absolute left-37.5 `}
             >
               <div className="relative bg-white text-black p-2 rounded-lg w-44 before:absolute before:-top-2 before:left-6 before:w-0 before:h-0 before:border-l-8 before:border-r-8 before:border-b-8 before:border-l-transparent before:border-r-transparent before:border-b-white">
                 <ul>
-                  <li
-                    onClick={() => toggoleActive('story')}
-                    className="cursor-pointer hover:bg-gray-300 active:bg-gray-300 font-medium p-1 rounded-sm"
-                  >
-                    See story
-                  </li>
+                  {ActiveStories.length > 0 && (
+                    <li
+                      onClick={() => toggoleActive('story')}
+                      className="cursor-pointer hover:bg-gray-300 active:bg-gray-300 font-medium p-1 rounded-sm"
+                    >
+                      See story
+                    </li>
+                  )}
                   <li
                     onClick={() => toggoleActive('picture')}
                     className="cursor-pointer hover:bg-gray-300 active:bg-gray-300 font-medium p-1 rounded-sm"
@@ -253,10 +258,9 @@ const Setting = () => {
               </button>
             </div>
             <div>
-              <VoiceChatCard
-                audioSrc="/Sayfalse  Nulteex - AL NACER!.mp3"
-                status="online"
-              />
+              {user.voiceIntro && (
+                <VoiceChatCard audioSrc={user.voiceIntro} status="online" />
+              )}
             </div>
           </div>
           <AllFriend />
@@ -269,7 +273,10 @@ const Setting = () => {
             />
           )}
           {active.story && (
-            <ShowStatus story={ActiveStories} onClose={() => setActive(false)} />
+            <ShowStatus
+              story={ActiveStories}
+              onClose={() => setActive(false)}
+            />
           )}
           {active.picture && (
             <SeeProfileFicture
