@@ -356,7 +356,7 @@ mutation UploadProfilePic($profilePic: String!) {
           <div className="flex items-center justify-between">
             <h5
               onClick={() => document.getElementById('input').click()}
-              className="text-[16px] font-inter font-semibold text-gray-500"
+              className="mobile:text-[14px] computer:text-[16px] font-inter font-semibold text-gray-500"
             >
               Do you want to lock your profile Picture, so click here
             </h5>

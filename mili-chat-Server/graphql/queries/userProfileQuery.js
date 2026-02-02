@@ -4,12 +4,12 @@ const getUserProfile = require('../resolver/getUserProfile');
 
 let userProfileQuery = {
   getUserProfile: {
-    type: UserPublicProfileType, 
+    type: UserPublicProfileType,
     args: {
       userId: { type: GraphQLID },
     },
     resolve: (_, args, context) => {
-      return getUserProfile(args, context);
+      return getUserProfile(_, args, context);
     },
   },
 };

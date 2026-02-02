@@ -69,7 +69,6 @@ let userSchema = new mongoose.Schema({
   },
   ProfilePicLock: {
     type: Boolean,
-    default: false,
   },
 });
 

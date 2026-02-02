@@ -10,6 +10,7 @@ const schema = require('./graphql/schema');
 let http = require('http');
 const { init: initSocket } = require('./socket_server');
 const setAuthCookies = require('./Helper/setAuthCookies');
+const { expireStory } = require('./Controller/StoryController');
 
 async function startServer() {
   let app = express();
@@ -109,6 +110,10 @@ async function startServer() {
   app.get('/', (req, res) => {
     res.send('Mili server is running');
   });
+
+  setInterval(async () => {
+    await expireStory();
+  }, 60 * 1000);
   initSocket(httpServer);
   httpServer.listen(process.env.Server_port, () => {
     console.log('Server is running on port', process.env.Server_port);

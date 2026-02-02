@@ -3,26 +3,20 @@
 import React, { useEffect, useState } from 'react';
 import VoiceChatCard from './VoiceChatCard';
 import AllFriend from './AllFriend';
-import { Plus } from 'lucide-react';
-import { RiEdit2Fill } from 'react-icons/ri';
 import Stories from './Stories';
 import { IoPersonAddSharp } from 'react-icons/io5';
-import Edite from './Edite';
 import ShowStatus from './ShowStatus';
 import SeeProfileFicture from './SeeProfileFicture';
 import AddStory from './AddStory';
 import { useGraphQL } from './Hook/useGraphQL';
-import { uploadToCloudinary } from '@/lib/cloudinaryClient';
-import ShowStatusForOther from './ShowStatusForOther';
+import { MoveLeft } from 'lucide-react';
 
-const Setting = () => {
+const ShowProfile = () => {
   let { request, loading, error } = useGraphQL();
   const [active, setActive] = useState({
     status: false,
     story: false,
     picture: false,
-    StoryUpload: false,
-    edite: false,
     ImageToggole: false,
   });
 
@@ -34,167 +28,49 @@ const Setting = () => {
     setActive(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  useEffect(() => {
-    let fetchMe = async () => {
-      let mutation = `
-      query Me {
-        me {
-          id
-          name
-          avatar
-          email
-          bio
-          ProfilePicLock
-          voiceIntro{
-            url
-          }
-          blockedByMe {
-            id
-            name
-            avatar
-          }
+  //     useEffect(() => {
+  //     let fetchUser = async () => {
+  //       let mutation = `query GetUserProfile($userId: ID!) {
+  //   getUserProfile(userId: $userId) {
+  //     id
+  //     name
+  //     avatar
+  //     bio
+  //     voiceIntro {
 
-            stories {
-      id
-      stories {
-        id
-        video
-        expiresAt
-      }
-    }
-        }
-      }
-    `;
+  //       url
 
-      let data = await request(mutation);
-      console.log(data);
-      setUser(data.me);
-    };
+  //     }
+  //   }
+  // }`;
 
-    fetchMe();
-  }, []);
+  //       let data = await request(mutation, {
+  //         userId: ,
+  //       });
+  //       console.log(data);
+  //       setUser(data.me);
+  //     };
 
-  let fetchStory = async () => {
-    try {
-      let mutation = `
-        query {
-          getAllStories {
-            id
-            user {
-              id
-              name
-              avatar
-            }
-            stories {
-              id
-              video
-              expiresAt
-              status
-              reactions {
-                user { id name avatar }
-                type
-                reactedAt
-              }
-              seenBy {
-                user { id name avatar }
-                seenAt
-              }
-            }
-          }
-        }
-      `;
-
-      let data = await request(mutation);
-      setStories(data.getAllStories);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  let fetchActiveStory = async () => {
-    try {
-      let mutation = `
-          query {
-            getNewStories {
-              id
-              user {
-                id
-                name
-                avatar
-              }
-              stories {
-                id
-                video
-                expiresAt
-                createdAt
-                status
-                reactions {
-                  user { id name avatar }
-                  type
-                  reactedAt
-                }
-                seenBy {
-                  user { id name avatar }
-                  seenAt
-                }
-              }
-            }
-          }
-        `;
-
-      let data = await request(mutation);
-      setActiveStories(data.getNewStories);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
-  useEffect(() => {
-    fetchStory();
-    fetchActiveStory();
-  }, [request]);
-
-  let handleStoryUpload = async file => {
-    try {
-      let fileUrl = await uploadToCloudinary(file, 'story', 'video');
-
-      let mutation = `
-      mutation CreateStory($video: String!) {
-        createStory(video: $video) {
-          id
-           stories {
-        video
-        expiresAt
-      }
-        }
-      }
-    `;
-
-      let data = await request(mutation, { video: fileUrl });
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  //     fetchUser();
+  //   }, []);
 
   return (
     <>
+      <button className='fixed top-0 left-0 z-9999 text-white text-3xl cursor-pointer'>
+        <MoveLeft />
+      </button>
       <section className="w-300 p-5 bg-gray-400/30 rounded-lg border border-gray-300">
         <div className="border-b border-gray-400">
           <h2 className="text-[34px] font-bold font-inter text-white">
             Account
           </h2>
           <p className="text-lg font-normal font-inter text-gray-200 mb-5">
-            Manage your account settings and set e-mail preferences.
+            You can see user profile if you are friend with this person, content
+            will show by user privacy.
           </p>
         </div>
         <div className="mt-10 flex flex-col mx-auto gap-5 p-5 overflow-y-auto h-[75vh] ">
           <div className="relative">
-            <button
-              onClick={() => toggoleActive('edite')}
-              className="absolute top-0 right-0 flex items-center gap-1 text-white bg-purple-600 rounded-md px-3 py-2 hover:bg-purple-700 cursor-pointer font-semibold text-[16px]"
-            >
-              <RiEdit2Fill /> Edite
-            </button>
             <div
               onClick={() => toggoleActive('ImageToggole')}
               className={`w-75 h-75 border-[6px] rounded-full ${ActiveStories.length > 0 ? 'border-purple-600 ' : 'border-white'} overflow-hidden`}
@@ -231,12 +107,6 @@ const Setting = () => {
                 </ul>
               </div>
             </div>
-            <span
-              onClick={() => toggoleActive('StoryUpload')}
-              className="absolute bottom-0 left-0 w-12.5 h-12.5 bg-purple-600 flex items-center justify-center rounded-full cursor-pointer border border-gray-500"
-            >
-              <Plus />
-            </span>
           </div>
           <div className="flex items-center justify-between border-b border-gray-400 pb-5">
             <div>
@@ -256,6 +126,12 @@ const Setting = () => {
               <h3 className="text-sm font-normal font-inter text-white mt-3.5">
                 {user.bio || 'Edit your bio From Edit Profile'}
               </h3>
+              <button className="flex items-center gap-1 text-md font-inter font-semibold text-white bg-purple-500 px-4 py-2 rounded-full mt-4 hover:bg-purple-600 cursor-pointer">
+                <span>
+                  <IoPersonAddSharp />
+                </span>
+                Add Friend
+              </button>
             </div>
             <div>
               {user.voiceIntro && (
@@ -265,7 +141,7 @@ const Setting = () => {
           </div>
           <AllFriend />
           <Stories Stories={Stories} />
-          {active.edite && <Edite setActive={setActive} />}
+
           {active.StoryUpload && (
             <AddStory
               onSave={handleStoryUpload}
@@ -290,4 +166,4 @@ const Setting = () => {
   );
 };
 
-export default Setting;
+export default ShowProfile;

@@ -187,7 +187,8 @@ const AddUser = () => {
     }
   };
 
-  //account privet korte hobe kintu
+
+  
 
   return (
     <>
@@ -219,7 +220,10 @@ const AddUser = () => {
               key={index}
               className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2"
             >
-              <div className="flex items-center gap-2.5">
+              <div
+                onClick={() => window.location.href = "/ShowProfile?id=" + u.id}
+                className="flex items-center gap-2.5"
+              >
                 <img
                   className="w-15 h-15 object-cover bg-center rounded-full"
                   src={u.avatar || 'defult.png'}

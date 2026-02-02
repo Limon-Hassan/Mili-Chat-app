@@ -1,7 +1,7 @@
 const user = require('../../models/user');
 
 async function getUserProfile(_, { userId }, context) {
-  const viewerId = context.userId;
+  const viewerId = context?.userId;
 
   const tergetUser = await user
     .findById(userId)

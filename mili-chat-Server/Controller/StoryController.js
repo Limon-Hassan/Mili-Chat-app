@@ -5,18 +5,28 @@ const { getIO, getSocketIds } = require('../socket_server');
 
 async function createStory({ videoUrl }, context) {
   if (!context.userId) throw new Error('Authentication required');
-
+  let now = new Date();
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  // const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+  if (!videoUrl) throw new Error('Video URL is required');
 
   let storyDoc = await storyModel.findOne({ user: context.userId });
 
   if (!storyDoc) {
     storyDoc = await storyModel.create({
       user: context.userId,
-      stories: [{ video: videoUrl, expiresAt, status: 'active' }],
+      stories: [
+        { video: videoUrl, createdAt: now, expiresAt, status: 'active' },
+      ],
     });
   } else {
-    storyDoc.stories.push({ video: videoUrl, expiresAt, status: 'active' });
+    storyDoc.stories.push({
+      video: videoUrl,
+      createdAt: now,
+      expiresAt,
+      status: 'active',
+    });
     await storyDoc.save();
   }
 
@@ -53,7 +63,7 @@ async function getNewStories(context) {
 
   const stories = await storyModel
     .find({ 'stories.status': 'active' })
-    .populate('user', 'name avatar storyPrivacy')
+    .populate('user', 'name avatar storyPrivacy createdAt')
     .lean();
 
   return stories
@@ -83,38 +93,32 @@ async function getAllStories(context) {
   const me = await user.findById(context.userId).populate('friends', '_id');
   if (!me) throw new Error('User not found');
 
-
-  const allStories = await storyModel
+  const stories = await storyModel
     .find({ 'stories.status': 'expired' })
     .populate('user', 'name avatar storyPrivacy')
     .lean();
 
-  const visibleStories = allStories.map(story => {
-    const privacy = story.user.storyPrivacy;
+  return stories
+    .map(story => {
+      const visibleStories = story.stories.filter(s => {
+        if (s.status !== 'expired') return false;
 
-    const filteredStories = story.stories.filter(s => {
-      if (s.status !== 'expired') return false;
+        if (story.user._id.toString() === context.userId) return true;
 
-      if (story.user._id.toString() === context.userId) return true;
+        if (story.user.storyPrivacy === 'public') return true;
 
-      if (privacy === 'public') return true;
+        if (story.user.storyPrivacy === 'friends') {
+          return me.friends.some(
+            f => f._id.toString() === story.user._id.toString(),
+          );
+        }
 
-      if (privacy === 'friends') {
-        return me.friends.some(
-          f => f._id.toString() === story.user._id.toString(),
-        );
-      }
+        return false;
+      });
 
-      return false;
-    });
-
-    return {
-      ...story,
-      stories: filteredStories,
-    };
-  });
-
-  return visibleStories.filter(s => s.stories.length > 0);
+      return { ...story, stories: visibleStories };
+    })
+    .filter(s => s.stories.length > 0);
 }
 
 async function markAsSeen({ storyId, storyItemId }, context) {
@@ -206,62 +210,17 @@ async function storyReaction({ storyId, storyItemId, reaction }, context) {
   return true;
 }
 
-// async function expireStory() {
-//   let now = new Date();
-//   let story = await storyModel.find({ 'stories.expiresAt': { $lt: now } });
-
-//   for (let storyDoc of story) {
-//     for (let storyItem of storyDoc.stories) {
-//       if (storyItem.expiresAt <= now && !storyItem.expiredNotified) {
-//         let totalSeen = storyItem.seenBy.length;
-//         const reactionsCount = storyItem.reactions.reduce((acc, r) => {
-//           acc[r.type] = (acc[r.type] || 0) + 1;
-//           return acc;
-//         }, {});
-
-//         let topReaction = null;
-//         let maxCount = 0;
-//         for (let type in reactionsCount) {
-//           if (reactionsCount[type] > maxCount) {
-//             maxCount = reactionsCount[type];
-//             topReaction = type;
-//           }
-//         }
-
-//         let message = `Your story expired. Seen by ${totalSeen} people.`;
-//         if (topReaction) {
-//           message += ` Top reaction: ${topReaction} (${maxCount})`;
-//         }
-
-//         await createNotify({
-//           userId: storyDoc.user,
-//           type: 'story_expired',
-//           message,
-//           relatedUserId: null,
-//         });
-//         storyItem.expiredNotified = true;
-
-//         let io = getIO();
-//         getSocketIds(storyDoc.user.toString()).forEach(sid => {
-//           io.to(sid).emit('storyExpired', {
-//             storyId: storyDoc._id.toString(),
-//             storyItemId: storyItem._id.toString(),
-//             totalSeen,
-//             topReaction,
-//             maxCount,
-//           });
-//         });
-//       }
-//     }
-
-//     await storyDoc.save();
-//   }
-// }
-
 async function expireStory() {
   const now = new Date();
 
-  const stories = await storyModel.find({ 'stories.expiresAt': { $lt: now } });
+  const stories = await storyModel.find({
+    stories: {
+      $elemMatch: {
+        status: 'active',
+        expiresAt: { $lte: now },
+      },
+    },
+  });
 
   for (let storyDoc of stories) {
     let updated = false;

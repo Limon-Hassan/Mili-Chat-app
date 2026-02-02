@@ -91,7 +91,7 @@ export default function Notification() {
             }`}
           >
             <img
-              src={n.relatedUser.avatar || 'defult.png'}
+              src={n.relatedUser?.avatar || 'defult.png'}
               className="w-14 h-14 rounded-full"
             />
 

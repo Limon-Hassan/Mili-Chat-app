@@ -16,6 +16,11 @@ const storySchema = new mongoose.Schema(
           required: true,
         },
 
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+
         expiresAt: {
           type: Date,
           required: true,
@@ -49,7 +54,6 @@ const storySchema = new mongoose.Schema(
               default: Date.now,
             },
           },
-          
         ],
         expiredNotified: { type: Boolean, default: false },
         status: {

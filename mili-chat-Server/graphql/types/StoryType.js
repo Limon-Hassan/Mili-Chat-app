@@ -30,6 +30,7 @@ let storyItemType = new GraphQLObjectType({
     id: { type: GraphQLID },
     video: { type: GraphQLString },
     expiresAt: { type: GraphQLString },
+    createdAt: { type: GraphQLString },
     reactions: { type: new GraphQLList(ReactionType) },
     seenBy: { type: new GraphQLList(SeenType) },
     expiredNotified: { type: GraphQLBoolean },
@@ -44,7 +45,6 @@ let StoryType = new GraphQLObjectType({
     user: { type: StoryUserType },
     stories: { type: new GraphQLList(storyItemType) },
     privacy: { type: GraphQLString },
-    createdAt: { type: GraphQLString },
     updatedAt: { type: GraphQLString },
   }),
 });

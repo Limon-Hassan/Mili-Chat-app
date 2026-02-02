@@ -67,8 +67,10 @@ async function updatePrivacy(
     updateObj.friendListPrivacy = friendPrivacy;
   if (ownVoicePrivacy !== undefined && ownVoicePrivacy !== '')
     updateObj.OwnVoicePrivacy = ownVoicePrivacy;
-  if (profilePicLock !== undefined && profilePicLock !== '')
+  if (profilePicLock !== undefined && profilePicLock !== '') {
     updateObj.ProfilePicLock = profilePicLock;
+  }
+ 
 
   const updatedUser = await user.findByIdAndUpdate(context.userId, updateObj, {
     new: true,

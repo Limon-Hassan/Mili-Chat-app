@@ -3,14 +3,13 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { GrClose } from 'react-icons/gr';
 
-const ShowStatus = ({ story = [], onClose }) => {
+const ShowStatusForOther = ({ story = [], onClose }) => {
   const storyRef = useRef(null);
   const videoRef = useRef(null);
   let [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [viewersOpen, setViewersOpen] = useState(false);
   const stories = story?.[0]?.stories || [];
   const currentStory = stories[currentIndex];
 
@@ -91,16 +90,12 @@ const ShowStatus = ({ story = [], onClose }) => {
     return `${Math.floor(seconds / 2592000)}mo ago`;
   };
 
-  let handleViewers = () => {
-    setViewersOpen(!viewersOpen);
-  };
-
   return (
     <section className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
       <div
         ref={storyRef}
         onClick={e => e.stopPropagation}
-        className="relative mobile:rounded-none computer:rounded-xl overflow-hidden shadow-2xl mobile:w-full tablet:w-full mobile:h-full tablet:h-full computer:max-w-180 computer:h-200 bg-black"
+        className="relative mobile:rounded-none computer:rounded-xl overflow-hidden shadow-2xl mobile:w-full tablet:w-full mobile:h-full tablet:h-full computer:max-w-180 computer:h-200 bg-black overflow-hidden"
       >
         <div className="absolute top-0 left-0 w-full">
           <div className="flex items-center gap-2 mb-5 ml-2.5 mt-2.5">
@@ -156,88 +151,23 @@ const ShowStatus = ({ story = [], onClose }) => {
         >
           <GrClose size={24} />
         </button>
-        <div
-          className={`absolute bottom-0 left-1/2 -translate-x-1/2 flex flex-col gap-5 w-full p-2 rounded-md transition-all ease-in-out duration-400 ${viewersOpen ? 'max-h-80 bg-black/40' : ''}`}
-        >
-          <h4
-            onClick={handleViewers}
-            className={`cursor-pointer text-white text-2xl ${viewersOpen && 'border-b border-white pb-2'} `}
-          >
-            Viewers 0
-          </h4>
-          {viewersOpen && (
-            <ul className="overflow-y-auto max-h-40 text-white">
-              <li className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-3">
-                  <img
-                    className="w-12 h-12 rounded-full object-cover"
-                    src="/Image.jpg"
-                    alt=""
-                  />
-                  <h3 className="mobile:text-[16px] computer:text-2xl font-inter font-medium text-white">
-                    Mahammud Hassan Limon
-                  </h3>
-                </div>
-                <span className="text-3xl">🖤</span>
-              </li>
-              <li className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-3">
-                  <img
-                    className="w-12 h-12 rounded-full object-cover"
-                    src="/Image.jpg"
-                    alt=""
-                  />
-                  <h3 className="mobile:text-[16px] computer:text-2xl font-inter font-medium text-white">
-                    Mahammud Hassan Limon
-                  </h3>
-                </div>
-                <span className="text-3xl">🖤</span>
-              </li>
-              <li className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-3">
-                  <img
-                    className="w-12 h-12 rounded-full object-cover"
-                    src="/Image.jpg"
-                    alt=""
-                  />
-                  <h3 className="mobile:text-[16px] computer:text-2xl font-inter font-medium text-white">
-                    Mahammud Hassan Limon
-                  </h3>
-                </div>
-                <span className="text-3xl">🖤</span>
-              </li>
-              <li className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-3">
-                  <img
-                    className="w-12 h-12 rounded-full object-cover"
-                    src="/Image.jpg"
-                    alt=""
-                  />
-                  <h3 className="mobile:text-[16px] computer:text-2xl font-inter font-medium text-white">
-                    Mahammud Hassan Limon
-                  </h3>
-                </div>
-                <span className="text-3xl">🖤</span>
-              </li>
-              <li className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-3">
-                  <img
-                    className="w-12 h-12 rounded-full object-cover"
-                    src="/Image.jpg"
-                    alt=""
-                  />
-                  <h3 className="mobile:text-[16px] computer:text-2xl font-inter font-medium text-white">
-                    Mahammud Hassan Limon
-                  </h3>
-                </div>
-                <span className="text-3xl">🖤</span>
-              </li>
-            </ul>
-          )}
+        <div className='absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/20 p-2 w-full overflow-x-scroll'>
+          <span className='text-[30px]'>❤️</span>
+          <span className='text-[30px]'>🖤</span>
+          <span className='text-[30px]'>🤍</span>
+          <span className='text-[30px]'>😂</span>
+          <span className='text-[30px]'>😍</span>
+          <span className='text-[30px]'>👌</span>
+          <span className='text-[30px]'>😱</span>
+          <span className='text-[30px]'>😭</span>
+          <span className='text-[30px]'>😡</span>
+          <span className='text-[30px]'>👀</span>
+          <span className='text-[30px]'>😵‍💫</span>
+          <span className='text-[30px]'>😵</span>
         </div>
       </div>
     </section>
   );
 };
 
-export default React.memo(ShowStatus);
+export default React.memo(ShowStatusForOther);

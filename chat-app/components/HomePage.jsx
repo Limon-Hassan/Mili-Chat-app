@@ -80,6 +80,7 @@ import { useGraphQL } from './Hook/useGraphQL';
 import Big_Loading from './Big_Loading';
 import Mobile_Notification from './Mobile/Mobile_Notification';
 import MsgFriends from './MsgFriends';
+import ShowProfile from './ShowProfile';
 
 const HomePage = () => {
   let [activePage, setActivePage] = useState('home');

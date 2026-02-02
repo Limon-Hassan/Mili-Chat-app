@@ -100,7 +100,7 @@ export default function Mobile_Notification() {
             }`}
           >
             <img
-              src={n.relatedUser.avatar || 'defult.png'}
+              src={n.relatedUser?.avatar || 'defult.png'}
               className="w-14 h-14 rounded-full"
             />
 
@@ -109,7 +109,7 @@ export default function Mobile_Notification() {
               <span className="text-xs text-white">{timeAgo(n.createdAt)}</span>
             </div>
 
-            {n.isRead && (
+            {!n.isRead && (
               <span className="relative flex size-4">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75"></span>
                 <span className="relative inline-flex size-4 rounded-full bg-sky-500"></span>

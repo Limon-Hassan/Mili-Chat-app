@@ -40,6 +40,9 @@ async function login({ email, password }, context) {
     if (!existingUser) {
       throw new Error('Not Account Found!');
     }
+    if (existingUser.provider === 'google') {
+      throw new Error('This account is registered via google');
+    }
 
     let isPasswordMatch = await bcrypt.compare(password, existingUser.password);
     if (!isPasswordMatch) {
