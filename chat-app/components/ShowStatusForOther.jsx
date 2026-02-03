@@ -95,7 +95,7 @@ const ShowStatusForOther = ({ story = [], onClose }) => {
       <div
         ref={storyRef}
         onClick={e => e.stopPropagation}
-        className="relative mobile:rounded-none computer:rounded-xl overflow-hidden shadow-2xl mobile:w-full tablet:w-full mobile:h-full tablet:h-full computer:max-w-180 computer:h-200 bg-black overflow-hidden"
+        className="relative mobile:rounded-none computer:rounded-xl overflow-hidden shadow-2xl mobile:w-full tablet:w-full mobile:h-full tablet:h-full computer:max-w-180 computer:h-200 bg-black"
       >
         <div className="absolute top-0 left-0 w-full">
           <div className="flex items-center gap-2 mb-5 ml-2.5 mt-2.5">

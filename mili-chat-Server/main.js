@@ -122,25 +122,3 @@ async function startServer() {
 
 startServer();
 
-// console.log('Context user:', user);
-// console.log('Context refreshValid:', refreshValid);
-// console.log('Context refreshToken:', req.cookies?.refreshToken);
-
-// app.use('/graphql', authMiddleware);
-
-// app.use(
-//   '/graphql',
-//   expressMiddleware(server, {
-//     context: async ({ req, res }) => {
-//       console.log('req cokkies here => ', req.cookies.refreshToken);
-//       return {
-//         req,
-//         res,
-//         user: req.user || null,
-//         refreshValid: req.refreshValid || false,
-//         accessToken: req.cookies?.accessToken || null,
-//         refreshToken: req.cookies?.refreshToken || null,
-//       };
-//     },
-//   })
-// );

@@ -1,7 +1,7 @@
 const user = require('../../models/user');
 
 async function getUserProfile(_, { userId }, context) {
-  const viewerId = context?.userId;
+  if (!context.userId) throw new Error('Unauthorized');
 
   const tergetUser = await user
     .findById(userId)
@@ -10,24 +10,21 @@ async function getUserProfile(_, { userId }, context) {
 
   if (!tergetUser) throw new Error('User not found');
 
-  const isOwner = viewerId && viewerId === userId;
-  const friend = viewerId ? isFriend(tergetUser, viewerId) : false;
+  const friend = context.userId ? isFriend(tergetUser, context.userId) : false;
 
   let profile = {
     id: tergetUser._id,
     name: tergetUser.name,
     avatar: tergetUser.avatar,
+    bio: tergetUser.bio,
   };
 
-  if (
-    isOwner ||
-    tergetUser.storyPrivacy === 'public' ||
-    (tergetUser.storyPrivacy === 'friends' && friend)
-  ) {
-    profile.bio = tergetUser.bio;
-    profile.voiceIntro = tergetUser.voiceIntro;
+  if (tergetUser.OwnVoicePrivacy === 'friends' && friend) {
+    profile = { ...profile, voiceIntro: tergetUser.voiceIntro };
   }
-
+  if (tergetUser.OwnVoicePrivacy === 'public') {
+    profile = { ...profile, voiceIntro: tergetUser.voiceIntro };
+  }
   return profile;
 }
 

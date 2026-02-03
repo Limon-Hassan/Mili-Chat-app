@@ -2,23 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { useGraphQL } from './Hook/useGraphQL';
 
-const AllFriend = () => {
-  let { request, loading, error } = useGraphQL();
-  let [friends, setFriends] = useState([]);
+const AllFriend = ({ friends }) => {
 
-  useEffect(() => {
-    let FetchMe = async () => {
-      try {
-        const query = `query {me {friends { id name avatar }}}`;
-        const data = await request(query);
-        setFriends(data.me.friends);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    FetchMe();
-  }, []);
 
   return (
     <>

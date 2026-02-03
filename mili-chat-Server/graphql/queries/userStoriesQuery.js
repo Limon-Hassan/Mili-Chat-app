@@ -8,8 +8,8 @@ let userStoriesQuery = {
     args: {
       userId: { type: GraphQLID },
     },
-    resolve: (parent, args, context) => {
-      return getUserStories(args, context);
+    resolve: (_, args, context) => {
+      return getUserStories(_,args, context);
     },
   },
 };

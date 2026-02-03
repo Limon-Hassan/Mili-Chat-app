@@ -44,6 +44,7 @@ function init(server) {
     console.log('✅ Socket connected:', socket.id);
 
     socket.on('joinUser', ({ userId }) => {
+      socket.userId = userId;
       registerUser(socket, userId);
       socket.join(userId);
       console.log(`👤 User ${userId} joined their private room`);
@@ -56,17 +57,87 @@ function init(server) {
       });
     });
 
-    socket.on('callUser', ({ toUserId, signalData, fromUserId }) => {
+    socket.on('typing', ({ toUserId }) => {
       const receivers = getSocketIds(toUserId);
       receivers.forEach(sId => {
-        io.to(sId).emit('incomingCall', { fromUserId, signalData });
+        io.to(sId).emit('typing', { from: socket.id });
       });
     });
 
-    socket.on('answerCall', ({ toUserId, signalData }) => {
+    socket.on('call-user', ({ toUserId, callType }) => {
+      if (!socket.userId) return;
       const receivers = getSocketIds(toUserId);
       receivers.forEach(sId => {
-        io.to(sId).emit('callAccepted', signalData);
+        io.to(sId).emit('incoming-call', {
+          fromUserId: socket.userId,
+          callType,
+        });
+      });
+    });
+
+    socket.on('accept-call', ({ toUserId }) => {
+      const receivers = getSocketIds(toUserId);
+      receivers.forEach(sId => {
+        io.to(sId).emit('call-accepted', {
+          fromUserId: socket.userId,
+        });
+      });
+    });
+
+    socket.on('reject-call', ({ toUserId }) => {
+      const receivers = getSocketIds(toUserId);
+      receivers.forEach(sId => {
+        io.to(sId).emit('call-rejected', {
+          fromUserId: socket.userId,
+        });
+      });
+    });
+
+    socket.on('end-call', ({ toUserId }) => {
+      const receivers = getSocketIds(toUserId);
+      receivers.forEach(sId => {
+        io.to(sId).emit('call-ended');
+      });
+    });
+
+    socket.on('webrtc-offer', ({ toUserId, offer }) => {
+      getSocketIds(toUserId).forEach(sId => {
+        io.to(sId).emit('webrtc-offer', {
+          fromUserId: socket.userId,
+          offer,
+        });
+      });
+    });
+
+    socket.on('webrtc-answer', ({ toUserId, answer }) => {
+      getSocketIds(toUserId).forEach(sId => {
+        io.to(sId).emit('webrtc-answer', {
+          fromUserId: socket.userId,
+          answer,
+        });
+      });
+    });
+
+    socket.on('ice-candidate', ({ toUserId, candidate }) => {
+      getSocketIds(toUserId).forEach(sId => {
+        io.to(sId).emit('ice-candidate', {
+          fromUserId: socket.userId,
+          candidate,
+        });
+      });
+    });
+
+    socket.on('joinUser', ({ userId }) => {
+      registerUser(socket, userId);
+      const yourFriends = getFavoriteFriends(userId); 
+      yourFriends.forEach(friendId => {
+        const sockets = getSocketIds(friendId);
+        sockets.forEach(sId => {
+          io.to(sId).emit('favorite-online', {
+            friendId,
+            name: socket.userName,
+          });
+        });
       });
     });
 

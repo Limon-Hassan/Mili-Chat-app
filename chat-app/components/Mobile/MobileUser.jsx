@@ -27,6 +27,7 @@ const MobileUser = () => {
             id
             name
             email
+            avatar
           }
         }`;
       let data = await request(query);
@@ -220,10 +221,15 @@ const MobileUser = () => {
               key={index}
               className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2"
             >
-              <div className="flex items-center gap-2.5">
+              <div
+                onClick={() =>
+                  (window.location.href = '/MobileProfile?id=' + u.id)
+                }
+                className="flex items-center gap-2.5"
+              >
                 <img
                   className="w-15 h-15 object-cover bg-center rounded-full"
-                  src={u.avatar || 'defult.png'}
+                  src={u.avatar || '/defult.png'}
                   alt="group"
                 />
                 <h5 className="text-[14px] h-5.5 font-open_sens font-semibold text-white">
@@ -250,7 +256,7 @@ const MobileUser = () => {
                   onClick={() => {
                     if (friendsMap[u.id]) {
                       setOpenFriendAction(prev =>
-                        prev === u.id ? null : u.id
+                        prev === u.id ? null : u.id,
                       );
                       return;
                     }
@@ -264,8 +270,8 @@ const MobileUser = () => {
                     friendsMap[u.id]
                       ? 'bg-blue-600'
                       : pendingRequests[u.id] || receivedRequests[u.id]
-                      ? 'bg-red-300'
-                      : 'bg-green-600'
+                        ? 'bg-red-300'
+                        : 'bg-green-600'
                   } px-2.5 rounded-md text-white cursor-pointer hover:opacity-70 `}
                 >
                   {friendsMap[u.id] ? (

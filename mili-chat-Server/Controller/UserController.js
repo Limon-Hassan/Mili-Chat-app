@@ -70,7 +70,6 @@ async function updatePrivacy(
   if (profilePicLock !== undefined && profilePicLock !== '') {
     updateObj.ProfilePicLock = profilePicLock;
   }
- 
 
   const updatedUser = await user.findByIdAndUpdate(context.userId, updateObj, {
     new: true,

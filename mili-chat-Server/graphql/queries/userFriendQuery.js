@@ -8,8 +8,8 @@ let userFriendQuery = {
     args: {
       userId: { type: GraphQLID },
     },
-    resolve: (parent, args, context) => {
-      return getUserFriends(args, context);
+    resolve: (_, args, context) => {
+      return getUserFriends(_, args, context);
     },
   },
 };

@@ -62,6 +62,7 @@ async function getNewStories(context) {
   const now = new Date();
 
   const stories = await storyModel
+    .find({ user: context.userId })
     .find({ 'stories.status': 'active' })
     .populate('user', 'name avatar storyPrivacy createdAt')
     .lean();
@@ -94,6 +95,7 @@ async function getAllStories(context) {
   if (!me) throw new Error('User not found');
 
   const stories = await storyModel
+    .find({ user: context.userId })
     .find({ 'stories.status': 'expired' })
     .populate('user', 'name avatar storyPrivacy')
     .lean();

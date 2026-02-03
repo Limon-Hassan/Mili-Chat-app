@@ -6,7 +6,6 @@ import AllFriend from './AllFriend';
 import { Plus } from 'lucide-react';
 import { RiEdit2Fill } from 'react-icons/ri';
 import Stories from './Stories';
-import { IoPersonAddSharp } from 'react-icons/io5';
 import Edite from './Edite';
 import ShowStatus from './ShowStatus';
 import SeeProfileFicture from './SeeProfileFicture';
@@ -27,7 +26,9 @@ const Setting = () => {
   });
 
   let [user, setUser] = useState({});
+  let isMe = true;
   let [stories, setStories] = useState([]);
+  let [friends, setFriends] = useState([]);
   let [ActiveStories, setActiveStories] = useState([]);
 
   let toggoleActive = key => {
@@ -44,6 +45,11 @@ const Setting = () => {
           avatar
           email
           bio
+          friends {
+            id
+            name
+            avatar
+          }
           ProfilePicLock
           voiceIntro{
             url
@@ -54,20 +60,12 @@ const Setting = () => {
             avatar
           }
 
-            stories {
-      id
-      stories {
-        id
-        video
-        expiresAt
-      }
-    }
         }
       }
     `;
 
       let data = await request(mutation);
-      console.log(data);
+      setFriends(data.me.friends);
       setUser(data.me);
     };
 
@@ -171,6 +169,7 @@ const Setting = () => {
     `;
 
       let data = await request(mutation, { video: fileUrl });
+      console.log(data);
     } catch (error) {
       console.log(error);
     }
@@ -218,7 +217,7 @@ const Setting = () => {
                       See story
                     </li>
                   )}
-                  {user.ProfilePicLock === false && (
+                  {(isMe || user.ProfilePicLock === false) && (
                     <li
                       onClick={() => {
                         toggoleActive('picture');
@@ -263,7 +262,7 @@ const Setting = () => {
               )}
             </div>
           </div>
-          <AllFriend />
+          <AllFriend friends={friends} />
           <Stories Stories={Stories} />
           {active.edite && <Edite setActive={setActive} />}
           {active.StoryUpload && (

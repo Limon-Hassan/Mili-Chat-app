@@ -714,8 +714,8 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
   const [isSaving, setIsSaving] = useState(false);
   const [progress, setProgress] = useState(0);
 
-  const DEFAULT_DURATION = 3; 
-  const DEFAULT_VIDEO_DURATION = 8; 
+  const DEFAULT_DURATION = 3;
+  const DEFAULT_VIDEO_DURATION = 8;
 
   const handleVideoUpload = e => {
     const f = e.target.files?.[0];
@@ -872,7 +872,6 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
   }, []);
 
   const drawFrameToCanvas = (ctx, width, height) => {
-   
     ctx.fillStyle =
       bg === 'red'
         ? '#dc2626'
@@ -883,7 +882,6 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
             : '#000';
     ctx.fillRect(0, 0, width, height);
 
-    
     if (imageFile && imageElRef.current) {
       const img = imageElRef.current;
       const imgRatio = img.naturalWidth / img.naturalHeight;
@@ -906,7 +904,6 @@ export default function AddStory({ onClose = () => {}, onSave = () => {} }) {
       ctx.drawImage(img, sx, sy, sW, sH, 0, 0, drawW, drawH);
     }
 
-   
     overlays.forEach(o => {
       const fontSize = 36;
       ctx.font = `${fontSize}px sans-serif`;

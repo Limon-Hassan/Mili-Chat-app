@@ -6,7 +6,6 @@ import AllFriend from '../AllFriend';
 import { Plus } from 'lucide-react';
 import { RiEdit2Fill } from 'react-icons/ri';
 import Stories from '../Stories';
-import { IoPersonAddSharp } from 'react-icons/io5';
 import Edite from '../Edite';
 import ShowStatus from '../ShowStatus';
 import SeeProfileFicture from '../SeeProfileFicture';
@@ -30,7 +29,9 @@ const MobileSetting = () => {
   });
 
   let [user, setUser] = useState({});
+  let isMe = true;
   let [stories, setStories] = useState([]);
+  let [friends, setFriends] = useState([]);
   let [ActiveStories, setActiveStories] = useState([]);
 
   useEffect(() => {
@@ -53,21 +54,17 @@ const MobileSetting = () => {
              avatar
            }
  
-             stories {
-       id
-       stories {
-         id
-         video
-         createdAt
-         expiresAt
-       }
-     }
+           friends {
+             id
+             name
+             avatar
+           }
          }
        }
      `;
 
       let data = await request(mutation);
-      console.log(data);
+      setFriends(data.me.friends);
       setUser(data.me);
     };
 
@@ -228,7 +225,7 @@ const MobileSetting = () => {
                       See story
                     </li>
                   )}
-                  {user.ProfilePicLock === false && (
+                  {(isMe || user.ProfilePicLock === false) && (
                     <li
                       onClick={() => toggoleActive('picture')}
                       className="cursor-pointer hover:bg-gray-300 active:bg-gray-300 font-medium p-1 rounded-sm"
@@ -275,19 +272,14 @@ const MobileSetting = () => {
                 {user.bio || 'Edit your bio From Edit Profile'}
               </h3>
             </div>
-            <div className="flex flex-col items-center justify-between">
+            <div className="flex flex-col gap-1 items-center justify-between">
               {user.voiceIntro && (
                 <VoiceChatCard audioSrc={user.voiceIntro} status="online" />
               )}
-              <button className="flex items-center gap-1 text-md font-inter font-semibold text-white bg-purple-500 w-75  justify-center py-2 rounded-full mt-4 hover:bg-purple-600 cursor-pointer">
-                <span>
-                  <IoPersonAddSharp />
-                </span>
-                Add Friend
-              </button>
+              
             </div>
           </div>
-          <AllFriend />
+          <AllFriend friends={friends} />
           <Stories />
           <BlockUser />
           {active.edite && (

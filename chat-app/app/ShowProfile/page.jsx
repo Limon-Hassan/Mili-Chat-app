@@ -5,12 +5,12 @@ import VoiceChatCard from '../../components/VoiceChatCard';
 import AllFriend from '../../components/AllFriend';
 import Stories from '../../components/Stories';
 import { IoPersonAddSharp } from 'react-icons/io5';
-import ShowStatus from '../../components/ShowStatus';
 import SeeProfileFicture from '../../components/SeeProfileFicture';
-import AddStory from '../../components/AddStory';
 import { useGraphQL } from '../../components/Hook/useGraphQL';
 import { MoveLeft } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import ShowStatusForOther from '@/components/ShowStatusForOther';
+import Big_Loading from '@/components/Big_Loading';
 
 const page = () => {
   let { request, loading, error } = useGraphQL();
@@ -24,17 +24,18 @@ const page = () => {
   const searchParams = useSearchParams();
   const uid = searchParams.get('id');
   let [user, setUser] = useState({});
+
   let [stories, setStories] = useState([]);
+  let [friends, setFriends] = useState([]);
   let [ActiveStories, setActiveStories] = useState([]);
 
   let toggoleActive = key => {
     setActive(prev => ({ ...prev, [key]: !prev[key] }));
   };
-  useEffect(() => {
-    if (!uid) return;
 
-    const fetchUser = async () => {
-      const query = `
+  const fetchUser = async () => {
+    if (!uid) return;
+    const query = `
       query GetUserProfile($userId: ID!) {
         getUserProfile(userId: $userId) {
           id
@@ -48,31 +49,83 @@ const page = () => {
       }
     `;
 
-      const data = await request(query, {
-        userId: uid,
-      });
-      console.log(data);
-      setUser(data.getUserProfile);
-    };
+    const data = await request(query, {
+      userId: uid,
+    });
 
+    setUser(data.getUserProfile);
+  };
+
+  let fetchUserFriend = async () => {
+    if (!uid) return;
+    const query = `query GetUserFriend($userId: ID!) {
+  getUserFriend(userId: $userId) {
+    id
+    name
+    avatar
+  }
+}
+
+    `;
+    const data = await request(query, {
+      userId: uid,
+    });
+    console.log(data);
+    setFriends(data.getUserFriend);
+  };
+
+  let fetchUserStories = async () => {
+    if (!uid) return;
+    const query = `query GetUserStories($userId: ID!) {
+  getUserStories(userId: $userId) {
+    id
+    privacy
+    updatedAt
+    user {
+      id
+      name
+      avatar
+    }
+    stories {
+      id
+      video
+      createdAt
+      expiresAt
+      status
+      
+    }
+  }
+}
+`;
+    const data = await request(query, {
+      userId: uid,
+    });
+    console.log(data);
+    setActiveStories(data.getUserStories);
+  };
+
+  useEffect(() => {
     fetchUser();
+    fetchUserFriend();
+    fetchUserStories();
   }, [uid]);
 
   return (
     <>
+      {loading && <Big_Loading />}
       <button
         onClick={() => (window.location.href = '/')}
-        className="fixed top-10 left-60 w-20 h-12.5 bg-white flex items-center justify-center rounded-l-lg z-9999 cursor-pointer"
+        className="fixed top-10 left-60 w-20 h-12.5 bg-white flex items-center justify-center rounded-l-lg z-9999 cursor-pointer active:scale-95"
       >
         <MoveLeft size={30} className="text-purple-500" />
       </button>
-      <section className="w-300 p-5 bg-gray-400/30 rounded-lg border border-gray-300  h-screen  mx-auto">
+      <section className=" fixed top-0 left-[50%] translate-x-[-50%] w-300 p-5 bg-gray-400/40 rounded-lg border border-gray-300  h-screen  mx-auto z-9999">
         <div className="border-b border-gray-400">
-          <h2 className="text-[34px] font-bold font-inter text-white">
+          <h2 className="text-[34px] font-bold font-inter text-white mb-2">
             Account
           </h2>
           <p className="text-lg font-normal font-inter text-gray-200 mb-5">
-            You can see user profile if you are friend with this person, content
+            You can see user profile content if you are friend with this person or public, content
             will show by user privacy.
           </p>
         </div>
@@ -146,17 +199,10 @@ const page = () => {
               )}
             </div>
           </div>
-          <AllFriend />
+          <AllFriend friends={friends} />
           <Stories Stories={Stories} />
-
-          {active.StoryUpload && (
-            <AddStory
-              onSave={handleStoryUpload}
-              onClose={() => setActive(false)}
-            />
-          )}
           {active.story && ActiveStories.length > 0 && (
-            <ShowStatus
+            <ShowStatusForOther
               story={ActiveStories}
               onClose={() => setActive(false)}
             />
