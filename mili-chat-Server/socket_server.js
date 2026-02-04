@@ -1,4 +1,5 @@
 const { Server } = require('socket.io');
+const user = require('./models/user');
 
 const onlineUsers = new Map();
 
@@ -43,11 +44,22 @@ function init(server) {
   io.on('connection', socket => {
     console.log('✅ Socket connected:', socket.id);
 
-    socket.on('joinUser', ({ userId }) => {
+    socket.on('joinUser', async ({ userId }) => {
       socket.userId = userId;
       registerUser(socket, userId);
       socket.join(userId);
       console.log(`👤 User ${userId} joined their private room`);
+      const yourFriends = await getFavoriteFriends(userId);
+      yourFriends.forEach(friendId => {
+        const sockets = getSocketIds(friendId);
+        sockets.forEach(sId => {
+          io.to(sId).emit('favorite-online', {
+            friendId: userId,
+          });
+        });
+      });
+
+      console.log(`👤 User ${userId} joined & notified favorites`);
     });
 
     socket.on('sendMessage', ({ toUserId, message }) => {
@@ -127,20 +139,6 @@ function init(server) {
       });
     });
 
-    socket.on('joinUser', ({ userId }) => {
-      registerUser(socket, userId);
-      const yourFriends = getFavoriteFriends(userId); 
-      yourFriends.forEach(friendId => {
-        const sockets = getSocketIds(friendId);
-        sockets.forEach(sId => {
-          io.to(sId).emit('favorite-online', {
-            friendId,
-            name: socket.userName,
-          });
-        });
-      });
-    });
-
     socket.on('disconnect', () => {
       removeUser(socket.id);
       console.log('❌ Socket disconnected:', socket.id);
@@ -153,6 +151,11 @@ function init(server) {
 function getIO() {
   if (!io) throw new Error('Socket.io not initialized');
   return io;
+}
+
+async function getFavoriteFriends(userId) {
+  const me = await user.findById(userId).select('friends');
+  return me?.friends || [];
 }
 
 module.exports = { init, getIO, registerUser, removeUser, getSocketIds };

@@ -1,26 +1,66 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useGraphQL } from './Hook/useGraphQL';
+import { useSocket } from './Hook/useSocket';
 
 const BlockUser = () => {
   let { request, loading, error } = useGraphQL();
   let [blockUser, setBlockUser] = useState([]);
 
+  let FetchMe = async () => {
+    try {
+      const query = `query {me {blockedByMe { id name avatar }}}`;
+      const data = await request(query);
+      setBlockUser(data.me.blockedByMe);
+    } catch (error) {
+      console.log(error);
+    }
+  };
   useEffect(() => {
-    let FetchMe = async () => {
-      try {
-        const query = `query {me {blockedByMe { id name avatar }}}`;
-        const data = await request(query);
-        setBlockUser(data.me.blockedByMe);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
     FetchMe();
   }, []);
 
- 
+  let handleUnblock = async blockUserId => {
+    try {
+      let qeury = `
+  mutation UnblockUser($unblockUserId: ID!) {
+    unBlock(unblockUserId: $unblockUserId) {
+      id
+      name
+      avatar
+      blockedByMe {
+        id
+        name
+        avatar
+      }
+    }
+  }
+`;
+
+      let data = await request(qeury, { unblockUserId: blockUserId });
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  let currentUserID = localStorage.getItem('userId');
+  useSocket({
+    userId: currentUserID,
+    onEvents: {
+      userBlocked: data => {
+        if (currentUserID !== data.byUserId) return;
+        setBlockUser(prev => {
+          if (prev.some(fid => fid.id === data.blockedUser.id)) return prev;
+          return [...prev, data.blockedUser];
+        });
+      },
+
+      userUnblocked: data => {
+        setBlockUser(prev => prev.filter(u => u.id !== data.unblockedUserId));
+      },
+    },
+  });
+
   return (
     <>
       <section className="mobile:w-full tablet:w-full laptop:w-full computer:w-125 mobile:h-auto tablet:h-auto laptop:h-auto bg-transparent border border-white p-4 rounded-lg">
@@ -59,7 +99,10 @@ const BlockUser = () => {
                   {user.name}
                 </h5>
               </div>
-              <button className="text-[12px] h-8.75 flex items-center font-inter font-bold bg-purple-500 w-28.75 rounded-full text-white cursor-pointer hover:opacity-70 justify-center">
+              <button
+                onClick={() => handleUnblock(user.id)}
+                className="text-[12px] h-8.75 flex items-center font-inter font-bold bg-purple-500 w-28.75 rounded-full text-white cursor-pointer hover:opacity-70 justify-center"
+              >
                 <span className="text-[16px] text-amber-300">😁</span>
                 Unblock
               </button>

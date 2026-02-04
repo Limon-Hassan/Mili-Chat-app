@@ -80,11 +80,11 @@ const page = () => {
       }
     `;
 
-      await request(GOOGLE_LOGIN, {
+      let data = await request(GOOGLE_LOGIN, {
         accessToken: tokenResponse.access_token,
       });
 
-      localStorage.setItem('userId', tokenResponse.user_id);
+      localStorage.setItem('userId', data.googleLogin.user.id);
       if (tokenResponse) {
         window.location.href = '/welcome';
       }

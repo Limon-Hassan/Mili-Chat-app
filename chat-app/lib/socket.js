@@ -4,15 +4,13 @@ let socket;
 
 export function getSocket() {
   if (!socket) {
-    socket = io(process.env.NEXT_SERVER_PORT, {
+    socket = io('http://localhost:8080', {
       withCredentials: true,
       autoConnect: false,
-      transports: ['polling', 'websocket'],
+      transports: ['websocket'],
     });
   }
   return socket;
 }
 
-export function notifyFavoriteOnline(userId) {
-  getSocket().emit('favorite-online', { userId });
-}
+

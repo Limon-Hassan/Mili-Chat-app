@@ -4,6 +4,8 @@ import { UserPlus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useGraphQL } from '../Hook/useGraphQL';
 import { FaUserClock, FaUserFriends } from 'react-icons/fa';
+import { useSocket } from '../Hook/useSocket';
+import { getSocket } from '@/lib/socket';
 
 const MobileUser = () => {
   let { request, loading, error } = useGraphQL();
@@ -136,7 +138,8 @@ const MobileUser = () => {
 
     try {
       let data = await request(query, { toUserId: frdId });
-
+      const socket = getSocket();
+      socket.emit('sendFriendRequest', { toUserId: frdId });
       setPendingRequests(prev => ({
         ...prev,
         [frdId]: true,
@@ -192,6 +195,106 @@ const MobileUser = () => {
       console.log(error);
     }
   };
+
+  const currentUserId = localStorage.getItem('userId');
+
+  useSocket({
+    userId: currentUserId,
+    onEvents: {
+      friendRequestReceived: data => {
+        setReceivedRequests(prev => ({
+          ...prev,
+          [data.fromUser.id]: true,
+        }));
+      },
+
+      friendRequestAccepted: data => {
+        if (currentUserId === data.fromUser.id) {
+          setFriendsMap(prev => ({
+            ...prev,
+            [data.toUser.id]: true,
+          }));
+
+          setPendingRequests(prev => ({
+            ...prev,
+            [data.toUser.id]: false,
+          }));
+
+          setReceivedRequests(prev => ({
+            ...prev,
+            [data.toUser.id]: false,
+          }));
+        } else if (currentUserId === data.toUser.id) {
+          setFriendsMap(prev => ({
+            ...prev,
+            [data.fromUser.id]: true,
+          }));
+
+          setPendingRequests(prev => ({
+            ...prev,
+            [data.fromUser.id]: false,
+          }));
+
+          setReceivedRequests(prev => ({
+            ...prev,
+            [data.fromUser.id]: false,
+          }));
+        }
+      },
+
+      friendRequestRejected: data => {
+        if (
+          currentUserId === data.fromUser.id ||
+          currentUserId === data.toUser.id
+        ) {
+          const otherId =
+            currentUserId === data.fromUser.id
+              ? data.toUser.id
+              : data.fromUser.id;
+          setPendingRequests(prev => ({
+            ...prev,
+            [otherId]: false,
+          }));
+          setReceivedRequests(prev => ({
+            ...prev,
+            [otherId]: false,
+          }));
+        }
+      },
+
+      friendRemoved: data => {
+        if (currentUserId === data.removedFriendId) {
+          setFriendsMap(prev => ({
+            ...prev,
+            [data.currentUserId]: false,
+          }));
+        } else {
+          setFriendsMap(prev => ({
+            ...prev,
+            [data.removedFriendId]: false,
+          }));
+        }
+      },
+      
+      userBlocked: data => {
+        if (currentUserId === data.byUserId) {
+          setFriendsMap(prev => ({
+            ...prev,
+            [data.blockedUserId]: false,
+          }));
+          userFetch();
+          setOpenFriendAction(null);
+        } else {
+          setFriendsMap(prev => ({
+            ...prev,
+            [data.currentUserId]: false,
+          }));
+          userFetch();
+          setOpenFriendAction(null);
+        }
+      },
+    },
+  });
 
   return (
     <>

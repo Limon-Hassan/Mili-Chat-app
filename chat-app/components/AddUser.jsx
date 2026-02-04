@@ -3,6 +3,8 @@ import { UserPlus } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useGraphQL } from './Hook/useGraphQL';
 import { FaUserClock, FaUserFriends } from 'react-icons/fa';
+import { useSocket } from './Hook/useSocket';
+import { getSocket } from '@/lib/socket';
 
 const AddUser = () => {
   let { request, loading, error } = useGraphQL();
@@ -77,7 +79,6 @@ const AddUser = () => {
       `;
 
         const data = await request(query);
-
         const receivedMap = {};
         data.friendRequests.forEach(req => {
           if (req.status === 'pending') {
@@ -97,9 +98,17 @@ const AddUser = () => {
   useEffect(() => {
     let FetchMe = async () => {
       try {
-        const query = `query {me {friends { id }}}`;
+        const query = `  query {
+    me {
+      id
+      friends {
+        id
+      }
+    }
+  }`;
 
         const data = await request(query);
+
         const fMap = {};
 
         data.me.friends.forEach(f => {
@@ -129,6 +138,8 @@ const AddUser = () => {
 
     try {
       let data = await request(query, { toUserId: frdId });
+      const socket = getSocket();
+      socket.emit('sendFriendRequest', { toUserId: frdId });
 
       setPendingRequests(prev => ({
         ...prev,
@@ -187,8 +198,105 @@ const AddUser = () => {
     }
   };
 
+  const currentUserId = localStorage.getItem('userId');
 
-  
+  useSocket({
+    userId: currentUserId,
+    onEvents: {
+      friendRequestReceived: data => {
+        setReceivedRequests(prev => ({
+          ...prev,
+          [data.fromUser.id]: true,
+        }));
+      },
+
+      friendRequestAccepted: data => {
+        if (currentUserId === data.fromUser.id) {
+          setFriendsMap(prev => ({
+            ...prev,
+            [data.toUser.id]: true,
+          }));
+
+          setPendingRequests(prev => ({
+            ...prev,
+            [data.toUser.id]: false,
+          }));
+
+          setReceivedRequests(prev => ({
+            ...prev,
+            [data.toUser.id]: false,
+          }));
+        } else if (currentUserId === data.toUser.id) {
+          setFriendsMap(prev => ({
+            ...prev,
+            [data.fromUser.id]: true,
+          }));
+
+          setPendingRequests(prev => ({
+            ...prev,
+            [data.fromUser.id]: false,
+          }));
+
+          setReceivedRequests(prev => ({
+            ...prev,
+            [data.fromUser.id]: false,
+          }));
+        }
+      },
+
+      friendRequestRejected: data => {
+        if (
+          currentUserId === data.fromUser.id ||
+          currentUserId === data.toUser.id
+        ) {
+          const otherId =
+            currentUserId === data.fromUser.id
+              ? data.toUser.id
+              : data.fromUser.id;
+          setPendingRequests(prev => ({
+            ...prev,
+            [otherId]: false,
+          }));
+          setReceivedRequests(prev => ({
+            ...prev,
+            [otherId]: false,
+          }));
+        }
+      },
+
+      friendRemoved: data => {
+        if (currentUserId === data.actorId) {
+          setFriendsMap(prev => ({
+            ...prev,
+            [data.targetId]: false,
+          }));
+        } else {
+          setFriendsMap(prev => ({
+            ...prev,
+            [data.actorId]: false,
+          }));
+        }
+      },
+      
+      userBlocked: data => {
+        if (currentUserId === data.byUserId) {
+          setFriendsMap(prev => ({
+            ...prev,
+            [data.blockedUserId]: false,
+          }));
+          userFetch();
+          setOpenFriendAction(null);
+        } else {
+          setFriendsMap(prev => ({
+            ...prev,
+            [data.currentUserId]: false,
+          }));
+          userFetch();
+          setOpenFriendAction(null);
+        }
+      },
+    },
+  });
 
   return (
     <>
@@ -221,7 +329,9 @@ const AddUser = () => {
               className="flex items-center justify-between bg-gray-400/30 rounded-lg p-2"
             >
               <div
-                onClick={() => window.location.href = "/ShowProfile?id=" + u.id}
+                onClick={() =>
+                  (window.location.href = '/ShowProfile?id=' + u.id)
+                }
                 className="flex items-center gap-2.5"
               >
                 <img

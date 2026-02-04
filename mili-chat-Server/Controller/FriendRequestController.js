@@ -59,7 +59,12 @@ async function sendFriendRequest({ toUserId }, context) {
 
   receivers.forEach(socketId => {
     io.to(socketId).emit('friendRequestReceived', {
-      fromUserId: context.userId,
+      requestId: newRequestDoc._id,
+      fromUser: {
+        id: me._id,
+        name: me.name,
+        avatar: me.avatar,
+      },
       message: `${me.name} sent you a friend request`,
     });
   });
@@ -105,16 +110,45 @@ async function acceptFriendRequest({ requestId }, context) {
     message: `${request.to.name} has accepted your friend request.`,
     relatedUserId: request.to._id,
   });
-
   const io = getIO();
-  const receivers = getSocketIds(request.from._id.toString());
+  const senderSockets = getSocketIds(request.from._id.toString());
+  const receiverSockets = getSocketIds(request.to._id.toString());
 
-  receivers.forEach(socketId => {
+  [...senderSockets, ...receiverSockets].forEach(socketId => {
     io.to(socketId).emit('friendRequestAccepted', {
-      fromUserId: request.to._id,
-      message: `${request.to.name} accepted your friend request`,
+      requestId,
+      fromUser: {
+        id: request.from._id,
+        name: request.from.name,
+        avatar: request.from.avatar || null,
+      },
+      toUser: {
+        id: request.to._id,
+        name: request.to.name,
+        avatar: request.to.avatar || null,
+      },
     });
   });
+
+  // const io = getIO();
+  // const receivers = getSocketIds(request.from._id.toString());
+
+  // receivers.forEach(socketId => {
+  //   io.to(socketId).emit('friendRequestAccepted', {
+  //     requestId: requestId,
+  //     fromUser: {
+  //       id: request.from._id,
+  //       name: request.from.name,
+  //       avatar: request.from.avatar,
+  //     },
+  //     toUser: {
+  //       id: request.to._id,
+  //       name: request.to.name,
+  //       avatar: request.to.avatar,
+  //     },
+  //     message: `${request.to.name} accepted your friend request`,
+  //   });
+  // });
 
   return true;
 }
@@ -145,17 +179,45 @@ async function requestRejected({ requestId }, context) {
     message: `${request.to.name} has rejected your friend request`,
     relatedUserId: request.to._id.toString(),
   });
-  const io = getIO();
-  const receivers = getSocketIds(request.from.toString());
-
   await friendRequest.findByIdAndDelete(requestId);
+  const io = getIO();
+  const senderSockets = getSocketIds(request.from._id.toString());
+  const receiverSockets = getSocketIds(request.to._id.toString());
 
-  receivers.forEach(socketId => {
+  [...senderSockets, ...receiverSockets].forEach(socketId => {
     io.to(socketId).emit('friendRequestRejected', {
-      fromUserId: request.to._id.toString(),
-      message: `${request.to.name} has rejected your friend request`,
+      requestId,
+      fromUser: {
+        id: request.from._id,
+        name: request.from.name,
+        avatar: request.from.avatar,
+      },
+      toUser: {
+        id: request.to._id,
+        name: request.to.name,
+        avatar: request.to.avatar,
+      },
     });
   });
+  // const io = getIO();
+  // const receivers = getSocketIds(request.from.toString());
+
+  // receivers.forEach(socketId => {
+  //   io.to(socketId).emit('friendRequestRejected', {
+  //     requestId: requestId,
+  //     fromUser: {
+  //       id: request.from._id,
+  //       name: request.from.name,
+  //       avatar: request.from.avatar,
+  //     },
+  //     toUser: {
+  //       id: request.to._id,
+  //       name: request.to.name,
+  //       avatar: request.to.avatar,
+  //     },
+  //     message: `${request.to.name} has rejected your friend request`,
+  //   });
+  // });
 
   return true;
 }
@@ -171,7 +233,7 @@ async function unfriend({ friendId }, context) {
       {
         $pull: { friends: friendId },
       },
-      { new: true }
+      { new: true },
     );
 
     await user.findByIdAndUpdate(
@@ -179,8 +241,18 @@ async function unfriend({ friendId }, context) {
       {
         $pull: { friends: context.userId },
       },
-      { new: true }
+      { new: true },
     );
+
+    let io = getIO();
+    let senderSockets = getSocketIds(context.userId);
+    let receiverSockets = getSocketIds(friendId);
+    [...senderSockets, ...receiverSockets].forEach(socketId => {
+      io.to(socketId).emit('friendRemoved', {
+        actorId: context.userId,
+        targetId: friendId,
+      });
+    });
 
     return true;
   } catch (error) {
@@ -209,15 +281,30 @@ async function BlockUser({ blockerId }, context) {
 
   currentUser.blockedUsers.push(blockerId);
   currentUser.friends = currentUser.friends.filter(
-    friendId => friendId.toString() !== blockerId
+    friendId => friendId.toString() !== blockerId,
   );
 
   blockUser.friends = blockUser.friends.filter(
-    friendId => friendId.toString() !== context.userId
+    friendId => friendId.toString() !== context.userId,
   );
-  await currentUser.populate('blockedUsers', 'id name email avatar');
+  await currentUser.populate('blockedUsers', 'id name avatar');
   await currentUser.save();
   await blockUser.save();
+  let io = getIO();
+  let senderSockets = getSocketIds(context.userId);
+  let receiverSockets = getSocketIds(blockerId);
+  [...senderSockets, ...receiverSockets].forEach(socketId => {
+    [...senderSockets, ...receiverSockets].forEach(socketId => {
+      io.to(socketId).emit('userBlocked', {
+        blockedUser: {
+          id: blockUser._id,
+          name: blockUser.name,
+          avatar: blockUser.avatar,
+        },
+        byUserId: context.userId,
+      });
+    });
+  });
   return currentUser;
 }
 
@@ -234,11 +321,19 @@ async function unblock({ unblockUserId }, context) {
   }
 
   currentUser.blockedUsers = currentUser.blockedUsers.filter(
-    friendId => friendId.toString() !== unblockUserId
+    friendId => friendId.toString() !== unblockUserId,
   );
 
+  const io = getIO();
+  const sockets = getSocketIds(context.userId);
+  sockets.forEach(socketId => {
+    io.to(socketId).emit('userUnblocked', {
+      unblockedUserId: unblockUserId,
+    });
+  });
+
   await currentUser.save();
-  await currentUser.populate('blockedUsers', 'id name email avatar');
+  await currentUser.populate('blockedUsers', 'id name avatar');
   return currentUser;
 }
 

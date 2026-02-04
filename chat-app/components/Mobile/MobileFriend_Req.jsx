@@ -14,10 +14,9 @@ const MobileFriend_Req = () => {
     computerHeight: 265,
   });
 
-  useEffect(() => {
-    let FetchRequest = async () => {
-      try {
-        const query = `
+  let FetchRequest = async () => {
+    try {
+      const query = `
           query {
             friendRequests {
               id
@@ -32,13 +31,13 @@ const MobileFriend_Req = () => {
           }
         `;
 
-        let data = await request(query);
-        setRequests(data.friendRequests);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
+      let data = await request(query);
+      setRequests(data.friendRequests);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  useEffect(() => {
     FetchRequest();
   }, []);
 
@@ -75,6 +74,32 @@ const MobileFriend_Req = () => {
     }
     setActiveRequestId(null);
   };
+
+  useSocket({
+    userId: localStorage.getItem('userId'),
+    onEvents: {
+      friendRequestReceived: data => {
+        setRequests(prev => [
+          {
+            id: data.requestId,
+            status: 'pending',
+            from: data.fromUser,
+          },
+          ...prev,
+        ]);
+      },
+
+      friendRequestAccepted: data => {
+        setRequests(prev => prev.filter(r => r.id !== data.requestId));
+        FetchRequest();
+      },
+
+      friendRequestRejected: data => {
+        setRequests(prev => prev.filter(r => r.id !== data.requestId));
+        FetchRequest();
+      },
+    },
+  });
 
   return (
     <>

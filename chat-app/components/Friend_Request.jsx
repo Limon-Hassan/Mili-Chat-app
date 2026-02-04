@@ -1,16 +1,16 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import { useGraphQL } from './Hook/useGraphQL';
+import { useSocket } from './Hook/useSocket';
 
 const Friend_Request = () => {
   let { request, loading, error } = useGraphQL();
   let [requests, setRequests] = useState([]);
   let [activeRequestId, setActiveRequestId] = useState(null);
 
-  useEffect(() => {
-    let FetchRequest = async () => {
-      try {
-        const query = `
+  let FetchRequest = async () => {
+    try {
+      const query = `
           query {
             friendRequests {
               id
@@ -25,13 +25,13 @@ const Friend_Request = () => {
           }
         `;
 
-        let data = await request(query);
-        setRequests(data.friendRequests);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
+      let data = await request(query);
+      setRequests(data.friendRequests);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  useEffect(() => {
     FetchRequest();
   }, []);
 
@@ -69,6 +69,32 @@ const Friend_Request = () => {
     setActiveRequestId(null);
   };
 
+  useSocket({
+    userId: localStorage.getItem('userId'),
+    onEvents: {
+      friendRequestReceived: data => {
+        setRequests(prev => [
+          {
+            id: data.requestId,
+            status: 'pending',
+            from: data.fromUser,
+          },
+          ...prev,
+        ]);
+      },
+
+      friendRequestAccepted: data => {
+        setRequests(prev => prev.filter(r => r.id !== data.requestId));
+        FetchRequest();
+      },
+
+      friendRequestRejected: data => {
+        setRequests(prev => prev.filter(r => r.id !== data.requestId));
+        FetchRequest();
+      },
+    },
+  });
+
   return (
     <>
       <section className=" laptop:w-full computer:w-125 laptop:h-auto computer:h-107.5 bg-transparent border border-white laptop:p-5 computer:p-4 rounded-lg laptop:absolute laptop:top-46.25 laptop:left-0 computer:relative computer:top-0">
@@ -100,11 +126,11 @@ const Friend_Request = () => {
               <div className="flex items-center gap-2.5">
                 <img
                   className="w-15 h-15 object-cover bg-center rounded-full"
-                  src={req.from.avatar || 'defult.png'}
+                  src={req.from?.avatar || 'defult.png'}
                   alt="group"
                 />
                 <h5 className="text-[14px] h-5.5 font-open_sens font-semibold text-white">
-                  {req.from.name}
+                  {req.from?.name}
                 </h5>
               </div>
               {activeRequestId === req.id ? (

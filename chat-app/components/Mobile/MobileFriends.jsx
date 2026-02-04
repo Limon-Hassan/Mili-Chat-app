@@ -3,6 +3,7 @@ import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 import React, { useEffect, useState } from 'react';
 import { LuMessageCircleMore } from 'react-icons/lu';
 import { useGraphQL } from '../Hook/useGraphQL';
+import { useSocket } from '../Hook/useSocket';
 
 const MobileFriends = () => {
   let { request, loading, error } = useGraphQL();
@@ -129,6 +130,38 @@ const MobileFriends = () => {
 
     FetchMyGroup();
   }, [conversation]);
+
+  let currentUserID = localStorage.getItem('userId');
+  useSocket({
+    userId: currentUserID,
+    onEvents: {
+      friendRequestAccepted: data => {
+        if (currentUserID === data.fromUser.id) {
+          setFriends(prev => [...prev, data.toUser]);
+        } else if (currentUserID === data.toUser.id) {
+          setFriends(prev => [...prev, data.fromUser]);
+        }
+      },
+
+      friendRemoved: data => {
+        if (currentUserID === data.actorId) {
+          setFriends(prev => prev.filter(f => f.id !== data.targetId));
+          FetchMe();
+        } else {
+          setFriends(prev => prev.filter(f => f.id !== data.actorId));
+          FetchMe();
+        }
+      },
+
+      userBlocked: data => {
+        if (currentUserID === data.byUserId) {
+          setFriends(prev => prev.filter(f => f.id !== data.blockedUserId));
+        } else {
+          setFriends(prev => prev.filter(f => f.id !== data.byUserId));
+        }
+      },
+    },
+  });
 
   return (
     <>

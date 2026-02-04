@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import CreateGroup from './CreateGroup';
 import { useGraphQL } from './Hook/useGraphQL';
 import GroupFriendViewer from './GroupFriendViewer';
+import { useSocket } from './Hook/useSocket';
 
 const Group = () => {
   let { request, loading, error } = useGraphQL();
@@ -30,6 +31,7 @@ const Group = () => {
         }
       `;
         let data = await request(query);
+
         setGroupData(data.Allgroup);
       } catch (error) {
         console.error('Error fetching group data:', error);
@@ -37,6 +39,15 @@ const Group = () => {
     };
     fetchGroupData();
   }, []);
+  let currentUserID = localStorage.getItem('userId');
+  useSocket({
+    userId: currentUserID,
+    onEvents: {
+      addedToGroup: data => {
+        console.log('group data', data);
+      },
+    },
+  });
 
   //group request and rejection baki
 
