@@ -1,5 +1,5 @@
 const user = require('../models/user');
-const { getIO, getSocketIds } = require('../socket_server');
+const { getIO, getSockets } = require('../socket_server');
 
 async function uploadProfilePic({ profilePic }, context) {
   if (!context.userId) throw new Error('Authentication required');
@@ -11,7 +11,7 @@ async function uploadProfilePic({ profilePic }, context) {
   );
 
   const io = getIO();
-  getSocketIds(context.userId).forEach(sid => {
+  getSockets(context.userId).forEach(sid => {
     io.to(sid).emit('profileUpdated', {
       avatar: updatedUser.avatar,
     });
@@ -29,7 +29,7 @@ async function updateProfile({ name, bio }, context) {
   });
   let io = getIO();
 
-  getSocketIds(context.userId).forEach(sid => {
+  getSockets(context.userId).forEach(sid => {
     io.to(sid).emit('profileUpdated', {
       name: updatedUser.name,
       bio: updatedUser.bio,
@@ -46,7 +46,7 @@ async function AddOwnVoice({ voice }, context) {
     { new: true },
   );
   let io = getIO();
-  getSocketIds(context.userId).forEach(sid => {
+  getSockets(context.userId).forEach(sid => {
     io.to(sid).emit('profileUpdated', {
       voiceIntro: updatedUser.voiceIntro,
     });

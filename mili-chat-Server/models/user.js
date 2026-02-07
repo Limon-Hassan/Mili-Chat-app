@@ -62,6 +62,12 @@ let userSchema = new mongoose.Schema({
 
   friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  messageBlockedUsers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ],
   storyPrivacy: {
     type: String,
     enum: ['public', 'friends', 'onlyMe'],
@@ -69,6 +75,11 @@ let userSchema = new mongoose.Schema({
   },
   ProfilePicLock: {
     type: Boolean,
+  },
+
+  lastSeen: {
+    type: Date,
+    default: null,
   },
 });
 

@@ -6,6 +6,8 @@ const {
   unfriend,
   BlockUser,
   unblock,
+  msgBlockedUser,
+  msgUnBlockedUser,
 } = require('../../Controller/FriendRequestController');
 const { FriendRequestType } = require('../types/FriendRequestType');
 const { UserType } = require('../types/userType');
@@ -68,6 +70,26 @@ let friendRequestResolver = {
     },
     resolve(parent, args, context) {
       return unblock(args, context);
+    },
+  },
+
+  MsgblockUser: {
+    type: UserType,
+    args: {
+      blockedUserId: { type: GraphQLID },
+    },
+    resolve(parent, args, context) {
+      return msgBlockedUser(args, context);
+    },
+  },
+
+  MsgUnBlock: {
+    type: UserType,
+    args: {
+      blockedUserId: { type: GraphQLID },
+    },
+    resolve(parent, args, context) {
+      return msgUnBlockedUser(args, context);
     },
   },
 };

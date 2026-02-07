@@ -1,7 +1,7 @@
 const storyModel = require('../models/storyModel');
 const user = require('../models/user');
 const { createNotify } = require('./NotificationContoller');
-const { getIO, getSocketIds } = require('../socket_server');
+const { getIO, getSockets } = require('../socket_server');
 
 async function createStory({ videoUrl }, context) {
   if (!context.userId) throw new Error('Authentication required');
@@ -44,7 +44,7 @@ async function createStory({ videoUrl }, context) {
       relatedUserId: context.userId,
     });
 
-    getSocketIds(friend._id.toString()).forEach(sid => {
+    getSockets(friend._id.toString()).forEach(sid => {
       io.to(sid).emit('newStory', {
         userId: context.userId,
         userName: me.name,
@@ -153,7 +153,7 @@ async function markAsSeen({ storyId, storyItemId }, context) {
   const io = getIO();
   const ownerId = story.user._id.toString();
 
-  getSocketIds(ownerId).forEach(sid => {
+  getSockets(ownerId).forEach(sid => {
     io.to(sid).emit('storySeen', {
       storyId,
       storyItemId,
@@ -201,7 +201,7 @@ async function storyReaction({ storyId, storyItemId, reaction }, context) {
   await story.populate('stories.reactions.user', 'id name avatar');
   let io = getIO();
 
-  getSocketIds(story.user._id.toString()).forEach(sid => {
+  getSockets(story.user._id.toString()).forEach(sid => {
     io.to(sid).emit('storyReaction', {
       storyId,
       storyItemId,
@@ -265,7 +265,7 @@ async function expireStory() {
           storyItem.expiredNotified = true;
 
           const io = getIO();
-          getSocketIds(storyDoc.user.toString()).forEach(sid => {
+          getSockets(storyDoc.user.toString()).forEach(sid => {
             io.to(sid).emit('storyExpired', {
               storyId: storyDoc._id.toString(),
               storyItemId: storyItem._id.toString(),

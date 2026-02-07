@@ -2,7 +2,7 @@ let mongoose = require('mongoose');
 const conversionSchema = require('../models/conversionSchema');
 const messageModel = require('../models/messageModel');
 const user = require('../models/user');
-const { getIO, getSocketIds } = require('../socket_server');
+const { getIO, getSockets, activeChat } = require('../socket_server');
 
 async function sendFirstMessage(
   { text, receiverId, type, mediaUrl, duration },
@@ -52,7 +52,7 @@ async function sendFirstMessage(
   await message.populate('sender', 'id name email avatar');
   await message.populate('receiver', 'id name email avatar');
   const io = getIO();
-  getSocketIds(receiverId).forEach(sid => {
+  getSockets(receiverId).forEach(sid => {
     io.to(sid).emit('newMessage', {
       message,
       conversation: newConversation,
@@ -103,16 +103,26 @@ async function sendMessageWithId(
       throw new Error('You are not friends with this user');
   }
 
+  let io = getIO();
+  let deliveryStatus = 'sent';
+
+  if (!conversation.group) {
+    const receiverOnline = getSockets(receiverId.toString()).length > 0;
+
+    if (receiverOnline) {
+      deliveryStatus = 'delivered';
+    }
+  }
   const message = await messageModel.create({
-    type: 'private',
+    type: conversation.group ? 'group' : 'private',
     conversation: conversationId,
     sender: context.userId,
     receiver: conversation.group ? null : receiverId,
     type,
     text: type === 'text' || type === 'link' ? text : undefined,
-    mediaUrl: mediaUrl || undefined,
-    duration: duration || undefined,
-    deliveryStatus: 'sent',
+    mediaUrl,
+    duration,
+    deliveryStatus,
   });
 
   conversation.lastMessage = type === 'text' ? text : `[${type}]`;
@@ -120,18 +130,31 @@ async function sendMessageWithId(
   conversation.lastMessageAt = new Date();
   await conversation.save();
 
-  await message.populate('sender', 'id name email avatar');
-  await message.populate('receiver', 'id name email avatar');
-  let io = getIO();
-  if (!conversation.group) {
-    getSocketIds(receiverId).forEach(sid => {
-      io.to(sid).emit('newMessage', { message });
-    });
+  await message.populate('sender', 'id name avatar');
+  if (message.receiver) {
+    await message.populate('receiver', 'id name avatar');
   }
+
   conversation.participants.forEach(uid => {
     if (uid.toString() !== context.userId) {
-      getSocketIds(uid.toString()).forEach(sid => {
+      getSockets(uid.toString()).forEach(sid => {
         io.to(sid).emit('newMessage', { message });
+      });
+    }
+  });
+
+  getSockets(context.userId).forEach(sid => {
+    if (deliveryStatus === 'delivered') {
+      io.to(sid).emit('messageDelivered', {
+        messageId: message._id,
+        conversationId,
+      });
+    }
+
+    if (deliveryStatus === 'seen') {
+      io.to(sid).emit('messageSeen', {
+        messageId: message._id,
+        conversationId,
       });
     }
   });
@@ -212,9 +235,7 @@ async function markMassageAsDelivery({ conversationId }, context) {
         deliveryStatus: 'sent',
       },
       {
-        $set: {
-          deliveryStatus: 'delivered',
-        },
+        $set: { deliveryStatus: 'delivered' },
       },
     );
   } else {
@@ -234,7 +255,7 @@ async function markMassageAsDelivery({ conversationId }, context) {
   let io = getIO();
   conversation.participants.forEach(uid => {
     if (uid.toString() !== context.userId) {
-      getSocketIds(uid.toString()).forEach(sid => {
+      getSockets(uid.toString()).forEach(sid => {
         io.to(sid).emit('messageDelivered', {
           conversationId,
           deliveredBy: context.userId,
@@ -262,8 +283,7 @@ async function markMessagesAsRead({ conversationId }, context) {
       {
         conversation: conversationId,
         receiver: context.userId,
-        isRead: false,
-        deliveryStatus: 'delivered',
+        deliveryStatus: { $ne: 'seen' },
       },
       {
         $set: { isRead: true, deliveryStatus: 'seen', readAt: new Date() },
@@ -286,7 +306,7 @@ async function markMessagesAsRead({ conversationId }, context) {
 
   conversation.participants.forEach(uid => {
     if (uid.toString() !== context.userId) {
-      getSocketIds(uid.toString()).forEach(sid => {
+      getSockets(uid.toString()).forEach(sid => {
         io.to(sid).emit('messageSeen', {
           conversationId,
           seenBy: context.userId,
@@ -368,7 +388,7 @@ async function editMessage({ messageId, newText }, context) {
   let io = getIO();
   conversation.participants.forEach(uid => {
     if (uid.toString() !== context.userId) {
-      getSocketIds(uid.toString()).forEach(sid => {
+      getSockets(uid.toString()).forEach(sid => {
         io.to(sid).emit('messageEdited', { message });
       });
     }
@@ -412,7 +432,7 @@ async function reactToMessage({ messageId, emoji }, context) {
   let io = getIO();
   conversation.participants.forEach(uid => {
     if (uid.toString() !== context.userId) {
-      getSocketIds(uid.toString()).forEach(sid => {
+      getSockets(uid.toString()).forEach(sid => {
         io.to(sid).emit('messageReaction', { message });
       });
     }

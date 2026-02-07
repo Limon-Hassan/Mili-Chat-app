@@ -31,7 +31,6 @@ const Group = () => {
         }
       `;
         let data = await request(query);
-
         setGroupData(data.Allgroup);
       } catch (error) {
         console.error('Error fetching group data:', error);
@@ -39,6 +38,7 @@ const Group = () => {
     };
     fetchGroupData();
   }, []);
+
   let currentUserID = localStorage.getItem('userId');
   useSocket({
     userId: currentUserID,
@@ -47,6 +47,8 @@ const Group = () => {
         console.log('group data', data);
       },
     },
+    groupDeleted: data =>
+      setGroupData(prev => prev.filter(g => g.id !== data.groupId)),
   });
 
   //group request and rejection baki

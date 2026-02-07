@@ -9,16 +9,18 @@ async function getMe(context) {
 
   const decoded = jwt.verify(
     context.accessToken.replace('Bearer ', ''),
-    process.env.JWT_SECRET
+    process.env.JWT_SECRET,
   );
 
   const User = await user
     .findById(decoded.userId)
-    .populate('friends', 'id name  avatar')
-    .populate('blockedUsers', 'id name  avatar')
+    .populate('friends', 'id name avatar lastSeen')
+    .populate('blockedUsers', 'id name avatar')
+    .populate('messageBlockedUsers', 'id name avatar')
     .lean();
   User.friends = User.friends || [];
   User.blockedUsers = User.blockedUsers || [];
+  User.messageBlockedUsers = User.messageBlockedUsers || [];
 
   if (!User) throw new Error('User not found');
 

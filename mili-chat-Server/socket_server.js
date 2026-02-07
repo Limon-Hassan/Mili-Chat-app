@@ -1,37 +1,12 @@
 const { Server } = require('socket.io');
 const user = require('./models/user');
-
-const onlineUsers = new Map();
+const { addUser, removeUser, getSockets } = require('./Helper/onlineUsers');
+const messageModel = require('./models/messageModel');
+const conversionSchema = require('./models/conversionSchema');
 
 let io;
 
-function registerUser(socket, userId) {
-  if (onlineUsers.has(userId)) {
-    const existing = onlineUsers.get(userId);
-    if (!existing.includes(socket.id)) existing.push(socket.id);
-    onlineUsers.set(userId, existing);
-  } else {
-    onlineUsers.set(userId, [socket.id]);
-  }
-  console.log('🟢 Online users:', onlineUsers);
-}
-
-function removeUser(socketId) {
-  for (let [userId, socketIds] of onlineUsers.entries()) {
-    const idx = socketIds.indexOf(socketId);
-    if (idx !== -1) {
-      socketIds.splice(idx, 1);
-      if (socketIds.length === 0) onlineUsers.delete(userId);
-      else onlineUsers.set(userId, socketIds);
-      break;
-    }
-  }
-  console.log('🔴 Online users after disconnect:', onlineUsers);
-}
-
-function getSocketIds(userId) {
-  return onlineUsers.get(userId) || [];
-}
+const activeChat = new Map();
 
 function init(server) {
   io = new Server(server, {
@@ -43,42 +18,116 @@ function init(server) {
 
   io.on('connection', socket => {
     console.log('✅ Socket connected:', socket.id);
-
     socket.on('joinUser', async ({ userId }) => {
       socket.userId = userId;
-      registerUser(socket, userId);
-      socket.join(userId);
-      console.log(`👤 User ${userId} joined their private room`);
-      const yourFriends = await getFavoriteFriends(userId);
-      yourFriends.forEach(friendId => {
-        const sockets = getSocketIds(friendId);
-        sockets.forEach(sId => {
-          io.to(sId).emit('favorite-online', {
-            friendId: userId,
-          });
+      addUser(userId, socket.id);
+
+      const friends = await getFavoriteFriends(userId);
+
+      friends.forEach(friendId => {
+        getSockets(friendId.toString()).forEach(sId => {
+          io.to(sId).emit('friend-online', { userId, lastSeen: null });
         });
       });
 
-      console.log(`👤 User ${userId} joined & notified favorites`);
+      socket.heartbeat = setInterval(() => {
+        if (!socket.connected) return;
+        friends.forEach(friendId => {
+          getSockets(friendId.toString()).forEach(sId => {
+            io.to(sId).emit('friend-online', { userId, lastSeen: null });
+          });
+        });
+      }, 10000);
     });
 
-    socket.on('sendMessage', ({ toUserId, message }) => {
-      const receivers = getSocketIds(toUserId);
-      receivers.forEach(sId => {
-        io.to(sId).emit('receiveMessage', { from: socket.id, message });
+    socket.on('chat:open', async ({ conversationId }) => {
+      if (!socket.userId) return;
+
+      activeChat.set(socket.userId, conversationId);
+
+      const conversation = await conversionSchema.findById(conversationId);
+      if (!conversation) return;
+
+      const unseenMessages = await messageModel.find({
+        conversation: conversationId,
+        receiver: socket.userId,
+        deliveryStatus: { $ne: 'seen' },
       });
+
+      const io = getIO();
+
+      for (let msg of unseenMessages) {
+        msg.deliveryStatus = 'seen';
+        msg.isRead = true;
+        msg.readAt = new Date();
+        await msg.save();
+        console.log();
+        getSockets(msg.sender.toString()).forEach(sId => {
+          io.to(sId).emit('messageSeen', {
+            messageId: msg._id.toString(),
+            conversationId,
+          });
+        });
+      }
     });
+
+    socket.on('chat:close', () => {
+      if (!socket.userId) return;
+      activeChat.delete(socket.userId);
+    });
+
+    socket.on('disconnect:chatClose', () => {
+      activeChat.delete(socket.userId);
+    });
+
+    socket.on(
+      'sendMessage',
+      async ({ toUserId, messageId, conversationId }) => {
+        const receivers = getSockets(toUserId);
+
+        receivers.forEach(sId => {
+          io.to(sId).emit('receiveMessage', {
+            from: socket.userId,
+            messageId,
+          });
+        });
+
+        const receiverActiveConversation = activeChat.get(toUserId);
+
+        if (receiverActiveConversation === conversationId) {
+          const msg = await messageModel.findById(messageId);
+          if (!msg) return;
+
+          msg.deliveryStatus = 'seen';
+          msg.isRead = true;
+          msg.readAt = new Date();
+          await msg.save();
+
+          getSockets(socket.userId).forEach(sId => {
+            io.to(sId).emit('messageSeen', {
+              messageId: messageId,
+              conversationId,
+            });
+          });
+        } else {
+          getSockets(toUserId).forEach(sId => {
+            io.to(sId).emit('messageDelivered', { messageId });
+          });
+        }
+      },
+    );
 
     socket.on('typing', ({ toUserId }) => {
-      const receivers = getSocketIds(toUserId);
+      if (!socket.userId) return;
+      const receivers = getSockets(toUserId);
       receivers.forEach(sId => {
-        io.to(sId).emit('typing', { from: socket.id });
+        io.to(sId).emit('typing', { from: socket.userId });
       });
     });
 
     socket.on('call-user', ({ toUserId, callType }) => {
       if (!socket.userId) return;
-      const receivers = getSocketIds(toUserId);
+      const receivers = getSockets(toUserId);
       receivers.forEach(sId => {
         io.to(sId).emit('incoming-call', {
           fromUserId: socket.userId,
@@ -88,7 +137,7 @@ function init(server) {
     });
 
     socket.on('accept-call', ({ toUserId }) => {
-      const receivers = getSocketIds(toUserId);
+      const receivers = getSockets(toUserId);
       receivers.forEach(sId => {
         io.to(sId).emit('call-accepted', {
           fromUserId: socket.userId,
@@ -97,7 +146,7 @@ function init(server) {
     });
 
     socket.on('reject-call', ({ toUserId }) => {
-      const receivers = getSocketIds(toUserId);
+      const receivers = getSockets(toUserId);
       receivers.forEach(sId => {
         io.to(sId).emit('call-rejected', {
           fromUserId: socket.userId,
@@ -106,14 +155,14 @@ function init(server) {
     });
 
     socket.on('end-call', ({ toUserId }) => {
-      const receivers = getSocketIds(toUserId);
+      const receivers = getSockets(toUserId);
       receivers.forEach(sId => {
         io.to(sId).emit('call-ended');
       });
     });
 
     socket.on('webrtc-offer', ({ toUserId, offer }) => {
-      getSocketIds(toUserId).forEach(sId => {
+      getSockets(toUserId).forEach(sId => {
         io.to(sId).emit('webrtc-offer', {
           fromUserId: socket.userId,
           offer,
@@ -122,7 +171,7 @@ function init(server) {
     });
 
     socket.on('webrtc-answer', ({ toUserId, answer }) => {
-      getSocketIds(toUserId).forEach(sId => {
+      getSockets(toUserId).forEach(sId => {
         io.to(sId).emit('webrtc-answer', {
           fromUserId: socket.userId,
           answer,
@@ -131,7 +180,7 @@ function init(server) {
     });
 
     socket.on('ice-candidate', ({ toUserId, candidate }) => {
-      getSocketIds(toUserId).forEach(sId => {
+      getSockets(toUserId).forEach(sId => {
         io.to(sId).emit('ice-candidate', {
           fromUserId: socket.userId,
           candidate,
@@ -139,9 +188,23 @@ function init(server) {
       });
     });
 
-    socket.on('disconnect', () => {
-      removeUser(socket.id);
-      console.log('❌ Socket disconnected:', socket.id);
+    socket.on('disconnect', async () => {
+      clearInterval(socket.heartbeat);
+      const userId = socket.userId;
+      if (!userId) return;
+      const stillOnline = removeUser(userId, socket.id);
+      if (!stillOnline) {
+        const lastSeen = new Date();
+        await user.findByIdAndUpdate(userId, { lastSeen });
+
+        const friends = await getFavoriteFriends(userId);
+        friends.forEach(friendId => {
+          getSockets(friendId.toString()).forEach(sId => {
+            io.to(sId).emit('friend-offline', { userId, lastSeen });
+          });
+        });
+      }
+      console.log('disconnecting', socket.id);
     });
   });
 
@@ -158,4 +221,4 @@ async function getFavoriteFriends(userId) {
   return me?.friends || [];
 }
 
-module.exports = { init, getIO, registerUser, removeUser, getSocketIds };
+module.exports = { init, getIO, addUser, removeUser, getSockets, activeChat };

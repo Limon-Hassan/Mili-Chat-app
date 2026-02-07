@@ -20,6 +20,11 @@ import twemoji from 'twemoji';
 import { uploadToCloudinary } from '@/lib/cloudinaryClient';
 import SeeProfileFicture from './SeeProfileFicture';
 import EmojiPicker from 'emoji-picker-react';
+import { useSocket } from './Hook/useSocket';
+import { Comment } from 'react-loader-spinner';
+import { getSocket } from '@/lib/socket';
+import Loader from './Loader';
+import BlockMenu from './BlockMenu';
 
 export default function Message({
   chatUserId,
@@ -42,6 +47,13 @@ export default function Message({
   const [active, setActive] = useState(false);
   const [activePicture, setActivePicture] = useState(null);
   const audioChunksRef = useRef([]);
+
+  const [onlineMap, setOnlineMap] = useState({});
+  const [lastSeenMap, setLastSeenMap] = useState({});
+  let [typing, setTyping] = useState({});
+  let [blockMenu, setBlockMenu] = useState(false);
+  let [HeBlockMe, setHeBlockMe] = useState({});
+  let [IBlockHim, setIBlockHim] = useState({});
 
   const startRecording = async () => {
     setIsRecording(true);
@@ -112,7 +124,7 @@ export default function Message({
 
   const [input, setInput] = useState('');
 
-  const bottomRef = useScrollToBottom([messages]);
+  const bottomRef = useScrollToBottom([messages, typing[chatUserId]]);
 
   useEffect(() => {
     const handleClick = e => {
@@ -233,10 +245,55 @@ export default function Message({
       setMessages(prev => [...prev, messageData]);
       setInput('');
       setAttachments([]);
+      const socket = getSocket();
+      socket.emit('sendMessage', {
+        toUserId: chatUserId,
+        messageId: messageData.id,
+        conversationId: conversationId
+          ? conversationId
+          : messageData.conversation.id,
+      });
     } catch (error) {
       console.log(error);
     }
   };
+
+  useEffect(() => {
+    let fetchMe = async () => {
+      try {
+        const query = `query { me { id name avatar MsgBlockedUsers { id name avatar } }  }`;
+        const data = await request(query);
+        const iBlocked = data?.me?.MsgBlockedUsers?.some(
+          u => u.id === chatUserId,
+        );
+        setIBlockHim(prev => ({ ...prev, [chatUserId]: iBlocked }));
+        const heBlocked = data?.me?.MsgBlockedUsers?.some(
+          u => u.id === currentUser,
+        );
+        setHeBlockMe(prev => ({ ...prev, [chatUserId]: heBlocked }));
+      } catch (err) {
+        console.log(err);
+      }
+    };
+
+    fetchMe();
+  }, [chatUserId]);
+
+  useEffect(() => {
+    const socket = getSocket();
+    socket.emit('register', currentUser);
+  }, [currentUser]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+    const socket = getSocket();
+    socket.emit('activeChat', conversationId);
+    socket.emit('chat:open', { conversationId });
+
+    return () => {
+      socket.emit('chat:close', { conversationId });
+    };
+  }, [conversationId]);
 
   useEffect(() => {
     setMessages([]);
@@ -308,8 +365,11 @@ export default function Message({
         console.log(error);
       }
     };
+    const timer = setTimeout(() => {
+      MarkAsRead();
+    }, 800);
 
-    MarkAsRead();
+    return () => clearTimeout(timer);
   }, [conversationId]);
 
   let handleDelete = async id => {
@@ -362,30 +422,6 @@ export default function Message({
     }
   };
 
-  let handleBlock = async userId => {
-    try {
-      const query = `
-    mutation BlockUser($blockerId: ID!) {
-      blockUser(blockerId: $blockerId) {
-         id
-         name
-        
-           blockedByMe {
-      id
-      name
-      avatar
-    }
-      }
-    }
-  `;
-      const data = await request(query, { blockerId: userId });
-      setMessages([]);
-      console.log(data);
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   let handleClearConv = async convId => {
     try {
       let query = `
@@ -401,6 +437,91 @@ export default function Message({
     }
   };
 
+  useSocket({
+    userId: currentUser,
+    onEvents: {
+      'friend-online': ({ userId }) => {
+        setOnlineMap(prev => ({ ...prev, [userId]: true }));
+        localStorage.removeItem(`lastSeen_${userId}`);
+      },
+      'friend-offline': ({ userId, lastSeen, now }) => {
+        setOnlineMap(prev => ({ ...prev, [userId]: false }));
+        localStorage.setItem(
+          `lastSeen_${userId}`,
+          new Date(lastSeen).getTime(),
+        );
+      },
+      newMessage: ({ message }) => {
+        setMessages(prev => [...prev, message]);
+      },
+
+      typing: ({ from }) => {
+        setTyping(prev => ({ ...prev, [from]: true }));
+        setTimeout(() => {
+          setTyping(prev => ({ ...prev, [from]: false }));
+        }, 2000);
+      },
+
+      messageDelivered: ({ messageId }) => {
+        setMessages(prev =>
+          prev.map(m =>
+            m._id === messageId ? { ...m, deliveryStatus: 'delivered' } : m,
+          ),
+        );
+      },
+
+      messageSeen: ({ messageId }) => {
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === messageId
+              ? { ...m, deliveryStatus: 'seen', isRead: true }
+              : m,
+          ),
+        );
+      },
+
+      messageUserBlocked: ({ byUserId }) => {
+        // He blocked me
+
+        if (byUserId === chatUserId) {
+          setHeBlockMe(prev => ({ ...prev, [byUserId]: true }));
+        }
+      },
+      messageUserBlockedSelf: ({ blockedUserId }) => {
+        // I blocked him
+        if (blockedUserId === chatUserId) {
+          setIBlockHim(prev => ({ ...prev, [blockedUserId]: true }));
+        }
+      },
+    },
+  });
+
+  useEffect(() => {
+    const savedLastSeen = localStorage.getItem(`lastSeen_${chatUserId}`);
+    if (savedLastSeen) {
+      setLastSeenMap(prev => ({
+        ...prev,
+        [chatUserId]: parseInt(savedLastSeen),
+      }));
+    }
+  }, [chatUserId]);
+
+  const getLastSeenText = timestamp => {
+    if (!timestamp) return 'Offline';
+    const diff = Date.now() - timestamp;
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (seconds < 30) return 'Active just now';
+    if (minutes < 60) return `Active ${minutes}m ago`;
+    if (hours < 24) return `Active ${hours}h ago`;
+    return `Active ${days}d ago`;
+  };
+
+  const isOnline = onlineMap[chatUserId] === true;
+
   return (
     <>
       <div className="h-[94vh]  backdrop-blur-md bg-transparent border rounded-xl shadow-md mx-auto w-5xl flex flex-col">
@@ -415,7 +536,12 @@ export default function Message({
               <h2 className="font-semibold text-[18px] font-open_sens">
                 {userInfo?.name || 'User'}
               </h2>
-              <p className="text-[13px] font-bold text-green-600">Online</p>
+
+              <p
+                className={`text-[13px] font-bold ${isOnline ? 'text-green-600' : 'text-gray-500'}`}
+              >
+                {isOnline ? 'Online' : getLastSeenText(lastSeenMap[chatUserId])}
+              </p>
             </div>
           </div>
 
@@ -433,7 +559,7 @@ export default function Message({
                 className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border z-9999"
               >
                 <p
-                  onClick={() => handleBlock(chatUserId)}
+                  onClick={() => setBlockMenu(!blockMenu)}
                   className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer"
                 >
                   Block
@@ -452,7 +578,7 @@ export default function Message({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4.5 ">
+        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4.5 relative">
           <div className="mx-auto mt-5.5 mb-15">
             <img
               className="w-35 h-35 object-cover bg-center rounded-full mx-auto"
@@ -467,151 +593,177 @@ export default function Message({
               You are both chimmy Friends
             </p>
           </div>
-          {messages.map(msg => {
-            const isMine = msg.sender.id === currentUser;
+          {loading ? (
+            <Loader className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+          ) : (
+            messages.map((msg, index) => {
+              const isMine = msg.sender.id === currentUser;
 
-            const bgClass =
-              msg.type === 'text' || msg.type === 'link'
-                ? isMine
-                  ? 'bg-purple-600 text-white rounded-br-none px-4 py-2.5'
-                  : 'bg-white text-gray-600 rounded-bl-none px-4 py-2.5'
-                : '';
-            return (
-              <div
-                key={msg.id}
-                onMouseEnter={() => setHoveredMessageId(msg.id)}
-                onMouseLeave={() => setHoveredMessageId(null)}
-                className={` flex ${isMine ? 'justify-end' : 'justify-start'}`}
-              >
+              const bgClass =
+                msg.type === 'text' || msg.type === 'link'
+                  ? isMine
+                    ? 'bg-purple-600 text-white rounded-br-none px-4 py-2.5'
+                    : 'bg-white text-gray-600 rounded-bl-none px-4 py-2.5'
+                  : '';
+
+              return (
                 <div
-                  className={`relative max-w-[60%] rounded-xl flex items-center gap-2 ${
-                    bgClass
-                  }`}
+                  key={index}
+                  onMouseEnter={() => setHoveredMessageId(msg.id)}
+                  onMouseLeave={() => setHoveredMessageId(null)}
+                  className={` flex ${isMine ? 'justify-end' : 'justify-start'}`}
                 >
-                  {msg.type === 'image' && msg.mediaUrl ? (
-                    <img
-                      src={msg.mediaUrl}
-                      alt="attachment"
-                      onClick={() => {
-                        setActivePicture(msg.mediaUrl);
-                        setActive(true);
-                      }}
-                      className="max-w-100 rounded-lg"
-                    />
-                  ) : msg.type === 'video' && msg.mediaUrl ? (
-                    <video
-                      src={msg.mediaUrl}
-                      controls
-                      className="max-w-100 rounded-lg"
-                    />
-                  ) : msg.type === 'audio' && msg.mediaUrl ? (
-                    <AudioPlayer src={msg.mediaUrl} />
-                  ) : (
-                    <span
-                      className="text-sm leading-5 font-normal font-open_sens"
-                      dangerouslySetInnerHTML={{
-                        __html: twemoji.parse(msg.text, {
-                          folder: 'svg',
-                          ext: '.svg',
-                          className: 'w-5 h-5 inline font-open_sens',
-                        }),
-                      }}
-                    ></span>
-                  )}
-
-                  {hoveredMessageId === msg.id && (
-                    <div
-                      className={`absolute top-1/2 -translate-y-1/2 flex gap-2 ${isMine ? '-left-20' : '-right-20'}`}
-                    >
-                      <button
-                        onClick={() => handleDelete(msg.id)}
-                        className="w-7 h-7 text-white rounded-full flex items-center justify-center cursor-pointer"
-                      >
-                        <Trash />
-                      </button>
-
-                      <button
+                  <div
+                    className={`relative max-w-[60%] rounded-xl flex items-center gap-2 ${
+                      bgClass
+                    }`}
+                  >
+                    {msg.type === 'image' && msg.mediaUrl ? (
+                      <img
+                        src={msg.mediaUrl}
+                        alt="attachment"
                         onClick={() => {
-                          setReactionFor(prev =>
-                            prev === msg.id ? null : msg.id,
-                          );
+                          setActivePicture(msg.mediaUrl);
+                          setActive(true);
                         }}
-                        className="w-7 h-7  text-white rounded-full flex items-center justify-center cursor-pointer"
+                        className="max-w-100 rounded-lg"
+                      />
+                    ) : msg.type === 'video' && msg.mediaUrl ? (
+                      <video
+                        src={msg.mediaUrl}
+                        controls
+                        className="max-w-100 rounded-lg"
+                      />
+                    ) : msg.type === 'audio' && msg.mediaUrl ? (
+                      <AudioPlayer src={msg.mediaUrl} />
+                    ) : (
+                      <span
+                        className="text-sm leading-5 font-normal font-open_sens"
+                        dangerouslySetInnerHTML={{
+                          __html: twemoji.parse(msg.text, {
+                            folder: 'svg',
+                            ext: '.svg',
+                            className: 'w-5 h-5 inline font-open_sens',
+                          }),
+                        }}
+                      ></span>
+                    )}
+
+                    {hoveredMessageId === msg.id && (
+                      <div
+                        className={`absolute top-1/2 -translate-y-1/2 flex gap-2 ${isMine ? '-left-20' : '-right-20'}`}
                       >
-                        <Smile />
-                      </button>
-                      {reactionFor === msg.id && (
-                        <div
-                          className={`absolute -top-12 ${
-                            isMine ? 'right-2' : 'left-2'
-                          } z-50`}
+                        {isMine && (
+                          <button
+                            onClick={() => handleDelete(msg.id)}
+                            className="w-7 h-7 text-white rounded-full flex items-center justify-center cursor-pointer"
+                          >
+                            <Trash />
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => {
+                            setReactionFor(prev =>
+                              prev === msg.id ? null : msg.id,
+                            );
+                          }}
+                          className="w-7 h-7  text-white rounded-full flex items-center justify-center cursor-pointer"
                         >
-                          <EmojiPicker
-                            reactionsDefaultOpen={true}
-                            emojiStyle="facebook"
-                            previewConfig={{ showPreview: false }}
-                            theme="dark"
-                            skinTonesDisabled
-                            onEmojiClick={emojiData => {
-                              handleReact(msg.id, emojiData.emoji);
-                              setReactionFor(null);
-                            }}
-                          />
+                          <Smile />
+                        </button>
+                        {reactionFor === msg.id && (
+                          <div
+                            className={`absolute -top-12 ${
+                              isMine ? 'right-2' : 'left-2'
+                            } z-50`}
+                          >
+                            <EmojiPicker
+                              reactionsDefaultOpen={true}
+                              emojiStyle="facebook"
+                              previewConfig={{ showPreview: false }}
+                              theme="dark"
+                              skinTonesDisabled
+                              onEmojiClick={emojiData => {
+                                handleReact(msg.id, emojiData.emoji);
+                                setReactionFor(null);
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {msg.reactions?.length > 0 && (
+                      <div
+                        className={`absolute -bottom-4 ${
+                          isMine ? 'left-0' : 'right-0'
+                        } bg-white shadow w-6 h-5 flex items-center justify-center rounded-full text-xs gap-1`}
+                      >
+                        {msg.reactions.map((r, i) => {
+                          return (
+                            <span
+                              key={i}
+                              dangerouslySetInnerHTML={{
+                                __html: twemoji.parse(r.emoji, {
+                                  folder: 'svg',
+                                  ext: '.svg',
+                                  className: 'w-3.5 h-3.5 inline',
+                                }),
+                              }}
+                            ></span>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {isMine &&
+                      messages.length > 0 &&
+                      messages[messages.length - 1].id === msg.id &&
+                      msg.deliveryStatus && (
+                        <div className="absolute -bottom-2.5 right-0 ">
+                          {msg.deliveryStatus === 'sent' && (
+                            <span className="text-white text-sm font-medium flex items-center gap-1 -mr-2.5 -mb-2.5">
+                              Sent
+                              <span className="w-4 h-4 border border-gray-500 rounded-full flex items-center justify-center">
+                                <Check size={12} />
+                              </span>
+                            </span>
+                          )}
+                          {msg.deliveryStatus === 'delivered' && (
+                            <span className="text-white text-sm font-medium flex items-center gap-1 -mr-2.5 -mb-2.5">
+                              Delivered
+                              <span className="w-4 h-4 rounded-full flex items-center justify-center bg-purple-500">
+                                <Check className="text-white" size={12} />
+                              </span>
+                            </span>
+                          )}
+                          {msg.deliveryStatus === 'seen' && (
+                            <span className="text-white text-sm font-medium flex items-center -mb-2">
+                              Seen
+                            </span>
+                          )}
                         </div>
                       )}
-                    </div>
-                  )}
-                  {msg.reactions?.length > 0 && (
-                    <div
-                      className={`absolute -bottom-4 ${
-                        isMine ? 'left-0' : 'right-0'
-                      } bg-white shadow w-6 h-5 flex items-center justify-center rounded-full text-xs gap-1`}
-                    >
-                      {msg.reactions.map((r, i) => {
-                        return (
-                          <span
-                            key={i}
-                            dangerouslySetInnerHTML={{
-                              __html: twemoji.parse(r.emoji, {
-                                folder: 'svg',
-                                ext: '.svg',
-                                className: 'w-3.5 h-3.5 inline',
-                              }),
-                            }}
-                          ></span>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {isMine && msg.deliveryStatus && (
-                    <div className="absolute -bottom-2.5 right-0 ">
-                      {msg.deliveryStatus === 'sent' && (
-                        <span className="text-white text-sm font-medium flex items-center gap-1 -mr-2.5 -mb-2.5">
-                          Sent
-                          <span className="w-4 h-4 border border-gray-500 rounded-full flex items-center justify-center">
-                            <Check size={12} />
-                          </span>
-                        </span>
-                      )}
-                      {msg.deliveryStatus === 'delivered' && (
-                        <span className="text-white text-sm font-medium flex items-center gap-1 -mr-2.5 -mb-2.5">
-                          Delivered
-                          <span className="w-4 h-4 rounded-full flex items-center justify-center bg-purple-500">
-                            <Check className="text-white" size={12} />
-                          </span>
-                        </span>
-                      )}
-                      {msg.deliveryStatus === 'seen' && (
-                        <span className="text-white text-sm font-medium flex items-center -mb-2">
-                          Seen
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })
+          )}
+
+          {typing[chatUserId] && (
+            <div ref={bottomRef} className="flex justify-start mb-2">
+              <Comment
+                visible={true}
+                height="80"
+                width="80"
+                ariaLabel="comment-loading"
+                wrapperStyle={{}}
+                wrapperClass="comment-wrapper"
+                color="#fff"
+                backgroundColor="#be29ec"
+              />
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
 
@@ -639,6 +791,21 @@ export default function Message({
               <Send size={24} />
             </button>
           </div>
+        ) : HeBlockMe[chatUserId] ? (
+          <div>
+            <div className="w-full mx-auto px-4 py-3 bg-gray-400/30 text-white flex items-center justify-center rounded-b-xl">
+              <span className="font-semibold text-sm">
+                This user going to fly, don't disturb!
+              </span>
+            </div>
+          </div>
+        ) : IBlockHim[chatUserId] ? (
+          <div>
+            <button className="text-[14px] font-inter font-medium text-white bg-purple-500 rounded-md py-2 cursor-pointer">
+              Unblock
+            </button>
+            <p>It's just message block you can unblock this user anytime.</p>
+          </div>
         ) : (
           <NormalChatUI
             input={input}
@@ -647,7 +814,11 @@ export default function Message({
             startRecording={startRecording}
             attachments={attachments}
             setAttachments={setAttachments}
+            chatUserId={chatUserId}
           />
+        )}
+        {blockMenu && (
+          <BlockMenu setBlockMenu={setBlockMenu} chatUserId={chatUserId} />
         )}
       </div>
       {active && (

@@ -2,7 +2,7 @@ const conversionSchema = require('../models/conversionSchema');
 const groupSchema = require('../models/groupSchema');
 const user = require('../models/user');
 const { createNotify } = require('./NotificationContoller');
-const { getIO, getSocketIds } = require('../socket_server');
+const { getIO, getSockets } = require('../socket_server');
 
 async function createGroup({ name, members = [], photo }, context) {
   try {
@@ -51,7 +51,7 @@ async function createGroup({ name, members = [], photo }, context) {
 
     uniqueMembers.forEach(memberId => {
       if (memberId !== context.userId) {
-        getSocketIds(memberId).forEach(sid => {
+        getSockets(memberId).forEach(sid => {
           io.to(sid).emit('addedToGroup', {
             group: newGroup,
           });
@@ -114,7 +114,7 @@ async function addMembers({ groupId, members = [] }, context) {
   const io = getIO();
 
   validMembers.forEach(memberId => {
-    const socketIds = getSocketIds(memberId);
+    const socketIds = getSockets(memberId);
     socketIds.forEach(sid => {
       io.to(sid).emit('addedToGroup', {
         group: Group,
@@ -154,7 +154,7 @@ async function removeMember({ groupId, memberId }, context) {
   ]);
 
   const io = getIO();
-  const socketIds = getSocketIds(memberId);
+  const socketIds = getSockets(memberId);
 
   socketIds.forEach(sid => {
     io.to(sid).emit('removedFromGroup', {
@@ -192,7 +192,7 @@ async function leaveGroup({ groupId }, context) {
   const io = getIO();
 
   Group.members.forEach(memberId => {
-    getSocketIds(memberId.toString()).forEach(sid => {
+    getSockets(memberId.toString()).forEach(sid => {
       io.to(sid).emit('memberLeftGroup', {
         groupId,
         userId: context.userId,
@@ -221,7 +221,7 @@ async function deleteGroup({ groupId }, context) {
 
   members.forEach(memberId => {
     if (memberId !== context.userId) {
-      getSocketIds(memberId).forEach(sid => {
+      getSockets(memberId).forEach(sid => {
         io.to(sid).emit('groupDeleted', { groupId });
       });
     }
@@ -257,7 +257,7 @@ async function requestToJoinGroup({ groupId }, context) {
   ]);
 
   const io = getIO();
-  getSocketIds(group.Admin.toString()).forEach(sid => {
+  getSockets(group.Admin.toString()).forEach(sid => {
     io.to(sid).emit('groupJoinRequest', {
       groupId,
       message: `${me.name} wants to join your group`,
@@ -293,7 +293,7 @@ async function handleJoinRequest({ groupId, userId, action }, context) {
   ]);
   if (action === 'accept') {
     const io = getIO();
-    getSocketIds(userId).forEach(sid => {
+    getSockets(userId).forEach(sid => {
       io.to(sid).emit('joinRequestAccepted', {
         group,
       });

@@ -1,10 +1,10 @@
 'use client';
 import React from 'react';
 import styled from 'styled-components';
-const Loader = () => {
+const Loader = ({className}) => {
   return (
     <StyledWrapper>
-      <div className="loader" />
+      <div className={`loader ${className}`} />
     </StyledWrapper>
   );
 };

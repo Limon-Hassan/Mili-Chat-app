@@ -1,7 +1,7 @@
 const friendRequest = require('../models/friendRequest');
 const user = require('../models/user');
 const { createNotify } = require('./NotificationContoller');
-const { getIO, getSocketIds } = require('../socket_server');
+const { getIO, getSockets } = require('../socket_server');
 
 async function sendFriendRequest({ toUserId }, context) {
   if (!context.userId) {
@@ -55,7 +55,7 @@ async function sendFriendRequest({ toUserId }, context) {
     relatedUserId: context.userId,
   });
   const io = getIO();
-  const receivers = getSocketIds(toUserId);
+  const receivers = getSockets(toUserId);
 
   receivers.forEach(socketId => {
     io.to(socketId).emit('friendRequestReceived', {
@@ -111,8 +111,8 @@ async function acceptFriendRequest({ requestId }, context) {
     relatedUserId: request.to._id,
   });
   const io = getIO();
-  const senderSockets = getSocketIds(request.from._id.toString());
-  const receiverSockets = getSocketIds(request.to._id.toString());
+  const senderSockets = getSockets(request.from._id.toString());
+  const receiverSockets = getSockets(request.to._id.toString());
 
   [...senderSockets, ...receiverSockets].forEach(socketId => {
     io.to(socketId).emit('friendRequestAccepted', {
@@ -131,7 +131,7 @@ async function acceptFriendRequest({ requestId }, context) {
   });
 
   // const io = getIO();
-  // const receivers = getSocketIds(request.from._id.toString());
+  // const receivers = getSockets(request.from._id.toString());
 
   // receivers.forEach(socketId => {
   //   io.to(socketId).emit('friendRequestAccepted', {
@@ -181,8 +181,8 @@ async function requestRejected({ requestId }, context) {
   });
   await friendRequest.findByIdAndDelete(requestId);
   const io = getIO();
-  const senderSockets = getSocketIds(request.from._id.toString());
-  const receiverSockets = getSocketIds(request.to._id.toString());
+  const senderSockets = getSockets(request.from._id.toString());
+  const receiverSockets = getSockets(request.to._id.toString());
 
   [...senderSockets, ...receiverSockets].forEach(socketId => {
     io.to(socketId).emit('friendRequestRejected', {
@@ -200,7 +200,7 @@ async function requestRejected({ requestId }, context) {
     });
   });
   // const io = getIO();
-  // const receivers = getSocketIds(request.from.toString());
+  // const receivers = getSockets(request.from.toString());
 
   // receivers.forEach(socketId => {
   //   io.to(socketId).emit('friendRequestRejected', {
@@ -245,8 +245,8 @@ async function unfriend({ friendId }, context) {
     );
 
     let io = getIO();
-    let senderSockets = getSocketIds(context.userId);
-    let receiverSockets = getSocketIds(friendId);
+    let senderSockets = getSockets(context.userId);
+    let receiverSockets = getSockets(friendId);
     [...senderSockets, ...receiverSockets].forEach(socketId => {
       io.to(socketId).emit('friendRemoved', {
         actorId: context.userId,
@@ -291,20 +291,19 @@ async function BlockUser({ blockerId }, context) {
   await currentUser.save();
   await blockUser.save();
   let io = getIO();
-  let senderSockets = getSocketIds(context.userId);
-  let receiverSockets = getSocketIds(blockerId);
+  let senderSockets = getSockets(context.userId);
+  let receiverSockets = getSockets(blockerId);
   [...senderSockets, ...receiverSockets].forEach(socketId => {
-    [...senderSockets, ...receiverSockets].forEach(socketId => {
-      io.to(socketId).emit('userBlocked', {
-        blockedUser: {
-          id: blockUser._id,
-          name: blockUser.name,
-          avatar: blockUser.avatar,
-        },
-        byUserId: context.userId,
-      });
+    io.to(socketId).emit('userBlocked', {
+      blockedUser: {
+        id: blockUser._id,
+        name: blockUser.name,
+        avatar: blockUser.avatar,
+      },
+      byUserId: context.userId,
     });
   });
+
   return currentUser;
 }
 
@@ -325,7 +324,7 @@ async function unblock({ unblockUserId }, context) {
   );
 
   const io = getIO();
-  const sockets = getSocketIds(context.userId);
+  const sockets = getSockets(context.userId);
   sockets.forEach(socketId => {
     io.to(socketId).emit('userUnblocked', {
       unblockedUserId: unblockUserId,
@@ -335,6 +334,59 @@ async function unblock({ unblockUserId }, context) {
   await currentUser.save();
   await currentUser.populate('blockedUsers', 'id name avatar');
   return currentUser;
+}
+
+async function msgBlockedUser({ blockedUserId }, context) {
+  if (!context.userId) throw new Error('Authentication required');
+  let me = await user.findById(context.userId);
+  if (!me) throw new Error('User not found');
+  if (me.messageBlockedUsers.includes(blockedUserId))
+    throw new Error('user already blocked');
+  if (!me.friends.includes(blockedUserId))
+    throw new Error('this user is not your friend');
+  me.messageBlockedUsers.push(blockedUserId);
+  await me.save();
+  const blockedUser = me.messageBlockedUsers.find(
+    u => u._id.toString() === blockedUserId,
+  );
+
+  const io = getIO();
+  getSockets(blockedUserId).forEach(socketId => {
+    io.to(socketId).emit('messageUserBlocked', {
+      byUserId: context.userId,
+    });
+  });
+
+  getSockets(context.userId).forEach(socketId => {
+    io.to(socketId).emit('messageUserBlockedSelf', {
+      blockedUserId: blockedUser._id.toString(),
+    });
+  });
+
+  return me;
+}
+
+async function msgUnBlockedUser({ blockedUserId }, context) {
+  if (!context.userId) throw new Error('Authentication required');
+  let me = await user.findById(context.userId);
+  if (!me) throw new Error('User not found');
+  if (!me.messageBlockedUsers.includes(blockedUserId))
+    throw new Error('blocked user not found');
+
+  me.messageBlockedUsers = me.messageBlockedUsers.filter(
+    id => id.toString() !== blockedUserId,
+  );
+
+  await me.save();
+
+  const io = getIO();
+  getSockets(context.userId).forEach(socketId => {
+    io.to(socketId).emit('messageUserUnblocked', {
+      unblockedUserId: blockedUserId,
+      byUserId: context.userId,
+    });
+  });
+  return me;
 }
 
 //1375284967710114
@@ -347,4 +399,6 @@ module.exports = {
   unfriend,
   BlockUser,
   unblock,
+  msgBlockedUser,
+  msgUnBlockedUser,
 };

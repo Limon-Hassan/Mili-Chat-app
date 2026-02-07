@@ -38,6 +38,11 @@ const UserType = new GraphQLObjectType({
       resolve: parent => parent.blockedUsers || [],
     },
 
+    MsgBlockedUsers: {
+      type: new GraphQLList(FriendType),
+      resolve: parent => parent.messageBlockedUsers || [],
+    },
+
     stories: {
       type: new GraphQLList(StoryType),
       resolve: async parent => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { getSocket } from '@/lib/socket';
 import EmojiPicker from 'emoji-picker-react';
 import { Mic, Paperclip, Send, SmileIcon, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -11,6 +12,7 @@ const NormalChatUI = ({
   startRecording,
   attachments,
   setAttachments,
+  chatUserId,
 }) => {
   const textareaRef = useRef(null);
   const fileRef = useRef(null);
@@ -147,7 +149,11 @@ const NormalChatUI = ({
           } ${isTyping ? 'w-full' : 'w-[55%]'} `}
           value={input}
           style={{ maxHeight: '120px', height: '45px' }}
-          onChange={e => setInput(e.target.value)}
+          onChange={e => {
+            setInput(e.target.value);
+            let socket = getSocket();
+            socket.emit('typing', { toUserId: chatUserId });
+          }}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
         />
       </div>
