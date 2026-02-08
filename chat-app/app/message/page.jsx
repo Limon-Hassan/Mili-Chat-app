@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, use } from 'react';
 import {
   Phone,
   Video,
@@ -22,6 +22,11 @@ import twemoji from 'twemoji';
 import { uploadToCloudinary } from '@/lib/cloudinaryClient';
 import SeeProfileFicture from '@/components/SeeProfileFicture';
 import EmojiPicker from 'emoji-picker-react';
+import { useSocket } from '@/components/Hook/useSocket';
+import { getSocket } from '@/lib/socket';
+import Loader from '@/components/Loader';
+import { Comment } from 'react-loader-spinner';
+import BlockMenu from '@/components/BlockMenu';
 
 export default function page() {
   let router = useRouter();
@@ -33,12 +38,13 @@ export default function page() {
   const conversationId = searchParams.get('conversationId');
 
   let [conversation, setConversation] = useState([]);
-  const [activeConversation, setActiveConversation] = useState({});
+  const [activeConversationId, setActiveConversationId] = useState(null);
   let [messages, setMessages] = useState([]);
-  let [me, setMe] = useState({});
+  let [me, setMe] = useState(null);
 
   const [openMenu, setOpenMenu] = useState(false);
   const menuRef = useRef(null);
+  const emojiRef = useRef(null);
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const [recordTime, setRecordTime] = useState(0);
@@ -50,12 +56,18 @@ export default function page() {
   let longPressRef = useRef(null);
   const timerRef = useRef(null);
   const audioChunksRef = useRef([]);
-
   const [analyser, setAnalyser] = useState(null);
+
+  const [onlineMap, setOnlineMap] = useState({});
+  const [lastSeenMap, setLastSeenMap] = useState({});
+  let [typing, setTyping] = useState({});
+  let [blockMenu, setBlockMenu] = useState(false);
+  let [HeBlockMe, setHeBlockMe] = useState({});
+  let [IBlockHim, setIBlockHim] = useState({});
 
   const [input, setInput] = useState('');
 
-  const bottomRef = useScrollToBottom([messages]);
+  const bottomRef = useScrollToBottom([messages, typing[userId]]);
 
   const startRecording = async () => {
     setIsRecording(true);
@@ -132,6 +144,7 @@ export default function page() {
   let handleTouchEND = () => {
     clearTimeout(longPressRef.current);
   };
+
   let handleTouchMOVE = () => {
     clearTimeout(longPressRef.current);
   };
@@ -209,6 +222,35 @@ export default function page() {
     }
   };
 
+  let handCLickOutside = e => {
+    if (emojiRef.current && !emojiRef.current.contains(e.target)) {
+      setReaction(null);
+      setReactionFor(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!activeConversationId) return;
+    let conversationId = activeConversationId;
+    const socket = getSocket();
+    socket.emit('activeChat', conversationId);
+    socket.emit('chat:open', { conversationId });
+
+    return () => {
+      socket.emit('chat:close', { conversationId });
+    };
+  }, [activeConversationId]);
+
+  useEffect(() => {
+    if (reactionFor) {
+      document.addEventListener('mousedown', handCLickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handCLickOutside);
+    };
+  }, [reactionFor]);
+
   let handleClearConv = async convId => {
     try {
       let query = `
@@ -276,7 +318,6 @@ export default function page() {
     const validConversation = conversation.find(
       conv => conv.id === conversationId,
     );
-
     if (!validConversation) {
       console.warn('Invalid conversation access attempt');
 
@@ -285,11 +326,10 @@ export default function page() {
 
       return;
     }
-    setActiveConversation(validConversation || null);
+    setActiveConversationId(validConversation.id || null);
   }, [conversationId, conversation]);
 
   const sendMessage = async ({ audio } = {}) => {
-    let convId = activeConversation.id;
     if (!input.trim() && attachments.length === 0 && !audio) return;
     try {
       let uploadedAttachments = [];
@@ -315,7 +355,7 @@ export default function page() {
       }
       let mutation;
       let variables;
-      if (!convId) {
+      if (!activeConversationId) {
         mutation = `
         mutation SendFirst(
           $receiverId: ID!,
@@ -385,7 +425,7 @@ export default function page() {
 
         let firstAttachment = uploadedAttachments[0];
         variables = {
-          conversationId: convId,
+          conversationId: activeConversationId,
           text:
             input.trim() ||
             (firstAttachment ? `[${firstAttachment.type}]` : ''),
@@ -398,6 +438,14 @@ export default function page() {
       setMessages(prev => [...prev, messageData]);
       setInput('');
       setAttachments([]);
+      const socket = getSocket();
+      socket.emit('sendMessage', {
+        toUserId: userId,
+        messageId: messageData.id,
+        conversationId: activeConversationId
+          ? activeConversationId
+          : messageData.conversation.id,
+      });
     } catch (error) {
       console.log(error);
     }
@@ -410,7 +458,7 @@ export default function page() {
   useEffect(() => {
     let FetchMessages = async () => {
       try {
-        if (!activeConversation.id) return;
+        if (!activeConversationId) return;
         let query = `query GetMessages($conversationId: ID!) {
   getMessages(conversationId: $conversationId) {
     id
@@ -420,17 +468,17 @@ export default function page() {
     duration
     createdAt
     deliveryStatus
-    reactions {
+    sender { id name avatar }
+    receiver { id name avatar }
+     reactions {
     emoji
     user { id name avatar }
   }
-    sender { id name avatar }
-    receiver { id name avatar }
   }
 }`;
 
         const data = await request(query, {
-          conversationId: activeConversation.id,
+          conversationId: activeConversationId,
         });
         if (data.getMessages) setMessages(data.getMessages);
       } catch (error) {
@@ -439,11 +487,10 @@ export default function page() {
     };
 
     FetchMessages();
-  }, [activeConversation]);
+  }, [activeConversationId]);
 
   useEffect(() => {
-    let convId = activeConversation.id;
-    if (!convId) return;
+    if (!activeConversationId) return;
     let MarkAsDelivered = async () => {
       try {
         const MARK_AS_DELIVERED = `
@@ -451,20 +498,19 @@ export default function page() {
     markAsDelivered(conversationId: $conversationId)
   }
 `;
-
-        let data = await request(MARK_AS_DELIVERED, { convId });
-        console.log(data);
+        let data = await request(MARK_AS_DELIVERED, {
+          conversationId: activeConversationId,
+        });
       } catch (error) {
         console.log(error);
       }
     };
 
     MarkAsDelivered();
-  }, [activeConversation]);
+  }, [activeConversationId]);
 
   useEffect(() => {
-    let convId = activeConversation.id;
-    if (!convId) return;
+    if (!activeConversationId) return;
     let MarkAsRead = async () => {
       try {
         const MARK_AS_READ = `
@@ -473,27 +519,154 @@ export default function page() {
   }
 `;
 
-        let data = await request(MARK_AS_READ, { convId });
+        let data = await request(MARK_AS_READ, {
+          conversationId: activeConversationId,
+        });
+        console.log(data);
       } catch (error) {
         console.log(error);
       }
     };
 
     MarkAsRead();
-  }, [activeConversation]);
+  }, [activeConversationId]);
 
   useEffect(() => {
     let fetchMe = async () => {
       try {
-        const query = `query { me { id name avatar } }`;
+        const query = `query {
+  me {
+    id
+    WhichBlockedByMe {
+      id
+      name
+      avatar
+    }
+    WhereIBlocked {
+      id
+      name
+      avatar
+    }
+  }
+}`;
         const data = await request(query);
-        setMe(data.me);
+        console.log(data);
+
+        const iBlocked = data.me.WhichBlockedByMe.some(u => u.id === userId);
+
+        setIBlockHim(prev => ({ ...prev, [userId]: iBlocked }));
+
+        const heBlocked = data.me.WhereIBlocked.some(u => u.id === userId);
+        setHeBlockMe(prev => ({ ...prev, [userId]: heBlocked }));
       } catch (err) {
         console.log(err);
       }
     };
     fetchMe();
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storedUserId = localStorage.getItem('userId');
+      setMe(storedUserId);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!me) return;
+    const socket = getSocket();
+    socket.emit('register', me);
+  }, [me]);
+
+  useSocket({
+    userId: me,
+    onEvents: {
+      'friend-online': ({ userId }) => {
+        setOnlineMap(prev => ({ ...prev, [userId]: true }));
+        localStorage.removeItem(`lastSeen_${userId}`);
+      },
+      'friend-offline': ({ userId, lastSeen }) => {
+        setOnlineMap(prev => ({ ...prev, [userId]: false }));
+        localStorage.setItem(
+          `lastSeen_${userId}`,
+          new Date(lastSeen).getTime(),
+        );
+      },
+      newMessage: ({ message }) => {
+        setMessages(prev => [...prev, message]);
+      },
+
+      typing: ({ from }) => {
+        setTyping(prev => ({ ...prev, [from]: true }));
+        setTimeout(() => {
+          setTyping(prev => ({ ...prev, [from]: false }));
+        }, 2000);
+      },
+
+      messageDelivered: ({ messageId }) => {
+        console.log(messageId);
+        setMessages(prev =>
+          prev.map(m =>
+            m._id === messageId ? { ...m, deliveryStatus: 'delivered' } : m,
+          ),
+        );
+      },
+
+      messageSeen: ({ messageId }) => {
+        console.log(messageId);
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === messageId
+              ? { ...m, deliveryStatus: 'seen', isRead: true }
+              : m,
+          ),
+        );
+      },
+
+      messageUserBlocked: ({ byUserId }) => {
+        // He blocked me
+
+        if (byUserId === userId) {
+          setHeBlockMe(prev => ({ ...prev, [byUserId]: true }));
+        }
+      },
+      messageUserBlockedSelf: ({ blockedUserId }) => {
+        // I blocked him
+        if (blockedUserId === userId) {
+          setIBlockHim(prev => ({ ...prev, [blockedUserId]: true }));
+        }
+      },
+    },
+  });
+
+  useEffect(() => {
+    const savedLastSeen = localStorage.getItem(`lastSeen_${userId}`);
+    if (savedLastSeen) {
+      setLastSeenMap(prev => ({
+        ...prev,
+        [userId]: parseInt(savedLastSeen),
+      }));
+    }
+  }, [userId]);
+
+  const getLastSeenText = timestamp => {
+    if (!timestamp) return 'Offline';
+    const diff = Date.now() - timestamp;
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (seconds < 30) return 'Active just now';
+    if (minutes < 60) return `Active ${minutes}m ago`;
+    if (hours < 24) return `Active ${hours}h ago`;
+    return `Active ${days}d ago`;
+  };
+
+  const isOnline = onlineMap[userId] === true;
+
+  const heBlocked = !!HeBlockMe?.[userId];
+  const iBlocked = !!IBlockHim?.[userId];
 
   return (
     <>
@@ -504,15 +677,21 @@ export default function page() {
         <div className="w-full px-5 py-4 border-b bg-transparent flex justify-between items-center rounded-t-lg">
           <div className="flex items-center gap-2">
             <img
-              className="w-15 h-15 object-cover bg-center rounded-full"
+              className="w-12.5 h-12.5 object-cover bg-center rounded-full"
               src={avatar || '/defult.png'}
               alt="group"
             />
             <div>
-              <h2 className="font-semibold text-[15px] font-open_sens">
+              <h2 className="font-semibold text-[15px] font-open_sens truncate w-42">
                 {name}
               </h2>
-              <p className="text-[13px] font-bold text-green-600">Online</p>
+              {!heBlocked && !iBlocked && (
+                <p
+                  className={`text-[13px] font-bold ${isOnline ? 'text-green-600' : 'text-gray-500'}`}
+                >
+                  {isOnline ? 'Online' : getLastSeenText(lastSeenMap[userId])}
+                </p>
+              )}
             </div>
           </div>
 
@@ -529,17 +708,22 @@ export default function page() {
                 ref={menuRef}
                 className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border z-9999"
               >
-                <p
-                  onClick={() => handleBlock(userId)}
-                  className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer"
-                >
-                  Block
-                </p>
+                {!heBlocked && (
+                  <p
+                    onClick={() => {
+                      setBlockMenu(!blockMenu);
+                      setOpenMenu(false);
+                    }}
+                    className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer"
+                  >
+                    Block
+                  </p>
+                )}
                 <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
                   Theme
                 </p>
                 <p
-                  onClick={() => handleClearConv(activeConversation.id)}
+                  onClick={() => handleClearConv(activeConversationId)}
                   className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer"
                 >
                   Clear Chat
@@ -564,8 +748,9 @@ export default function page() {
               You are both chimmy Friends
             </p>
           </div>
-          {messages.map(msg => {
-            const isMine = msg.sender.id === me?.id;
+
+          {messages.map((msg, index) => {
+            const isMine = msg.sender.id === me;
             const bgClass =
               msg.type === 'text' || msg.type === 'link'
                 ? isMine
@@ -574,14 +759,14 @@ export default function page() {
                 : '';
             return (
               <div
-                key={msg.id}
+                key={index}
                 onTouchStart={() => handleTouch(msg.id)}
                 onTouchEnd={handleTouchEND}
                 onTouchMove={handleTouchMOVE}
                 className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`relative max-w-[60%] rounded-xl flex items-center gap-2 ${bgClass}`}
+                  className={`relative max-w-[80%] rounded-xl flex items-center gap-2 ${bgClass}`}
                 >
                   {msg.type === 'image' && msg.mediaUrl ? (
                     <img
@@ -616,14 +801,16 @@ export default function page() {
 
                   {reaction === msg.id && (
                     <div
-                      className={`absolute top-1/2 -translate-y-1/2 flex gap-2 z-50 ${isMine ? '-left-23' : '-right-23'} `}
+                      className={`absolute top-1/2 -translate-y-1/2 flex gap-px z-50 ${isMine ? '-left-18.5' : '-right-18.5'} `}
                     >
-                      <button
-                        onClick={() => handleDelete(msg.id)}
-                        className="w-9 h-9 text-white "
-                      >
-                        <Trash />
-                      </button>
+                      {isMine && (
+                        <button
+                          onClick={() => handleDelete(msg.id)}
+                          className="w-9 h-9 text-white "
+                        >
+                          <Trash />
+                        </button>
+                      )}
 
                       <button
                         onClick={() => {
@@ -635,25 +822,6 @@ export default function page() {
                       >
                         <Smile />
                       </button>
-                      {reactionFor === msg.id && (
-                        <div
-                          className={`absolute -top-12 ${
-                            isMine ? '-right-50' : '-left-12.5'
-                          } z-50`}
-                        >
-                          <EmojiPicker
-                            reactionsDefaultOpen={true}
-                            emojiStyle="facebook"
-                            previewConfig={{ showPreview: false }}
-                            theme="dark"
-                            skinTonesDisabled
-                            onEmojiClick={e => {
-                              handleReact(msg.id, e.emoji);
-                              setReactionFor(null);
-                            }}
-                          />
-                        </div>
-                      )}
                     </div>
                   )}
 
@@ -680,35 +848,74 @@ export default function page() {
                     </div>
                   )}
 
-                  {isMine && msg.deliveryStatus && (
-                    <div className="absolute -bottom-2.5 right-0 ">
-                      {msg.deliveryStatus === 'sent' && (
-                        <span className="text-white text-sm font-medium flex items-center gap-1 -mr-2.5 -mb-2.5">
-                          Sent
-                          <span className="w-4 h-4 border border-gray-500 rounded-full flex items-center justify-center">
-                            <Check size={12} />
+                  {isMine &&
+                    messages.length > 0 &&
+                    messages[messages.length - 1].id === msg.id &&
+                    msg.deliveryStatus && (
+                      <div className="absolute -bottom-2.5 right-0 ">
+                        {msg.deliveryStatus === 'sent' && (
+                          <span className="text-white text-[12px] font-medium flex items-center gap-1 -mr-2.5 -mb-2.5">
+                            Sent
+                            <span className="w-4 h-4 border border-gray-500 rounded-full flex items-center justify-center">
+                              <Check size={12} />
+                            </span>
                           </span>
-                        </span>
-                      )}
-                      {msg.deliveryStatus === 'delivered' && (
-                        <span className="text-white text-sm font-medium flex items-center gap-1 -mr-2.5 -mb-2.5">
-                          Delivered
-                          <span className="w-4 h-4 rounded-full flex items-center justify-center bg-purple-500">
-                            <Check className="text-white" size={12} />
+                        )}
+                        {msg.deliveryStatus === 'delivered' && (
+                          <span className="text-white text-[12px] font-medium flex items-center gap-1 -mr-2.5 -mb-2.5">
+                            Delivered
+                            <span className="w-4 h-4 rounded-full flex items-center justify-center bg-purple-500">
+                              <Check className="text-white" size={12} />
+                            </span>
                           </span>
-                        </span>
-                      )}
-                      {msg.deliveryStatus === 'seen' && (
-                        <span className="text-white text-sm font-medium flex items-center -mb-2">
-                          Seen
-                        </span>
-                      )}
-                    </div>
-                  )}
+                        )}
+                        {msg.deliveryStatus === 'seen' && (
+                          <span className="text-white text-[12px] font-medium flex items-center -mb-2">
+                            Seen
+                          </span>
+                        )}
+                      </div>
+                    )}
                 </div>
+                {reactionFor === msg.id && (
+                  <div
+                    ref={emojiRef}
+                    className={`fixed top-1/2 -translate-y-1/2 ${
+                      isMine ? 'right-0' : 'left-0'
+                    } z-50`}
+                  >
+                    <EmojiPicker
+                      reactionsDefaultOpen={true}
+                      emojiStyle="facebook"
+                      previewConfig={{ showPreview: false }}
+                      theme="dark"
+                      skinTonesDisabled
+                      onEmojiClick={e => {
+                        handleReact(msg.id, e.emoji);
+                        handCLickOutside(e);
+                        setReactionFor(null);
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             );
           })}
+
+          {typing[userId] && (
+            <div ref={bottomRef} className="flex justify-start mb-2">
+              <Comment
+                visible={true}
+                height="80"
+                width="80"
+                ariaLabel="comment-loading"
+                wrapperStyle={{}}
+                wrapperClass="comment-wrapper"
+                color="#fff"
+                backgroundColor="#be29ec"
+              />
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
 
@@ -736,6 +943,23 @@ export default function page() {
               <Send size={24} />
             </button>
           </div>
+        ) : HeBlockMe[userId] ? (
+          <div>
+            <div className="w-full mx-auto px-4 py-3 bg-gray-400/30 text-white flex items-center justify-center rounded-b-xl">
+              <span className="font-semibold text-sm">
+                This user going to fly, don't disturb!
+              </span>
+            </div>
+          </div>
+        ) : IBlockHim[userId] ? (
+          <div className="w-full mx-auto px-4 py-3 bg-gray-400/30 text-white flex items-center justify-center rounded-b-xl">
+            <div className="flex flex-col items-center gap-1.5">
+              <button className="text-[14px] font-inter font-medium text-white bg-purple-500 rounded-md py-2 px-4 cursor-pointer">
+                Unblock
+              </button>
+              <p>It's just message block you can unblock this user anytime.</p>
+            </div>
+          </div>
         ) : (
           <NormalChatUI
             input={input}
@@ -744,6 +968,19 @@ export default function page() {
             startRecording={startRecording}
             attachments={attachments}
             setAttachments={setAttachments}
+            chatUserId={userId}
+          />
+        )}
+
+        {blockMenu && (
+          <BlockMenu
+            setBlockMenu={setBlockMenu}
+            userId={userId}
+            isBlocked={iBlocked}
+            onBlock={() => setIBlockHim(prev => ({ ...prev, [userId]: true }))}
+            onUnblock={() =>
+              setIBlockHim(prev => ({ ...prev, [userId]: false }))
+            }
           />
         )}
       </div>

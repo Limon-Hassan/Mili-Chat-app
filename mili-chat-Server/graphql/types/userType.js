@@ -9,6 +9,7 @@ const FriendType = require('./FriendType');
 const storyModel = require('../../models/storyModel');
 const { StoryType } = require('./StoryType');
 const { voiceIntro } = require('./VoiceIntroType');
+const user = require('../../models/user');
 
 const UserType = new GraphQLObjectType({
   name: 'User',
@@ -38,9 +39,22 @@ const UserType = new GraphQLObjectType({
       resolve: parent => parent.blockedUsers || [],
     },
 
-    MsgBlockedUsers: {
+    WhichBlockedByMe: {
       type: new GraphQLList(FriendType),
       resolve: parent => parent.messageBlockedUsers || [],
+    },
+
+    WhereIBlocked: {
+      type: new GraphQLList(FriendType),
+      resolve: async (parent, args, context) => {
+        if (!context.userId) return [];
+
+        const users = await user.find({
+          messageBlockedUsers: context.userId,
+        });
+
+        return users;
+      },
     },
 
     stories: {

@@ -2,6 +2,7 @@
 import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 import React, { useEffect, useState } from 'react';
 import { useGraphQL } from '../Hook/useGraphQL';
+import { useSocket } from '../Hook/useSocket';
 
 const MobileFriend_Req = () => {
   let { request, loading, error } = useGraphQL();

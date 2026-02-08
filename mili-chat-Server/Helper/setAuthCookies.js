@@ -3,7 +3,7 @@ function setAuthCookies(res, accessToken, refreshToken) {
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
     sameSite: 'lax',
-    secure: false,
+    secure: true,
     maxAge: 15 * 60 * 1000,
     path: '/',
   });
@@ -11,7 +11,7 @@ function setAuthCookies(res, accessToken, refreshToken) {
   if (refreshToken) {
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: false,
+      secure: true,
       sameSite: 'lax',
       maxAge: 24 * 60 * 60 * 1000,
       path: '/',

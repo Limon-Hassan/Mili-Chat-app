@@ -61,7 +61,6 @@ function init(server) {
         msg.isRead = true;
         msg.readAt = new Date();
         await msg.save();
-        console.log();
         getSockets(msg.sender.toString()).forEach(sId => {
           io.to(sId).emit('messageSeen', {
             messageId: msg._id.toString(),

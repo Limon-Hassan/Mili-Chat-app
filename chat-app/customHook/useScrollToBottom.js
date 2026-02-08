@@ -12,7 +12,7 @@ export default function useScrollToBottom(deps = []) {
     const handleScroll = () => {
       const isNearBottom =
         container.scrollHeight - container.scrollTop - container.clientHeight <
-        150;
+        100;
       if (isNearBottom) {
         bottomRef.current.scrollIntoView({ behavior: 'smooth' });
       }

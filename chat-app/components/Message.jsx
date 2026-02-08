@@ -261,15 +261,29 @@ export default function Message({
   useEffect(() => {
     let fetchMe = async () => {
       try {
-        const query = `query { me { id name avatar MsgBlockedUsers { id name avatar } }  }`;
+        const query = `query {
+  me {
+    id
+    WhichBlockedByMe {
+      id
+      name
+      avatar
+    }
+    WhereIBlocked {
+      id
+      name
+      avatar
+    }
+  }
+}`;
         const data = await request(query);
-        const iBlocked = data?.me?.MsgBlockedUsers?.some(
+
+        const iBlocked = data.me.WhichBlockedByMe.some(
           u => u.id === chatUserId,
         );
         setIBlockHim(prev => ({ ...prev, [chatUserId]: iBlocked }));
-        const heBlocked = data?.me?.MsgBlockedUsers?.some(
-          u => u.id === currentUser,
-        );
+
+        const heBlocked = data.me.WhereIBlocked.some(u => u.id === chatUserId);
         setHeBlockMe(prev => ({ ...prev, [chatUserId]: heBlocked }));
       } catch (err) {
         console.log(err);
@@ -522,6 +536,9 @@ export default function Message({
 
   const isOnline = onlineMap[chatUserId] === true;
 
+  const heBlocked = !!HeBlockMe?.[chatUserId];
+  const iBlocked = !!IBlockHim?.[chatUserId];
+
   return (
     <>
       <div className="h-[94vh]  backdrop-blur-md bg-transparent border rounded-xl shadow-md mx-auto w-5xl flex flex-col">
@@ -537,11 +554,15 @@ export default function Message({
                 {userInfo?.name || 'User'}
               </h2>
 
-              <p
-                className={`text-[13px] font-bold ${isOnline ? 'text-green-600' : 'text-gray-500'}`}
-              >
-                {isOnline ? 'Online' : getLastSeenText(lastSeenMap[chatUserId])}
-              </p>
+              {!heBlocked && !iBlocked && (
+                <p
+                  className={`text-[13px] font-bold ${isOnline ? 'text-green-600' : 'text-gray-500'}`}
+                >
+                  {isOnline
+                    ? 'Online'
+                    : getLastSeenText(lastSeenMap[chatUserId])}
+                </p>
+              )}
             </div>
           </div>
 
@@ -558,12 +579,14 @@ export default function Message({
                 ref={menuRef}
                 className="absolute top-8 right-0 bg-black shadow-xl rounded-md w-45 py-2 border z-9999"
               >
-                <p
-                  onClick={() => setBlockMenu(!blockMenu)}
-                  className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer"
-                >
-                  Block
-                </p>
+                {!heBlocked && (
+                  <p
+                    onClick={() => setBlockMenu(!blockMenu)}
+                    className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer"
+                  >
+                    Block
+                  </p>
+                )}
                 <p className="px-4 py-2 hover:bg-gray-100 hover:text-black cursor-pointer">
                   Theme
                 </p>
@@ -693,6 +716,7 @@ export default function Message({
                         )}
                       </div>
                     )}
+                    
                     {msg.reactions?.length > 0 && (
                       <div
                         className={`absolute -bottom-4 ${
@@ -800,11 +824,13 @@ export default function Message({
             </div>
           </div>
         ) : IBlockHim[chatUserId] ? (
-          <div>
-            <button className="text-[14px] font-inter font-medium text-white bg-purple-500 rounded-md py-2 cursor-pointer">
-              Unblock
-            </button>
-            <p>It's just message block you can unblock this user anytime.</p>
+          <div className="w-full mx-auto px-4 py-3 bg-gray-400/30 text-white flex items-center justify-center rounded-b-xl">
+            <div className="flex flex-col items-center gap-1.5">
+              <button className="text-[14px] font-inter font-medium text-white bg-purple-500 rounded-md py-2 px-4 cursor-pointer">
+                Unblock
+              </button>
+              <p>It's just message block you can unblock this user anytime.</p>
+            </div>
           </div>
         ) : (
           <NormalChatUI
@@ -818,7 +844,17 @@ export default function Message({
           />
         )}
         {blockMenu && (
-          <BlockMenu setBlockMenu={setBlockMenu} chatUserId={chatUserId} />
+          <BlockMenu
+            setBlockMenu={setBlockMenu}
+            chatUserId={chatUserId}
+            isBlocked={iBlocked}
+            onBlock={() =>
+              setIBlockHim(prev => ({ ...prev, [chatUserId]: true }))
+            }
+            onUnblock={() =>
+              setIBlockHim(prev => ({ ...prev, [chatUserId]: false }))
+            }
+          />
         )}
       </div>
       {active && (
