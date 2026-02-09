@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useGraphQL } from './Hook/useGraphQL';
+import { useSocket } from './Hook/useSocket';
 
 export default function Notification() {
   let { request, loading, error } = useGraphQL();
@@ -53,6 +54,19 @@ export default function Notification() {
 
     fetchMarkNotificationsAsSeen();
   }, []);
+
+  useSocket({
+    userId: localStorage.getItem('userId'),
+    onEvents: {
+      newNotification: notify => {
+        setNotifications(prev => [notify, ...prev]);
+      },
+
+      notificationSeen: () => {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      },
+    },
+  });
 
   const timeAgo = createdAt => {
     if (!createdAt) return '';

@@ -13,6 +13,7 @@ import AddStory from './AddStory';
 import { useGraphQL } from './Hook/useGraphQL';
 import { uploadToCloudinary } from '@/lib/cloudinaryClient';
 import ShowStatusForOther from './ShowStatusForOther';
+import { useSocket } from './Hook/useSocket';
 
 const Setting = () => {
   let { request, loading, error } = useGraphQL();
@@ -35,9 +36,8 @@ const Setting = () => {
     setActive(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  useEffect(() => {
-    let fetchMe = async () => {
-      let mutation = `
+  let fetchMe = async () => {
+    let mutation = `
       query Me {
         me {
           id
@@ -64,14 +64,10 @@ const Setting = () => {
       }
     `;
 
-      let data = await request(mutation);
-      setFriends(data.me.friends);
-      setUser(data.me);
-    };
-
-    fetchMe();
-  }, []);
-
+    let data = await request(mutation);
+    setFriends(data.me.friends);
+    setUser(data.me);
+  };
   let fetchStory = async () => {
     try {
       let mutation = `
@@ -150,6 +146,7 @@ const Setting = () => {
   useEffect(() => {
     fetchStory();
     fetchActiveStory();
+    fetchMe();
   }, [request]);
 
   let handleStoryUpload = async file => {
@@ -174,6 +171,60 @@ const Setting = () => {
       console.log(error);
     }
   };
+
+  useSocket({
+    userId: localStorage.getItem('userId'),
+    onEvents: {
+      newStory: story => {
+        fetchStory();
+        fetchActiveStory();
+      },
+
+      storySeen: data => {
+        setActiveStories(prev =>
+          prev.map(story => {
+            if (story.id !== data.storyId) return story;
+
+            return {
+              ...story,
+              stories: story.stories.map(item => {
+                if (item.id !== data.storyItemId) return item;
+
+                return {
+                  ...item,
+                  seenBy: [...item.seenBy, data.seenBy],
+                };
+              }),
+            };
+          }),
+        );
+      },
+
+      storyReaction: data => {
+        setActiveStories(prev =>
+          prev.map(story => {
+            if (story.id !== data.storyId) return story;
+
+            return {
+              ...story,
+              stories: story.stories.map(item => {
+                if (item.id !== data.storyItemId) return item;
+
+                return {
+                  ...item,
+                  reactions: [...item.reactions, data.reaction],
+                };
+              }),
+            };
+          }),
+        );
+      },
+
+      profileUpdated: avatar => {
+        fetchMe();
+      },
+    },
+  });
 
   return (
     <>

@@ -44,11 +44,15 @@ async function createStory({ videoUrl }, context) {
       relatedUserId: context.userId,
     });
 
+    getSockets(context.userId).forEach(sid => {
+      io.to(sid).emit('newStory', {
+        story: storyDoc.stories[storyDoc.stories.length - 1],
+      });
+    });
+
     getSockets(friend._id.toString()).forEach(sid => {
       io.to(sid).emit('newStory', {
-        userId: context.userId,
-        userName: me.name,
-        avatar: me.avatar,
+        story: storyDoc.stories[storyDoc.stories.length - 1],
       });
     });
   }
@@ -65,25 +69,54 @@ async function getNewStories(context) {
     .find({ user: context.userId })
     .find({ 'stories.status': 'active' })
     .populate('user', 'name avatar storyPrivacy createdAt')
+    .populate('stories.seenBy.user', 'name avatar')
+    .populate('stories.reactions.user', 'name avatar')
     .lean();
 
   return stories
     .map(story => {
-      const visibleStories = story.stories.filter(s => {
-        if (s.status !== 'active') return false;
-        if (s.expiresAt < now) return false;
+      const visibleStories = story.stories
+        .filter(s => {
+          if (s.status !== 'active') return false;
+          if (s.expiresAt < now) return false;
 
-        if (story.user._id.toString() === context.userId) return true;
-        if (story.user.storyPrivacy === 'public') return true;
-        if (story.user.storyPrivacy === 'friends') {
-          return me.friends.some(
-            f => f._id.toString() === story.user._id.toString(),
-          );
-        }
-        return false;
-      });
+          if (story.user._id.toString() === context.userId) return true;
+          if (story.user.storyPrivacy === 'public') return true;
+          if (story.user.storyPrivacy === 'friends') {
+            return me.friends.some(
+              f => f._id.toString() === story.user._id.toString(),
+            );
+          }
+          return false;
+        })
+        .map(item => ({
+          ...item,
+          id: item._id.toString(),
+          seenBy: item.seenBy.map(seen => ({
+            ...seen,
+            user: {
+              ...seen.user,
+              id: seen.user._id.toString(),
+            },
+          })),
+          reactions: item.reactions.map(r => ({
+            ...r,
+            user: {
+              ...r.user,
+              id: r.user._id.toString(),
+            },
+          })),
+        }));
 
-      return { ...story, stories: visibleStories };
+      return {
+        ...story,
+        id: story._id.toString(),
+        user: {
+          ...story.user,
+          id: story.user._id.toString(),
+        },
+        stories: visibleStories,
+      };
     })
     .filter(s => s.stories.length > 0);
 }
@@ -212,6 +245,15 @@ async function storyReaction({ storyId, storyItemId, reaction }, context) {
   return true;
 }
 
+async function deleteStory({ storyId }, context) {
+  if (!context.userId) throw new Error('Authentication required');
+  let story = await storyModel.findById(storyId);
+  if (!story) throw new Error('Story not found');
+  if (story.user.toString() !== context.userId) throw new Error('Unauthorized');
+  await storyModel.findByIdAndDelete(storyId);
+  return true;
+}
+
 async function expireStory() {
   const now = new Date();
 
@@ -291,4 +333,5 @@ module.exports = {
   markAsSeen,
   storyReaction,
   expireStory,
+  deleteStory,
 };

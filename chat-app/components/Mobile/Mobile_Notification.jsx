@@ -3,6 +3,7 @@
 import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 import { useEffect, useState } from 'react';
 import { useGraphQL } from '../Hook/useGraphQL';
+import { useSocket } from '../Hook/useSocket';
 
 export default function Mobile_Notification() {
   let { request } = useGraphQL();
@@ -43,22 +44,35 @@ export default function Mobile_Notification() {
     fetchNotifications();
   }, []);
 
-    useEffect(() => {
-      let fetchMarkNotificationsAsSeen = async () => {
-        try {
-          let mutation = ` mutation MarkNotificationsAsSeen {
+  useEffect(() => {
+    let fetchMarkNotificationsAsSeen = async () => {
+      try {
+        let mutation = ` mutation MarkNotificationsAsSeen {
   markNotificationsAsSeen
 }`;
 
-          let data = await request(mutation);
-          console.log('data', data);
-        } catch (error) {
-          console.log(error);
-        }
-      };
+        let data = await request(mutation);
+        console.log('data', data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
 
-      fetchMarkNotificationsAsSeen();
-    }, []);
+    fetchMarkNotificationsAsSeen();
+  }, []);
+
+  useSocket({
+    userId: localStorage.getItem('userId'),
+    onEvents: {
+      newNotification: notify => {
+        setNotifications(prev => [notify, ...prev]);
+      },
+
+      notificationSeen: () => {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      },
+    },
+  });
 
   const timeAgo = createdAt => {
     if (!createdAt) return '';

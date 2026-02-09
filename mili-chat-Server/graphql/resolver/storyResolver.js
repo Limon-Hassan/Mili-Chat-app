@@ -1,9 +1,10 @@
-const { GraphQLString, GraphQLNonNull, GraphQLID } = require('graphql');
+const { GraphQLString, GraphQLNonNull, GraphQLID, GraphQLBoolean } = require('graphql');
 const { StoryType } = require('../types/StoryType');
 const {
   createStory,
   markAsSeen,
   storyReaction,
+  deleteStory,
 } = require('../../Controller/StoryController');
 
 let storyResolver = {
@@ -35,6 +36,16 @@ let storyResolver = {
     },
     resolve: (parent, args, context) => {
       return storyReaction(args, context);
+    },
+  },
+
+  deleteStory: {
+    type: GraphQLBoolean,
+    args: {
+      storyId: { type: new GraphQLNonNull(GraphQLID) },
+    },
+    resolve: (parent, args, context) => {
+      return deleteStory(args, context);
     },
   },
 };

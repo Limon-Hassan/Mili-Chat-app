@@ -2,8 +2,10 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 import { GrClose } from 'react-icons/gr';
+import { useGraphQL } from './Hook/useGraphQL';
 
 const ShowStatusForOther = ({ story = [], onClose }) => {
+  let { request, loading, error } = useGraphQL();
   const storyRef = useRef(null);
   const videoRef = useRef(null);
   let [currentIndex, setCurrentIndex] = useState(0);
@@ -89,6 +91,43 @@ const ShowStatusForOther = ({ story = [], onClose }) => {
 
     return `${Math.floor(seconds / 2592000)}mo ago`;
   };
+  useEffect(() => {
+    const markSeen = async () => {
+      if (!currentStory) return;
+      try {
+        const mutation = `
+          mutation MarkStorySeen($storyId: ID!, $storyItemId: ID!) {
+            markStorySeen(storyId: $storyId, storyItemId: $storyItemId) {
+              id
+              stories {
+                id
+                seenBy {
+                  user {
+                    id
+                    name
+                    avatar
+                  }
+                  seenAt
+                }
+              }
+            }
+          }
+        `;
+
+        const variables = {
+          storyId: story[0].id,
+          storyItemId: currentStory.id,
+        };
+
+        let data = await request(mutation, variables);
+        console.log(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    markSeen();
+  }, [currentStory]);
 
   return (
     <section className="fixed inset-0 bg-black/90 flex items-center justify-center z-50">
@@ -151,19 +190,19 @@ const ShowStatusForOther = ({ story = [], onClose }) => {
         >
           <GrClose size={24} />
         </button>
-        <div className='absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/20 p-2 w-full overflow-x-scroll'>
-          <span className='text-[30px]'>❤️</span>
-          <span className='text-[30px]'>🖤</span>
-          <span className='text-[30px]'>🤍</span>
-          <span className='text-[30px]'>😂</span>
-          <span className='text-[30px]'>😍</span>
-          <span className='text-[30px]'>👌</span>
-          <span className='text-[30px]'>😱</span>
-          <span className='text-[30px]'>😭</span>
-          <span className='text-[30px]'>😡</span>
-          <span className='text-[30px]'>👀</span>
-          <span className='text-[30px]'>😵‍💫</span>
-          <span className='text-[30px]'>😵</span>
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/20 p-2 w-full overflow-x-scroll">
+          <span className="text-[30px]">❤️</span>
+          <span className="text-[30px]">🖤</span>
+          <span className="text-[30px]">🤍</span>
+          <span className="text-[30px]">😂</span>
+          <span className="text-[30px]">😍</span>
+          <span className="text-[30px]">👌</span>
+          <span className="text-[30px]">😱</span>
+          <span className="text-[30px]">😭</span>
+          <span className="text-[30px]">😡</span>
+          <span className="text-[30px]">👀</span>
+          <span className="text-[30px]">😵‍💫</span>
+          <span className="text-[30px]">😵</span>
         </div>
       </div>
     </section>

@@ -15,6 +15,7 @@ import { useDynamicHeight } from '@/customHook/useDynamicHeight';
 import { useGraphQL } from '../Hook/useGraphQL';
 import { uploadToCloudinary } from '@/lib/cloudinaryClient';
 import ShowStatusForOther from '../ShowStatusForOther';
+import { useSocket } from '../Hook/useSocket';
 
 const MobileSetting = () => {
   let { request, loading, error } = useGraphQL();
@@ -34,9 +35,8 @@ const MobileSetting = () => {
   let [friends, setFriends] = useState([]);
   let [ActiveStories, setActiveStories] = useState([]);
 
-  useEffect(() => {
-    let fetchMe = async () => {
-      let mutation = `
+  let fetchMe = async () => {
+    let mutation = `
        query Me {
          me {
            id
@@ -63,13 +63,10 @@ const MobileSetting = () => {
        }
      `;
 
-      let data = await request(mutation);
-      setFriends(data.me.friends);
-      setUser(data.me);
-    };
-
-    fetchMe();
-  }, []);
+    let data = await request(mutation);
+    setFriends(data.me.friends);
+    setUser(data.me);
+  };
 
   let fetchStory = async () => {
     try {
@@ -112,33 +109,33 @@ const MobileSetting = () => {
   let fetchActiveStory = async () => {
     try {
       let mutation = `
-            query {
-              getNewStories {
+          query {
+            getNewStories {
+              id
+              user {
                 id
-                user {
-                  id
-                  name
-                  avatar
+                name
+                avatar
+              }
+              stories {
+                id
+                video
+                expiresAt
+                createdAt
+                status
+                reactions {
+                  user { id name avatar }
+                  type
+                  reactedAt
                 }
-                stories {
-                  id
-                  video
-                  expiresAt
-                  createdAt
-                  status
-                  reactions {
-                    user { id name avatar }
-                    type
-                    reactedAt
-                  }
-                  seenBy {
-                    user { id name avatar }
-                    seenAt
-                  }
+                seenBy {
+                  user { id name avatar }
+                  seenAt
                 }
               }
             }
-          `;
+          }
+        `;
 
       let data = await request(mutation);
       setActiveStories(data.getNewStories);
@@ -150,6 +147,7 @@ const MobileSetting = () => {
   useEffect(() => {
     fetchStory();
     fetchActiveStory();
+    fetchMe();
   }, []);
 
   let toggoleActive = key => {
@@ -177,6 +175,60 @@ const MobileSetting = () => {
       console.log(error);
     }
   };
+
+  useSocket({
+    userId: localStorage.getItem('userId'),
+    onEvents: {
+      newStory: story => {
+        fetchStory();
+        fetchActiveStory();
+      },
+
+      storySeen: data => {
+        setActiveStories(prev =>
+          prev.map(story => {
+            if (story.id !== data.storyId) return story;
+
+            return {
+              ...story,
+              stories: story.stories.map(item => {
+                if (item.id !== data.storyItemId) return item;
+
+                return {
+                  ...item,
+                  seenBy: [...item.seenBy, data.seenBy],
+                };
+              }),
+            };
+          }),
+        );
+      },
+
+      storyReaction: data => {
+        setActiveStories(prev =>
+          prev.map(story => {
+            if (story.id !== data.storyId) return story;
+
+            return {
+              ...story,
+              stories: story.stories.map(item => {
+                if (item.id !== data.storyItemId) return item;
+
+                return {
+                  ...item,
+                  reactions: [...item.reactions, data.reaction],
+                };
+              }),
+            };
+          }),
+        );
+      },
+
+      profileUpdated: avatar => {
+        fetchMe();
+      },
+    },
+  });
 
   return (
     <>
@@ -276,7 +328,6 @@ const MobileSetting = () => {
               {user.voiceIntro && (
                 <VoiceChatCard audioSrc={user.voiceIntro} status="online" />
               )}
-              
             </div>
           </div>
           <AllFriend friends={friends} />

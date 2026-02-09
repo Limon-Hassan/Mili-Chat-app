@@ -163,75 +163,28 @@ const ShowStatus = ({ story = [], onClose }) => {
             onClick={handleViewers}
             className={`cursor-pointer text-white text-2xl ${viewersOpen && 'border-b border-white pb-2'} `}
           >
-            Viewers 0
+            Viewers {currentStory.seenBy.length}
           </h4>
           {viewersOpen && (
             <ul className="overflow-y-auto max-h-40 text-white">
-              <li className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-3">
-                  <img
-                    className="w-12 h-12 rounded-full object-cover"
-                    src="/Image.jpg"
-                    alt=""
-                  />
-                  <h3 className="mobile:text-[16px] computer:text-2xl font-inter font-medium text-white">
-                    Mahammud Hassan Limon
-                  </h3>
-                </div>
-                <span className="text-3xl">🖤</span>
-              </li>
-              <li className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-3">
-                  <img
-                    className="w-12 h-12 rounded-full object-cover"
-                    src="/Image.jpg"
-                    alt=""
-                  />
-                  <h3 className="mobile:text-[16px] computer:text-2xl font-inter font-medium text-white">
-                    Mahammud Hassan Limon
-                  </h3>
-                </div>
-                <span className="text-3xl">🖤</span>
-              </li>
-              <li className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-3">
-                  <img
-                    className="w-12 h-12 rounded-full object-cover"
-                    src="/Image.jpg"
-                    alt=""
-                  />
-                  <h3 className="mobile:text-[16px] computer:text-2xl font-inter font-medium text-white">
-                    Mahammud Hassan Limon
-                  </h3>
-                </div>
-                <span className="text-3xl">🖤</span>
-              </li>
-              <li className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-3">
-                  <img
-                    className="w-12 h-12 rounded-full object-cover"
-                    src="/Image.jpg"
-                    alt=""
-                  />
-                  <h3 className="mobile:text-[16px] computer:text-2xl font-inter font-medium text-white">
-                    Mahammud Hassan Limon
-                  </h3>
-                </div>
-                <span className="text-3xl">🖤</span>
-              </li>
-              <li className="flex items-center justify-between mb-2.5">
-                <div className="flex items-center gap-3">
-                  <img
-                    className="w-12 h-12 rounded-full object-cover"
-                    src="/Image.jpg"
-                    alt=""
-                  />
-                  <h3 className="mobile:text-[16px] computer:text-2xl font-inter font-medium text-white">
-                    Mahammud Hassan Limon
-                  </h3>
-                </div>
-                <span className="text-3xl">🖤</span>
-              </li>
+              {currentStory.seenBy.map((user, i) => (
+                <li
+                  key={i}
+                  className="flex items-center justify-between mb-2.5"
+                >
+                  <div className="flex items-center gap-3">
+                    <img
+                      className="w-12 h-12 rounded-full object-cover"
+                      src={user.user?.avatar || 'default.png'}
+                      alt=""
+                    />
+                    <h3 className="mobile:text-[16px] computer:text-2xl font-inter font-medium text-white">
+                      {user.user?.name || 'User'}
+                    </h3>
+                  </div>
+                  <span className="text-3xl">🖤</span>
+                </li>
+              ))}
             </ul>
           )}
         </div>
