@@ -11,7 +11,7 @@ const activeChat = new Map();
 function init(server) {
   io = new Server(server, {
     cors: {
-      origin: ['http://localhost:3000', 'https://mili-chat-app.vercel.app'],
+      origin: ['http://localhost:3000', 'https://mili-chat-app.onrender.com'],
       methods: ['GET', 'POST'],
     },
   });

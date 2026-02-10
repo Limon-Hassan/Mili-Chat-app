@@ -22,7 +22,7 @@ async function startServer() {
 
         const allowedOrigins = [
           'http://localhost:3000',
-          'https://mili-chat-app.vercel.app',
+          'https://mili-chat-app.onrender.com',
         ];
 
         if (allowedOrigins.indexOf(origin) !== -1) {
