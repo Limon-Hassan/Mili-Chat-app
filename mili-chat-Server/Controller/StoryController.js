@@ -79,10 +79,11 @@ async function getNewStories(context) {
         .filter(s => {
           if (s.status !== 'active') return false;
           if (s.expiresAt < now) return false;
-
+          if (!story.user) return false;
           if (story.user._id.toString() === context.userId) return true;
           if (story.user.storyPrivacy === 'public') return true;
           if (story.user.storyPrivacy === 'friends') {
+            if (!story.user) return false;
             return me.friends.some(
               f => f._id.toString() === story.user._id.toString(),
             );
@@ -92,20 +93,24 @@ async function getNewStories(context) {
         .map(item => ({
           ...item,
           id: item._id.toString(),
-          seenBy: item.seenBy.map(seen => ({
-            ...seen,
-            user: {
-              ...seen.user,
-              id: seen.user._id.toString(),
-            },
-          })),
-          reactions: item.reactions.map(r => ({
-            ...r,
-            user: {
-              ...r.user,
-              id: r.user._id.toString(),
-            },
-          })),
+          seenBy: item.seenBy
+            .filter(seen => seen.user)
+            .map(seen => ({
+              ...seen,
+              user: {
+                ...seen.user,
+                id: seen.user._id.toString(),
+              },
+            })),
+          reactions: item.reactions
+            .filter(r => r.user)
+            .map(r => ({
+              ...r,
+              user: {
+                ...r.user,
+                id: r.user._id.toString(),
+              },
+            })),
         }));
 
       return {
@@ -118,7 +123,7 @@ async function getNewStories(context) {
         stories: visibleStories,
       };
     })
-    .filter(s => s.stories.length > 0);
+    .filter(story => story.stories.length > 0);
 }
 
 async function getAllStories(context) {

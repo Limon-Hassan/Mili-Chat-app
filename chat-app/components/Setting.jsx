@@ -128,7 +128,7 @@ const Setting = () => {
                   reactedAt
                 }
                 seenBy {
-                  user { id name avatar }
+                  user { name avatar }
                   seenAt
                 }
               }
